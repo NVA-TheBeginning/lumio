@@ -1,9 +1,6 @@
 {
   "private": true,
   "name": "lumio",
-  "prisma": {
-    "schema": "packages/database/prisma/schema.prisma"
-  },
   "packageManager": "bun@1.2.8",
   "scripts": {
     "build": "turbo run build",
@@ -14,6 +11,7 @@
     "test": "turbo run test",
     "test:ci": "turbo run test --affected",
     "dev": "turbo run dev",
+    "start": "turbo run start",
     "format": "biome format --fix",
     "lint": "biome check --fix",
     "generate": "turbo run generate"

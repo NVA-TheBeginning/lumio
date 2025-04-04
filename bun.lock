@@ -36,7 +36,7 @@
       "name": "frontend",
       "version": "1.0.0",
       "dependencies": {
-        "@hookform/resolvers": "^4.1.3",
+        "@hookform/resolvers": "^5.0.1",
         "@radix-ui/react-dropdown-menu": "^2.1.6",
         "@radix-ui/react-label": "^2.1.2",
         "@radix-ui/react-slot": "^1.1.2",
@@ -223,7 +223,7 @@
 
     "@happy-dom/global-registrator": ["@happy-dom/global-registrator@17.4.4", "", { "dependencies": { "happy-dom": "^17.4.4" } }, "sha512-njrU74GrYVHO43upIJr96f7pEmUG7YLZbHCGiHALBECeVnDKpepzL9kVc7KIl8S2nQOkPA0rAA1EyC3xASb54w=="],
 
-    "@hookform/resolvers": ["@hookform/resolvers@4.1.3", "", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.0.0" } }, "sha512-Jsv6UOWYTrEFJ/01ZrnwVXs7KDvP8XIo115i++5PWvNkNvkrsTfGiLS6w+eJ57CYtUtDQalUWovCZDHFJ8u1VQ=="],
+    "@hookform/resolvers": ["@hookform/resolvers@5.0.1", "", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.55.0" } }, "sha512-u/+Jp83luQNx9AdyW2fIPGY6Y7NG68eN2ZW8FOJYL+M0i4s49+refdJdOp/A9n9HFQtQs3HIDHQvX3ZET2o7YA=="],
 
     "@img/sharp-darwin-arm64": ["@img/sharp-darwin-arm64@0.33.5", "", { "optionalDependencies": { "@img/sharp-libvips-darwin-arm64": "1.0.4" }, "os": "darwin", "cpu": "arm64" }, "sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ=="],
 
