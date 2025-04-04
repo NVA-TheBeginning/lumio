@@ -42,6 +42,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-turbo-
 
+    - uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.bun }}-bun-
+
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
@@ -51,7 +58,7 @@ jobs:
       run: bun install
 
     - name: Init database
-      run: bun run generate
+      run: bun run generate && bun run db:push
 
     - name: Build
       run: bun run build
