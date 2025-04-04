@@ -10,6 +10,7 @@ env:
   FORCE_COLOR: 1
   CI: true
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+  TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.sha || github.event.before) }}
 
 jobs:
   test:
@@ -33,6 +34,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         persist-credentials: false
+        fetch-depth: 0
 
     - name: Cache turbo build setup
       uses: actions/cache@v4
