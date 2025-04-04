@@ -7,6 +7,19 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   expireTime: 3600,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
+    minimumCacheTTL: 60,
+  },
   experimental: {
     reactCompiler: isProduction,
     optimizePackageImports: ["@radix-ui/*"],

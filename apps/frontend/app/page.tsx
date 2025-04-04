@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ModeToggle } from "@/components/toggle-theme";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,13 @@ export default function Home() {
               </div>
             </div>
             <div className="flex justify-center">
-              <Image src="https://picsum.photos/500/400" alt="Lumio Interface" className="rounded-lg shadow-xl" />
+              <img
+                src="https://picsum.photos/500/400"
+                alt="Lumio Interface"
+                className="rounded-lg shadow-xl"
+                width={500}
+                height={400}
+              />
             </div>
           </div>
         </div>
