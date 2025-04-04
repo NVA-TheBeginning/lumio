@@ -62,13 +62,13 @@ jobs:
       run: bun turbo run generate
 
     - name: Push database schema
-      run: bun turbo run db:push --env DATABASE_URL
+      run: bun turbo run db:push
 
     - name: Build
-      run: bun run build
+      run: bun run build:ci
 
     - name: Run tests
-      run: bun test
+      run: bun run test:ci
 
   lint:
     name: Code quality
