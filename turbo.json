@@ -1,23 +1,22 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalEnv": ["DATABASE_URL"],
+  "envMode": "loose",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "db:deploy": {
-      "cache": false,
-      "env": ["DATABASE_URL"]
+      "cache": false
     },
     "db:push": {
-      "cache": false,
-      "env": ["DATABASE_URL"]
+      "cache": false
     },
     "dev": {
       "cache": false,
-      "persistent": true,
-      "env": ["DATABASE_URL"]
+      "persistent": true
     },
     "generate": {
       "dependsOn": ["^generate"],
