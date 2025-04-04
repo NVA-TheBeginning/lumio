@@ -10,6 +10,7 @@ env:
   FORCE_COLOR: 1
   CI: true
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+  TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.sha || github.event.before) }}
 
 jobs:
   test:
@@ -33,6 +34,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         persist-credentials: false
+        fetch-depth: 0
 
     - name: Cache turbo build setup
       uses: actions/cache@v4
@@ -42,6 +44,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-turbo-
 
+    - name: Cache bun dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.bun }}-bun-
+
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
@@ -50,14 +60,17 @@ jobs:
     - name: Install dependencies
       run: bun install
 
-    - name: Init database
-      run: bun run generate
+    - name: Generate Prisma client
+      run: bun turbo run generate
+
+    - name: Push database schema
+      run: bun turbo run db:push
 
     - name: Build
-      run: bun run build
+      run: bun run build:ci
 
     - name: Run tests
-      run: bun test
+      run: bun run test:ci
 
   lint:
     name: Code quality
