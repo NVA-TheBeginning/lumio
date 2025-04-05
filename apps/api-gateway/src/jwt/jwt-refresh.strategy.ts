@@ -1,4 +1,3 @@
-// src/jwt/jwt-refresh.strategy.ts
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-jwt";
@@ -15,7 +14,6 @@ interface JwtRefreshPayload {
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, "jwt-refresh") {
   constructor() {
     super({
-      // Ici, on suppose que le refresh token est envoyé dans le body sous le champ 'refreshToken'
       jwtFromRequest: ExtractJwt.fromBodyField("refreshToken"),
       ignoreExpiration: false,
       secretOrKey: jwtConstants.refreshSecret,
