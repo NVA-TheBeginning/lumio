@@ -22,8 +22,5 @@
   },
   "workspaces": [
     "apps/*"
-  ],
-  "dependencies": {
-    "@fastify/helmet": "^13.0.1"
-  }
+  ]
 }
