@@ -33,6 +33,7 @@ yarn-error.log*
 
 # turbo
 .turbo
+.env
 
 # We use Bun as a package manager
 package-lock.json

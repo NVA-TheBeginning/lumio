@@ -1,8 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ModeToggle } from "@/components/toggle-theme";
 import { Button } from "@/components/ui/button";
+import { getUserFromCookie } from "@/lib/cookie";
+import LogoutButton from "./logout/page";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getUserFromCookie();
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-background border-b py-4">
@@ -12,12 +17,23 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-2">
             <ModeToggle />
-            <Link href={{ pathname: "/login" }}>
-              <Button className="cursor-pointer">Se connecter</Button>
-            </Link>
-            <Link href={{ pathname: "/register" }}>
-              <Button className="cursor-pointer">S'inscrire</Button>
-            </Link>
+            {user ? (
+              <>
+                <Link href={{ pathname: "/dashboard" }} prefetch>
+                  <Button className="cursor-pointer">Tableau de bord</Button>
+                </Link>
+                <LogoutButton />
+              </>
+            ) : (
+              <>
+                <Link href={{ pathname: "/login" }} prefetch>
+                  <Button className="cursor-pointer">Se connecter</Button>
+                </Link>
+                <Link href={{ pathname: "/register" }} prefetch>
+                  <Button className="cursor-pointer">S'inscrire</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -47,7 +63,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex justify-center">
-              <img
+              <Image
                 src="https://picsum.photos/500/400"
                 alt="Lumio Interface"
                 className="rounded-lg shadow-xl"

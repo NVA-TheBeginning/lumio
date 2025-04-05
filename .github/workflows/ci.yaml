@@ -23,15 +23,13 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: rapidfort/postgresql-official:17.4-alpine3.21
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: testdb
         ports:
         - 5432:5432
-        options: >-
-          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
     - name: Checkout code
@@ -39,6 +37,11 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
 
     - name: Cache turbo build setup
       uses: actions/cache@v4
@@ -56,13 +59,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.bun }}-bun-
 
-    - name: Setup Bun
-      uses: oven-sh/setup-bun@v2
-      with:
-        bun-version: latest
-
     - name: Install dependencies
-      run: bun install
+      run: bun install --frozen-lockfile
 
     - name: Generate Prisma client
       run: bun turbo run generate
