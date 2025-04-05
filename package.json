@@ -24,6 +24,6 @@
     "apps/*"
   ],
   "dependencies": {
-    "@fastify/rate-limit": "^10.2.2"
+    "@fastify/helmet": "^13.0.1"
   }
 }

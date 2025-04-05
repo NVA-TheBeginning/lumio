@@ -52,7 +52,6 @@ export async function setupFederatedSwagger(app: INestApplication): Promise<void
                 return schemas;
             })(),
         },
-
     };
 
     // 6. Log propre des microservices intégrés

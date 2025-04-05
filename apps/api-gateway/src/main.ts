@@ -5,7 +5,7 @@ import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify
 import { AppModule } from "@/app.module.js";
 import { LoggingInterceptor } from "@/common/interceptors/logging.interceptor.js";
 import {ConfigService} from "@nestjs/config";
-import helmet from "helmet";
+import fastifyHelmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import {HttpExceptionFilter} from "@/common/filters/http-exception.filter.js";
 import {setupFederatedSwagger} from "@/docs/swagger-federation.js";
@@ -17,8 +17,14 @@ async function bootstrap() {
 
   const port = configService.get<number>('port') || 3000;
 
-  // Middlewares de sécurité
-  app.use(helmet());
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: false, // désactivé par défaut sinon ça bloque Swagger
+  });
+
+// Helmet pour Fastify
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: false,
+  });
 
   // Middleware Rate Limiter global
   await app.register(rateLimit, {
