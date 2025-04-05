@@ -19,7 +19,7 @@ async function bootstrap() {
 
   Logger.log("CORS enabled with origin: * and methods: GET, POST, PUT, DELETE, OPTIONS");
 
-  await app.listen(process.env.PORT ?? 3000, "0.0.0.0");
+  await app.listen(process.env.PORT ?? 3002, "0.0.0.0");
   const url = await app.getUrl();
   Logger.log(`Server is running on: ${url}`);
   Logger.log(`API Docs available at: ${url}/api`);
