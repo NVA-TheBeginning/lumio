@@ -1,0 +1,15 @@
+dist/
+node_modules/
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+*.tgz
+.env
+
+# We use Bun as a package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
