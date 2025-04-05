@@ -5,19 +5,32 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../../../node_modules/@prisma-auth"
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@prisma-auth"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["auth_schema"]
 }
 
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique @db.VarChar(255)
   password  String
+  role      Role     @default(TEACHER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@schema("auth_schema")
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+  ADMIN
+
+  @@schema("auth_schema")
 }
