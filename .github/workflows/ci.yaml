@@ -23,7 +23,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: rapidfort/postgresql-official:17.4-alpine3.21
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
