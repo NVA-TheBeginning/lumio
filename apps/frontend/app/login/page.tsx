@@ -4,24 +4,9 @@ import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { LoginForm, type LoginFormValues } from "@/components/login-form";
+import { loginApiClient } from "@/app/login/action";
+import { LoginForm } from "@/components/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const loginApiClient = async (credentials: LoginFormValues) => {
-  const API_URL = "http://localhost:3000";
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(credentials),
-  });
-
-  if (!response.ok) {
-    throw new Error("Identifiants incorrects");
-  }
-};
 
 export default function LoginPage() {
   const router = useRouter();

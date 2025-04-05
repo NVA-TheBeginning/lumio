@@ -13,10 +13,10 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-2">
             <ModeToggle />
-            <Link href={{ pathname: "/login" }}>
+            <Link href={{ pathname: "/login" }} prefetch>
               <Button className="cursor-pointer">Se connecter</Button>
             </Link>
-            <Link href={{ pathname: "/register" }}>
+            <Link href={{ pathname: "/register" }} prefetch>
               <Button className="cursor-pointer">S'inscrire</Button>
             </Link>
           </div>

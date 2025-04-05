@@ -8,9 +8,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "db:deploy": {
-      "cache": false
-    },
     "db:push": {
       "cache": false
     },
