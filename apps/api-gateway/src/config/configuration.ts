@@ -1,11 +1,11 @@
 // src/config/configuration.ts
 export default () => ({
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || "3000", 10),
   jwt: {
-    secret: process.env.JWT_SECRET || 'defaultSecret',
-    expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'defaultRefreshSecret',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    secret: process.env.JWT_SECRET || "defaultSecret",
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+    refreshSecret: process.env.JWT_REFRESH_SECRET || "defaultRefreshSecret",
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   },
   microservices: {
     auth: process.env.AUTH_SERVICE_URL || "http://localhost:3002",
