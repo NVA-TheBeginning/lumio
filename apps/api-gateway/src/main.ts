@@ -2,28 +2,71 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "@/app.module.js";
 import { LoggingInterceptor } from "@/common/interceptors/logging.interceptor.js";
+import {ConfigService} from "@nestjs/config";
+import helmet from "helmet";
+import rateLimit from '@fastify/rate-limit';
+import {HttpExceptionFilter} from "@/common/filters/http-exception.filter.js";
+import {setupFederatedSwagger} from "@/docs/swagger-federation.js";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const configService = app.get(ConfigService);
+  const logger = new Logger('Bootstrap');
 
-  // Pipe global pour valider et transformer les données d'entrée
-  app.useGlobalPipes(new ValidationPipe());
+  const port = configService.get<number>('port') || 3000;
+
+  // Middlewares de sécurité
+  app.use(helmet());
+
+  // Middleware Rate Limiter global
+  await app.register(rateLimit, {
+    max: 100, // max 100 requêtes
+    timeWindow: '15 minutes', // par fenêtre de 15 minutes
+    errorResponseBuilder: () => ({
+      statusCode: 429,
+      error: 'Too Many Requests',
+      message: 'Trop de requêtes. Réessayez plus tard.',
+    }),
+  });
+
+  // Pipes globaux pour la validation des DTO
+  app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+  );
+
+  // Filtre global des exceptions HTTP
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Interceptor global pour logger les requêtes et mesurer leur temps d'exécution
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // Configuration de Swagger pour documenter l'API Gateway
-  const config = new DocumentBuilder().setTitle("API Gateway").setVersion("1.0").build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api", app, document);
+  // Swagger fédéré
+  await setupFederatedSwagger(app);
 
-  await app.listen(process.env.PORT ?? 3000, "0.0.0.0");
-  const url = await app.getUrl();
-  Logger.log(`Server is running on: ${url}`);
-  Logger.log(`API Docs available at: ${url}/api`);
+
+  await app.listen(port);
+
+  const microservices = configService.get<Record<string, string>>('microservices') ?? {};
+  console.log('\x1b[36m📡 Routes des Microservices :\x1b[0m'); // cyan
+
+  Object.entries(microservices).forEach(([name, url]) => {
+    console.log(`\x1b[33m- ${name}\x1b[0m: \x1b[32m${url}\x1b[0m`);
+  });
+
+  console.log('\nApplication démarrée avec succès !');
+  logger.log(`🚀 API Gateway listening on http://localhost:${port}`);
+  logger.log(`📖 Swagger docs available on http://localhost:${port}/docs`);
+
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('❌ Application failed to start', error);
+  process.exit(1);
+});

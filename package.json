@@ -22,5 +22,8 @@
   },
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "dependencies": {
+    "@fastify/rate-limit": "^10.2.2"
+  }
 }

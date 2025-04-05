@@ -6,8 +6,10 @@ node_modules/
 [._]ss[a-gi-z]
 [._]sw[a-p]
 
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
 *.tgz
 .env
+
+# We use Bun as a package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

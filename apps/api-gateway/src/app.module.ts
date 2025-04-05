@@ -1,10 +1,19 @@
 // src/app.module.ts
-import { MiddlewareConsumer, Module } from "@nestjs/common";
-import { RouterModule } from "nest-router";
-import { AuthModule } from "@/auth/auth.module.js";
-import { HealthModule } from "@/health/health.module.js";
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import configuration from './config/configuration.js';
+
+import { AuthModule } from '@/microservices/auth/auth.module.js';
+import { HealthController } from '@/health/health.controller.js';
 
 @Module({
-  imports: [AuthModule, HealthModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
+    AuthModule,
+  ],
+  controllers: [HealthController],
 })
 export class AppModule {}
