@@ -21,11 +21,6 @@ async function bootstrap() {
     contentSecurityPolicy: false, // désactivé par défaut sinon ça bloque Swagger
   });
 
-// Helmet pour Fastify
-  await app.register(fastifyHelmet, {
-    contentSecurityPolicy: false,
-  });
-
   // Middleware Rate Limiter global
   await app.register(rateLimit, {
     max: 100, // max 100 requêtes
