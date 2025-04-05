@@ -25,7 +25,7 @@ describe("Health", () => {
       })
       .then((result) => {
         expect(result.statusCode).toEqual(200);
-        expect(JSON.parse(result.body)).toEqual({ status: 200, message: "OK" });
+        expect(JSON.parse(result.body)).toEqual({ status: "ok" });
       });
   });
 
