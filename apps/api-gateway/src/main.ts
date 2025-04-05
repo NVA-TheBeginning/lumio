@@ -14,7 +14,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = new Logger("Gateway");
 
-  const port = configService.get<number>("port") || 3000;
+  const port = 3000;
 
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: false,
