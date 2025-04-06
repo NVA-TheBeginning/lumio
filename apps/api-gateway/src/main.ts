@@ -9,12 +9,17 @@ import { HttpExceptionFilter } from "@/common/filters/http-exception.filter.js";
 import { LoggingInterceptor } from "@/common/interceptors/logging.interceptor.js";
 import { setupFederatedSwagger } from "@/docs/swagger-federation.js";
 
+// Used to delay the application startup for a few seconds to allow other services to be ready
+// before the gateway starts accepting requests.
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
-  const configService = app.get(ConfigService);
   const logger = new Logger("Gateway");
 
-  const port = 3000;
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const configService = app.get(ConfigService);
+
+  const port = configService.get<number>("port") ?? 3000;
 
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: false,
@@ -41,20 +46,26 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
+  const startDelay = 3000;
+  logger.log("⏳ Delaying federated Swagger setup for 3 seconds...");
+  await sleep(startDelay);
+
   await setupFederatedSwagger(app);
 
   await app.listen(port);
+  const url = await app.getUrl();
 
   const microservices = configService.get<Record<string, string>>("microservices") ?? {};
-  logger.log("\x1b[36m📡 Routes des Microservices :\x1b[0m"); // cyan
+  logger.log("\x1b[36m📡 Routes des Microservices :\x1b[0m");
 
   Object.entries(microservices).forEach(([name, url]) => {
     logger.log(`\x1b[33m- ${name}\x1b[0m: \x1b[32m${url}\x1b[0m`);
   });
 
-  logger.log("\nApplication démarrée avec succès !");
-  logger.log(`🚀 API Gateway listening on http://localhost:${port}`);
-  logger.log(`📖 Swagger docs available on http://localhost:${port}/docs`);
+  logger.log("Application démarrée avec succès !");
+  logger.log(`🚀 API Gateway listening on ${url}`);
+  logger.log(`API Docs available at: ${url}/docs`);
+  logger.log(`Swagger UI available at: ${url}/ui`);
 }
 
 bootstrap().catch((error) => {
