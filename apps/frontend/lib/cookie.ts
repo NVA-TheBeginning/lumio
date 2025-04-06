@@ -29,7 +29,7 @@ export async function setUserCookie(user: User): Promise<void> {
 
 export async function getUserFromCookie(): Promise<User | null> {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user");  
+  const userCookie = cookieStore.get("user");
   try {
     if (!userCookie?.value) {
       return null;
