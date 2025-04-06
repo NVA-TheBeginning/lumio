@@ -108,4 +108,23 @@ export class PromotionsService {
       where: { id },
     });
   }
+
+  async removeStudents(promotionId: number, studentIds: number[]) {
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id: promotionId },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException(`Promotion with id ${promotionId} not found`);
+    }
+
+    return this.prisma.studentPromotion.deleteMany({
+      where: {
+        promotionId,
+        studentId: {
+          in: studentIds,
+        },
+      },
+    });
+  }
 }

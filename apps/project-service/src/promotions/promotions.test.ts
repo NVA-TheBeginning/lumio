@@ -10,6 +10,7 @@ describe("Promotions", () => {
   let prisma: PrismaService;
   const promotionName = `Test Promotion ${Date.now()}`;
   let promotionId: number;
+  let studentIdsToRemove: number[] = [];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -47,6 +48,19 @@ describe("Promotions", () => {
       { firstname: "Jane", name: "Smith", email: "jane.smith@example.com" },
     ]);
     promotionId = body.id;
+
+    const studentPromotions = await prisma.studentPromotion.findMany({
+      where: {
+        promotionId: promotionId,
+      },
+      select: {
+        studentId: true,
+      },
+    });
+
+    studentIdsToRemove = studentPromotions.map((sp) => sp.studentId);
+
+    expect(studentIdsToRemove.length).toBeGreaterThan(0);
   });
 
   test("/promotions (GET) - should return a list of promotions", async () => {
@@ -86,6 +100,26 @@ describe("Promotions", () => {
     expect(body).toHaveProperty("description", updateData.description);
   });
 
+  test("/promotions/:id/student (DELETE) - should remove students from a promotion", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: `/promotions/${promotionId}/student`,
+      body: studentIdsToRemove,
+    });
+
+    expect(response.statusCode).toEqual(200);
+
+    const studentPromotions = await prisma.studentPromotion.findMany({
+      where: {
+        promotionId: promotionId,
+        studentId: {
+          in: studentIdsToRemove,
+        },
+      },
+    });
+    expect(studentPromotions.length).toEqual(0);
+  });
+
   test("/promotions/:id (DELETE) - should delete a specific promotion", async () => {
     const response = await app.inject({
       method: "DELETE",
@@ -102,11 +136,6 @@ describe("Promotions", () => {
   });
 
   afterAll(async () => {
-    await prisma.studentPromotion.deleteMany({
-      where: {
-        promotionId,
-      },
-    });
     await app.close();
   });
 });

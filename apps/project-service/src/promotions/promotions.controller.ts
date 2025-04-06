@@ -41,7 +41,14 @@ export class PromotionsController {
   @Delete(":id")
   @ApiOkResponse({ type: PromotionEntity })
   async remove(@Param("id", ParseIntPipe) id: number) {
-    const promo = await this.promotionsService.remove(id);
-    return new PromotionEntity(promo);
+    await this.promotionsService.remove(id);
+    return { message: "Promotion deleted successfully" };
+  }
+
+  @Delete(":id/student")
+  @ApiOkResponse({ type: PromotionEntity })
+  async removeStudentsFromPromotion(@Param("id", ParseIntPipe) promoId: number, @Body() studentIds: number[]) {
+    await this.promotionsService.removeStudents(promoId, studentIds);
+    return { message: `Students removed from promotion ${promoId} successfully` };
   }
 }

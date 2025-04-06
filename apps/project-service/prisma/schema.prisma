@@ -52,30 +52,34 @@ model ProjectStep {
 }
 
 model Promotion {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(255)
-  description String   @db.Text
-  creatorId   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                Int                @id @default(autoincrement())
+  name              String             @db.VarChar(255)
+  description       String             @db.Text
+  creatorId         Int
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  studentPromotions StudentPromotion[] @relation("PromotionToStudentPromotion")
+  projectPromotions ProjectPromotion[] @relation("PromotionToProjectPromotion")
 
   @@map("PROMOTION")
   @@schema("project_schema")
 }
 
 model ProjectPromotion {
-  id          Int @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   projectId   Int
   promotionId Int
+  promotion   Promotion @relation("PromotionToProjectPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
 
   @@map("PROJECT_PROMOTION")
   @@schema("project_schema")
 }
 
 model StudentPromotion {
-  id          Int @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   studentId   Int
   promotionId Int
+  promotion   Promotion @relation("PromotionToStudentPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
 
   @@map("STUDENT_PROMOTION")
   @@schema("project_schema")
