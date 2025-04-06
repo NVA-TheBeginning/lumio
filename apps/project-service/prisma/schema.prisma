@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@prisma-project"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["project_schema"]
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(255)
+  description String        @db.Text
+  status      ProjectStatus @default(DRAFT)
+  creatorId   Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?     @db.Timestamptz(6)
+
+  @@map("PROJECT")
+  @@schema("project_schema")
+}
+
+enum ProjectStatus {
+  VISIBLE
+  DRAFT
+  HIDDEN
+
+  @@schema("project_schema")
+}
+
+model ProjectStep {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  name      String   @db.VarChar(255)
+  content   String   @db.Text
+  dueDate   DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("PROJECT_STEP")
+  @@schema("project_schema")
+}
+
+model Promotion {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  description String   @db.Text
+  creatorId   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("PROMOTION")
+  @@schema("project_schema")
+}
+
+model ProjectPromotion {
+  id          Int @id @default(autoincrement())
+  projectId   Int
+  promotionId Int
+
+  @@map("PROJECT_PROMOTION")
+  @@schema("project_schema")
+}
+
+model StudentPromotion {
+  id          Int @id @default(autoincrement())
+  studentId   Int
+  promotionId Int
+
+  @@map("STUDENT_PROMOTION")
+  @@schema("project_schema")
+}
