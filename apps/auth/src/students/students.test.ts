@@ -9,7 +9,7 @@ describe("Students", () => {
   let app: NestFastifyApplication;
   let prisma: PrismaService;
   let studentId: number;
-  const testEmail = `test-${Date.now()}@example.com`; // Unique email for testing
+  const testEmail = `test-${Date.now()}@example.com`;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

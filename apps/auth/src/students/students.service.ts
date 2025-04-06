@@ -29,27 +29,51 @@ export class StudentsService {
       }),
     );
 
-    const studentsData = studentsWithPasswords.map((item) => ({
-      lastname: item.student.lastname,
-      firstname: item.student.firstname,
-      email: item.student.email,
-      password: item.hashedPassword,
-      role: "STUDENT" as const,
-    }));
-
-    const result = await this.prisma.user.createMany({
-      data: studentsData,
-      skipDuplicates: true,
-    });
-
-    // TODO: Send emails to students with their passwords
-    return {
-      count: result.count,
-      students: studentsWithPasswords.map((item) => ({
+    return this.prisma.$transaction(async (tx) => {
+      const studentsData = studentsWithPasswords.map((item) => ({
+        lastname: item.student.lastname,
+        firstname: item.student.firstname,
         email: item.student.email,
-        initialPassword: item.randomPassword,
-      })),
-    };
+        password: item.hashedPassword,
+        role: "STUDENT" as const,
+      }));
+
+      const insertResult = await tx.user.createMany({
+        data: studentsData,
+        skipDuplicates: true,
+      });
+
+      if (insertResult.count === 0) {
+        return { count: 0, students: [] };
+      }
+
+      const createdStudents = await tx.user.findMany({
+        where: {
+          email: {
+            in: studentsData.map((s) => s.email),
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      });
+
+      const students = studentsWithPasswords.map((user) => {
+        const createdStudent = createdStudents.find((s) => s.email === user.student.email);
+        return {
+          studentId: createdStudent?.id,
+          email: user.student.email,
+          initialPassword: user.randomPassword,
+        };
+      });
+
+      // TODO: Send emails to students with their passwords
+      return {
+        count: insertResult.count,
+        students: students,
+      };
+    });
   }
 
   async findStudentById(id: number) {
