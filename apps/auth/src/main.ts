@@ -7,10 +7,13 @@ import { AppModule } from "@/app.module.js";
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ logger: true }));
 
-  const config = new DocumentBuilder().setTitle("API").setVersion("1.0").build();
+  const config = new DocumentBuilder().setTitle("Auth Service").setVersion("1.0").build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api", app, documentFactory);
+  SwaggerModule.setup("ui", app, documentFactory);
+  SwaggerModule.setup("swagger", app, documentFactory, {
+    jsonDocumentUrl: "docs",
+  });
 
   app.enableCors({
     origin: "*",
@@ -19,9 +22,11 @@ async function bootstrap() {
 
   Logger.log("CORS enabled with origin: * and methods: GET, POST, PUT, DELETE, OPTIONS");
 
-  await app.listen(process.env.PORT ?? 3002, "0.0.0.0");
+  await app.listen(3002, "0.0.0.0");
+
   const url = await app.getUrl();
   Logger.log(`Server is running on: ${url}`);
-  Logger.log(`API Docs available at: ${url}/api`);
+  Logger.log(`API Docs available at: ${url}/docs`);
+  Logger.log(`Swagger UI available at: ${url}/ui`);
 }
 bootstrap();

@@ -18,7 +18,7 @@ export async function setupFederatedSwagger(app: INestApplication): Promise<void
   const remoteDocs = await Promise.all(
     microservicesDocs.map(async ({ name, url }) => {
       try {
-        const { data } = await axios.get(`${url}/api-json`);
+        const { data } = await axios.get(`${url}/docs`);
         return { name, doc: data };
       } catch (error) {
         const err = error as Error;
@@ -63,5 +63,8 @@ export async function setupFederatedSwagger(app: INestApplication): Promise<void
   }
 
   // 🔧 4. Exposer sur /docs
-  SwaggerModule.setup("docs", app, merged);
+  SwaggerModule.setup("ui", app, merged);
+  SwaggerModule.setup("swagger", app, merged, {
+    jsonDocumentUrl: "docs",
+  });
 }
