@@ -21,7 +21,7 @@ export class AuthController {
     return this.authService.signUp(signUpDto.email, signUpDto.password);
   }
 
-  @Post("signin")
+  @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Login with email and password" })
   @ApiBody({ type: SignInDto })

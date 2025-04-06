@@ -3,8 +3,8 @@ import { LoginFormValues } from "@/components/login-form";
 import { setUserCookie } from "@/lib/cookie";
 
 export async function loginApiClient(credentials: LoginFormValues): Promise<void> {
-  const API_URL = "http://localhost:3000";
-  const response = await fetch(`${API_URL}/auth/signin`, {
+  const API_URL = process.env.API_URL || "http://localhost:3000";
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
