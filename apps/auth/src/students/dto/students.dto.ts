@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsString, IsStrongPassword } from "class-validator";
 
 export class CreateStudentDto {
   constructor(lastname: string, firstname: string, email: string) {
@@ -52,5 +52,9 @@ export class UpdatePasswordDto {
   @ApiProperty({ description: "New password for the student" })
   @IsNotEmpty()
   @IsString()
+  @IsStrongPassword({
+    minLength: 8,
+    minUppercase: 1,
+  })
   newPassword: string;
 }
