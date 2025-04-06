@@ -28,9 +28,9 @@ export async function setUserCookie(user: User): Promise<void> {
 }
 
 export async function getUserFromCookie(): Promise<User | null> {
+  const cookieStore = await cookies();
+  const userCookie = cookieStore.get("user");
   try {
-    const userCookie = (await cookies()).get("user");
-
     if (!userCookie?.value) {
       return null;
     }
