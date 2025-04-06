@@ -43,16 +43,8 @@ describe("Students", () => {
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("count", createStudentDtos.length);
     expect(body.students[0]).toHaveProperty("email", createStudentDtos[0].email);
-
-    const student = await prisma.user.findUnique({
-      where: { email: testEmail },
-      select: { id: true },
-    });
-    expect(student).not.toBeNull();
-    if (!student) {
-      throw new Error("Student not found");
-    }
-    studentId = student.id;
+    expect(body.students[0]).toHaveProperty("studentId");
+    studentId = body.students[0].studentId;
   });
 
   test("/students/:id (GET) - should return a specific student", async () => {
