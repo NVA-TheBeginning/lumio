@@ -73,7 +73,7 @@ describe("setupFederatedSwagger", () => {
 
     expect(DocumentBuilder).toHaveBeenCalled();
     expect(SwaggerModule.createDocument).toHaveBeenCalledWith(mockApp, expect.anything());
-    expect(SwaggerModule.setup).toHaveBeenCalledWith("docs", mockApp, expect.anything());
+    expect(SwaggerModule.setup).toHaveBeenCalledWith("ui", mockApp, expect.anything());
 
     expect(axios.get).toHaveBeenCalledTimes(microservicesDocs.length);
     expect(consoleInfoSpy).toHaveBeenCalled();
