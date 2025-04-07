@@ -14,8 +14,8 @@ interface UpdatePromotionDto extends Record<string, unknown> {
   students_csv?: string;
 }
 
-@Controller("projects")
-export class ProjectsController {
+@Controller("promotions")
+export class PromotionsController {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post()
