@@ -21,56 +21,15 @@ export interface Member {
   updatedAt: string;
 }
 
-const mockPromotions: Promotion[] = [
-  {
-    id: 1,
-    name: "Promotion 1",
-    description: "Description of Promotion 1",
-    creatorId: 1,
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
-  },
-  {
-    id: 2,
-    name: "Promotion 2",
-    description: "Description of Promotion 2",
-    creatorId: 2,
-    createdAt: "2023-02-01T00:00:00Z",
-    updatedAt: "2023-02-01T00:00:00Z",
-  },
-];
-
-const mockMembers: Member[] = [
-  {
-    id: 1,
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    promotionId: 1,
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
-  },
-  {
-    id: 2,
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    promotionId: 1,
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
-  },
-];
-
-const API_URL = "http://localhost:3002";
+const API_URL = process.env.API_URL || "http://localhost:3000";
 
 export async function getPromotions(): Promise<Promotion[]> {
   try {
-    // const response = await fetch(`${API_URL}/promotions`);
-    // if (!response.ok) {
-    //   throw new Error("Failed to fetch promotions");
-    // }
-    // return response.json();
-    return mockPromotions;
+    const response = await fetch(`${API_URL}/promotions`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch promotions");
+    }
+    return await response.json();
   } catch (error) {
     console.error("Error fetching promotions:", error);
     return [];
@@ -85,7 +44,7 @@ export async function getPromotion(id: number): Promise<Promotion | null> {
       throw new Error(`Failed to fetch promotion with id ${id}`);
     }
 
-    return response.json();
+    return await response.json();
   } catch (error) {
     console.error(`Error fetching promotion ${id}:`, error);
     return null;
@@ -94,12 +53,13 @@ export async function getPromotion(id: number): Promise<Promotion | null> {
 
 export async function getPromotionMembers(promotionId: number): Promise<Member[]> {
   try {
-    // const response = await fetch(`${API_URL}/promotions/${promotionId}/members`);
-    // if (!response.ok) {
-    //   throw new Error(`Failed to fetch members for promotion ${promotionId}`);
-    // }
-    // return response.json();
-    return mockMembers.filter((member) => member.promotionId === promotionId);
+    const response = await fetch(`${API_URL}/promotions/${promotionId}/members`);
+    if (!response.ok) {
+      return [];
+      // TODO: Uncomment the line below to throw an error when the backend will be ready
+      //throw new Error(`Failed to fetch members for promotion ${promotionId}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error(`Error fetching members for promotion ${promotionId}:`, error);
     return [];
