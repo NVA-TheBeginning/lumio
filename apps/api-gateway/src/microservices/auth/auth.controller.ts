@@ -6,6 +6,11 @@ interface LoginDto extends Record<string, unknown> {
   password: string;
 }
 
+interface SignUpDto extends Record<string, unknown> {
+  email: string;
+  password: string;
+}
+
 interface RefreshTokenDto extends Record<string, unknown> {
   refreshToken: string;
 }
@@ -18,6 +23,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
     return this.proxy.forwardRequest("auth", "/auth/login", "POST", loginDto);
+  }
+  @Post("signup")
+  @HttpCode(HttpStatus.CREATED)
+  async signup(@Body() signUpDto: SignUpDto) {
+    return this.proxy.forwardRequest("auth", "/auth/signup", "POST", signUpDto);
   }
 
   @Post("refresh")

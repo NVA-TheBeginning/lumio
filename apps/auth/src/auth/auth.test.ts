@@ -60,7 +60,7 @@ describe("Auth", () => {
     expect(response.statusCode).toEqual(409);
   });
 
-  test("/auth/signin (POST) - should login existing user", async () => {
+  test("/auth/login (POST) - should login existing user", async () => {
     await app.inject({
       method: "POST",
       url: "/auth/signup",
@@ -72,7 +72,7 @@ describe("Auth", () => {
 
     const response = await app.inject({
       method: "POST",
-      url: "/auth/signin",
+      url: "/auth/login",
       payload: {
         email,
         password,
@@ -87,10 +87,10 @@ describe("Auth", () => {
     expect(body).toHaveProperty("token");
   });
 
-  test("/auth/signin (POST) - should return 401 for invalid credentials", async () => {
+  test("/auth/login (POST) - should return 401 for invalid credentials", async () => {
     const response = await app.inject({
       method: "POST",
-      url: "/auth/signin",
+      url: "/auth/login",
       payload: {
         email: "nonexistent@example.com",
         password: "wrong-password",
@@ -100,7 +100,7 @@ describe("Auth", () => {
     expect(response.statusCode).toEqual(401);
   });
 
-  test("/auth/signin (POST) - should return 401 for wrong password", async () => {
+  test("/auth/login (POST) - should return 401 for wrong password", async () => {
     await app.inject({
       method: "POST",
       url: "/auth/signup",
@@ -112,7 +112,7 @@ describe("Auth", () => {
 
     const response = await app.inject({
       method: "POST",
-      url: "/auth/signin",
+      url: "/auth/login",
       payload: {
         email,
         password: "wrong-password",
