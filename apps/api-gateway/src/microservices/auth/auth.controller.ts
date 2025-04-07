@@ -1,5 +1,6 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
+import {Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards} from "@nestjs/common";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import {AuthGuard} from "@nestjs/passport";
 
 interface LoginDto extends Record<string, unknown> {
   email: string;
@@ -9,10 +10,6 @@ interface LoginDto extends Record<string, unknown> {
 interface SignUpDto extends Record<string, unknown> {
   email: string;
   password: string;
-}
-
-interface RefreshTokenDto extends Record<string, unknown> {
-  refreshToken: string;
 }
 
 @Controller("auth")
@@ -30,9 +27,11 @@ export class AuthController {
     return this.proxy.forwardRequest("auth", "/auth/signup", "POST", signUpDto);
   }
 
+  @UseGuards(AuthGuard("jwt-refresh"))
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() refreshDto: RefreshTokenDto) {
-    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", refreshDto);
+  async refresh(@Req() req : any) {
+    const user = req.user;
+    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", user);
   }
 }
