@@ -47,10 +47,6 @@ const navData = {
       icon: <Users className="size-4" />,
       items: [
         {
-          title: "Toutes les promotions",
-          url: "/dashboard/promotions",
-        },
-        {
           title: "Créer une promotion",
           url: "/dashboard/promotions/new",
         },
