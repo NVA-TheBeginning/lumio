@@ -1,6 +1,6 @@
 services:
   db:
-    image: rapidfort/postgresql-official:17.4-alpine3.21
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
