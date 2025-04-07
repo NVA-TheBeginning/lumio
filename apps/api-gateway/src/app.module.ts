@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { HealthController } from "@/health/health.controller.js";
 import { AuthModule } from "@/microservices/auth/auth.module.js";
 import configuration from "./config/configuration.js";
+import { ProjectsModule } from "./microservices/projects/projects.module.js";
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import configuration from "./config/configuration.js";
       load: [configuration],
     }),
     AuthModule,
+    ProjectsModule,
   ],
   controllers: [HealthController],
 })
