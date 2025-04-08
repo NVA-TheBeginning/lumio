@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack --port 3001",
     "build": "next build --turbopack",
-    "start": "next start --turbopack",
+    "start": "bun --bun .next/standalone/apps/frontend/server.js",
     "format": "biome format --write",
     "lint": "biome lint --write",
     "check": "biome check --write",
