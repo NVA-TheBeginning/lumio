@@ -224,10 +224,12 @@ export default function ProjectList() {
           )}
         </div>
         <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau projet
-          </Button>
+          {projects.length > 0 && (
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau projet
+            </Button>
+          )}
         </div>
       </div>
 
