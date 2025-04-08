@@ -20,8 +20,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error(`[${request.method}] ${request.url} → ${status}: ${JSON.stringify(rawMessage)}`);
 
-    const message =
-        typeof rawMessage === 'string' ? rawMessage.replace(/^\[\w+\]\s/, '') : rawMessage;
+    const message = typeof rawMessage === "string" ? rawMessage.replace(/^\[\w+\]\s/, "") : rawMessage;
 
     response.status(status).send({
       statusCode: status,

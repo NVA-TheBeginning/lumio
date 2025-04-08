@@ -2,12 +2,6 @@ import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/co
 import { createSigner, createVerifier } from "fast-jwt";
 import { PrismaService } from "@/prisma.service.js";
 
-interface JwtPayload {
-  sub: number;
-  email: string;
-  type?: "access" | "refresh";
-}
-
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -20,7 +14,7 @@ export class AuthService {
   private readonly verifier;
 
   constructor(private prisma: PrismaService) {
-    this.accessSigner  = createSigner({
+    this.accessSigner = createSigner({
       key: process.env.JWT_SECRET || "your-secret-key",
       expiresIn: 86400, // 1 day
     });
@@ -66,24 +60,19 @@ export class AuthService {
     return this.generateTokens(user.id, user.email);
   }
 
-  private generateTokens(userId: number, email: string): AuthTokens {
+  async refreshToken(id: number, email: string): Promise<AuthTokens> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+    return this.generateTokens(id, email);
+  }
+
+  generateTokens(userId: number, email: string): AuthTokens {
     const accessToken = this.accessSigner({ sub: userId, email, type: "access" });
     const refreshToken = this.refreshSigner({ sub: userId, email, type: "refresh" });
     return { accessToken, refreshToken };
-  }
-
-  async refresh(token: string): Promise<AuthTokens> {
-    try {
-      const payload = this.verifier(token) as JwtPayload;
-
-      if (payload.type !== "refresh") {
-        throw new UnauthorizedException("Invalid token token");
-      }
-
-      return this.generateTokens(payload.sub, payload.email);
-    }
-    catch (error) {
-      throw new UnauthorizedException("Invalid token");
-    }
   }
 }

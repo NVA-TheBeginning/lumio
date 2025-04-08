@@ -1,8 +1,8 @@
 import { HttpService } from "@nestjs/axios";
-import {HttpException, Injectable} from "@nestjs/common";
+import { HttpException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { firstValueFrom } from "rxjs";
 import { AxiosError } from "axios";
+import { firstValueFrom } from "rxjs";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
@@ -75,8 +75,7 @@ export class MicroserviceProxyService {
       const data = err.response?.data as MicroserviceErrorResponse;
 
       const status = err?.response?.status ?? 500;
-      const message =
-          data?.message || data?.error || "Erreur microservice inconnue";
+      const message = data?.message || data?.error || "Erreur microservice inconnue";
 
       throw new HttpException(`[${microservice}] ${message}`, status);
     }
