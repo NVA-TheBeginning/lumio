@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Filter, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -16,17 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
-
-interface Project {
-  id: number;
-  title: string;
-  description: string;
-  promotions: string[];
-  date: string;
-  status: "visible" | "draft" | "hidden";
-}
+import { getAllProjects } from "./actions";
 
 interface FilterState {
   promotions: string[];
@@ -35,91 +29,6 @@ interface FilterState {
   search: string;
 }
 
-const mockProjects: Project[] = [
-  {
-    id: 1,
-    title: "Application Web pour Bibliothèque",
-    description: "Développement d'une application de gestion pour bibliothèques universitaires",
-    promotions: ["Master 2 Informatique", "Licence 3 Informatique"],
-    date: "2025-03-15",
-    status: "visible",
-  },
-  {
-    id: 2,
-    title: "Plateforme de Cours en Ligne",
-    description: "Création d'une plateforme e-learning avec système de quiz interactifs",
-    promotions: ["Licence 3 Informatique"],
-    date: "2025-02-10",
-    status: "visible",
-  },
-  {
-    id: 3,
-    title: "Application Mobile de Suivi Sportif",
-    description: "Application native pour suivre les performances sportives des étudiants",
-    promotions: ["Master 1 STAPS", "Master 2 Informatique"],
-    date: "2025-01-20",
-    status: "draft",
-  },
-  {
-    id: 4,
-    title: "Système de Gestion d'Emploi du Temps",
-    description: "Application pour gérer les horaires et les salles de cours",
-    promotions: ["Master 2 Informatique"],
-    date: "2024-12-05",
-    status: "visible",
-  },
-  {
-    id: 5,
-    title: "Plateforme de Stage",
-    description: "Portail web pour gérer les offres et candidatures de stage",
-    promotions: ["Licence 3 Informatique", "Master 1 STAPS"],
-    date: "2024-11-22",
-    status: "visible",
-  },
-  {
-    id: 6,
-    title: "Application d'Analyse de Données Sportives",
-    description: "Outil d'analyse statistique pour les performances sportives",
-    promotions: ["Master 1 STAPS"],
-    date: "2024-10-15",
-    status: "hidden",
-  },
-  {
-    id: 7,
-    title: "Système de Réservation de Salles",
-    description: "Application permettant la réservation de salles de cours et de réunion",
-    promotions: ["Licence 3 Informatique"],
-    date: "2024-09-18",
-    status: "hidden",
-  },
-  {
-    id: 8,
-    title: "Plateforme d'Échange Étudiant",
-    description: "Réseau social interne pour les étudiants de l'université",
-    promotions: ["Master 1 STAPS", "Master 2 Informatique"],
-    date: "2024-08-30",
-    status: "visible",
-  },
-  {
-    id: 9,
-    title: "Application de Gestion de Projets Étudiants",
-    description: "Outil collaboratif pour la gestion de projets académiques",
-    promotions: ["Master 2 Informatique"],
-    date: "2024-07-25",
-    status: "draft",
-  },
-];
-
-const getAllPromotions = (): string[] => {
-  const promotionSet = new Set<string>();
-  mockProjects.forEach((project) => {
-    project.promotions.forEach((promotion) => {
-      promotionSet.add(promotion);
-    });
-  });
-  return Array.from(promotionSet);
-};
-
 const datePeriods = [
   { label: "Tous", value: "all" },
   { label: "Cette année", value: "year" },
@@ -127,7 +36,9 @@ const datePeriods = [
   { label: "3 derniers mois", value: "3months" },
 ];
 
-const ProjectsDashboard = () => {
+export default function ProjectList() {
+  const queryClient = useQueryClient();
+
   const [filters, setFilters] = useState<FilterState>({
     promotions: [],
     dateRange: "all",
@@ -142,7 +53,16 @@ const ProjectsDashboard = () => {
   const [itemsPerPage, setItemsPerPage] = useState<number>(9);
   const [activeTab, setActiveTab] = useState<string>("all");
 
-  const promotions = useMemo(() => getAllPromotions(), []);
+  const {
+    data: { projects = [], promotions = [] } = {},
+    isLoading: isLoadingProjects,
+    isError: isErrorProjects,
+    error: projectsError,
+  } = useQuery({
+    queryKey: ["projects"],
+    queryFn: getAllProjects,
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
     let count = 0;
@@ -154,6 +74,8 @@ const ProjectsDashboard = () => {
   }, [filters]);
 
   const filteredProjects = useMemo(() => {
+    if (isLoadingProjects) return [];
+
     const now = new Date();
 
     let dateLimit: Date | null = null;
@@ -167,7 +89,7 @@ const ProjectsDashboard = () => {
       dateLimit.setMonth(now.getMonth() - 3);
     }
 
-    return mockProjects.filter((project) => {
+    return projects.filter((project) => {
       const matchesTab = activeTab === "all" || project.status === activeTab;
 
       const matchesPromotion =
@@ -186,7 +108,7 @@ const ProjectsDashboard = () => {
 
       return matchesTab && matchesPromotion && matchesSearch && matchesDate && matchesStatus;
     });
-  }, [filters, activeTab]);
+  }, [filters, activeTab, projects, isLoadingProjects]);
 
   const sortedProjects = useMemo(() => {
     return [...filteredProjects].sort((a, b) => {
@@ -212,7 +134,6 @@ const ProjectsDashboard = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -272,23 +193,41 @@ const ProjectsDashboard = () => {
     setCurrentPage(1);
   };
 
+  if (isErrorProjects) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center py-12 border rounded-lg bg-red-50 text-red-800">
+          <h3 className="text-lg font-medium">Erreur lors du chargement des projets</h3>
+          <p className="mt-2">
+            {projectsError instanceof Error ? projectsError.message : "Une erreur s'est produite. Veuillez réessayer."}
+          </p>
+          <Button className="mt-4" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["projects"] })}>
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Mes Projets</h1>
-          <p className="text-gray-500 mt-1">
-            {sortedProjects.length} projet{sortedProjects.length !== 1 ? "s" : ""} trouvé
-            {sortedProjects.length !== 1 ? "s" : ""}
-          </p>
+          {!isLoadingProjects ? (
+            <p className="text-gray-500 mt-1">
+              {sortedProjects.length} projet{sortedProjects.length !== 1 ? "s" : ""} trouvé
+              {sortedProjects.length !== 1 ? "s" : ""}
+            </p>
+          ) : (
+            <Skeleton className="h-6 w-32 mt-2" />
+          )}
         </div>
         <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-          {mockProjects.length > 0 && (
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Nouveau projet
-            </Button>
-          )}
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau projet
+          </Button>
         </div>
       </div>
 
@@ -329,20 +268,28 @@ const ProjectsDashboard = () => {
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium">Promotions</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {promotions.map((promotion) => (
-                        <div key={promotion} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`promotion-${promotion}`}
-                            checked={filters.promotions.includes(promotion)}
-                            onCheckedChange={() => handlePromotionToggle(promotion)}
-                          />
-                          <Label htmlFor={`promotion-${promotion}`} className="text-sm">
-                            {promotion}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+                    {isLoadingProjects ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-full" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        {promotions.map((promotion) => (
+                          <div key={promotion} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`promotion-${promotion}`}
+                              checked={filters.promotions.includes(promotion)}
+                              onCheckedChange={() => handlePromotionToggle(promotion)}
+                            />
+                            <Label htmlFor={`promotion-${promotion}`} className="text-sm">
+                              {promotion}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -451,42 +398,72 @@ const ProjectsDashboard = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {paginatedProjects.map((project) => (
-          <Card key={project.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl line-clamp-2">{project.title}</CardTitle>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <CardDescription className="text-sm">{formatDate(project.date)}</CardDescription>
-                <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-grow pb-3">
-              <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
+      {isLoadingProjects ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: Fine for skeletons
+            <Card key={index} className="flex flex-col h-full">
+              <CardHeader className="pb-3">
+                <Skeleton className="h-7 w-3/4 mb-2" />
+                <div className="flex justify-between items-center mt-2">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-6 w-1/5" />
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow pb-3">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4 mb-4" />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-32" />
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2 border-t pt-4">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-24" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paginatedProjects.map((project) => (
+            <Card key={project.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-xl line-clamp-2">{project.title}</CardTitle>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <CardDescription className="text-sm">{formatDate(project.date)}</CardDescription>
+                  <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow pb-3">
+                <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
 
-              <div className="mt-2 flex flex-wrap gap-2">
-                {project.promotions.map((promotion) => (
-                  <Badge key={promotion} variant="secondary" className="text-xs">
-                    {promotion}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2 border-t pt-4">
-              <Button variant="outline" size="sm">
-                Modifier
-              </Button>
-              <Button variant="default" size="sm">
-                Voir détails
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {project.promotions.map((promotion) => (
+                    <Badge key={promotion} variant="secondary" className="text-xs">
+                      {promotion}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2 border-t pt-4">
+                <Button variant="outline" size="sm">
+                  Modifier
+                </Button>
+                <Button variant="default" size="sm">
+                  Voir détails
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {paginatedProjects.length === 0 && (
+      {!isLoadingProjects && paginatedProjects.length === 0 && (
         <div className="text-center py-12 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-medium">Aucun projet trouvé</h3>
           <p className="text-gray-500 mt-2">Modifiez vos critères de recherche ou créez un nouveau projet</p>
@@ -497,7 +474,7 @@ const ProjectsDashboard = () => {
         </div>
       )}
 
-      {totalPages > 1 && (
+      {!isLoadingProjects && totalPages > 1 && (
         <div className="flex justify-center items-center mt-8 gap-2">
           <Button
             variant="outline"
@@ -576,6 +553,4 @@ const ProjectsDashboard = () => {
       </div>
     </div>
   );
-};
-
-export default ProjectsDashboard;
+}
