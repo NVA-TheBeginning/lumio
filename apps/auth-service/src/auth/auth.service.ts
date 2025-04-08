@@ -1,35 +1,41 @@
 import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { createSigner, createVerifier, VerifierCallback } from "fast-jwt";
+import { createSigner, createVerifier } from "fast-jwt";
 import { PrismaService } from "@/prisma.service.js";
 
 interface JwtPayload {
   sub: number;
   email: string;
+  type?: "access" | "refresh";
 }
 
-export interface AuthResult {
-  id: number;
-  email: string;
-  token: string;
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
 }
 
 @Injectable()
 export class AuthService {
-  private readonly signer;
+  private readonly accessSigner;
+  private readonly refreshSigner;
   private readonly verifier;
 
   constructor(private prisma: PrismaService) {
-    this.signer = createSigner({
+    this.accessSigner  = createSigner({
       key: process.env.JWT_SECRET || "your-secret-key",
       expiresIn: 86400, // 1 day
     });
 
+    this.refreshSigner = createSigner({
+      key: process.env.JWT_REFRESH_SECRET ?? "refresh-secret",
+      expiresIn: "7d",
+    });
+
     this.verifier = createVerifier({
-      key: process.env.JWT_SECRET || "your-secret-key",
+      key: process.env.JWT_REFRESH_SECRET || "refresh-secret",
     });
   }
 
-  async signUp(email: string, password: string): Promise<AuthResult> {
+  async signUp(email: string, password: string): Promise<AuthTokens> {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -45,45 +51,38 @@ export class AuthService {
       },
     });
 
-    const payload: JwtPayload = {
-      sub: newUser.id,
-      email: newUser.email,
-    };
-
-    const token = this.signer(payload);
-    return { id: newUser.id, email: newUser.email, token };
+    return this.generateTokens(newUser.id, newUser.email);
   }
 
-  async signIn(email: string, password: string): Promise<AuthResult> {
+  async signIn(email: string, password: string): Promise<AuthTokens> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
-    if (!user) {
+    if (!user || !(await Bun.password.verify(password, user.password))) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    const isPasswordValid = await Bun.password.verify(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-    };
-
-    const token = this.signer(payload);
-
-    return { ...user, token };
+    return this.generateTokens(user.id, user.email);
   }
 
-  async validateToken(token: string): Promise<VerifierCallback> {
+  private generateTokens(userId: number, email: string): AuthTokens {
+    const accessToken = this.accessSigner({ sub: userId, email, type: "access" });
+    const refreshToken = this.refreshSigner({ sub: userId, email, type: "refresh" });
+    return { accessToken, refreshToken };
+  }
+
+  async refresh(token: string): Promise<AuthTokens> {
     try {
-      const payload = this.verifier(token);
-      return payload;
-    } catch (error) {
+      const payload = this.verifier(token) as JwtPayload;
+
+      if (payload.type !== "refresh") {
+        throw new UnauthorizedException("Invalid token token");
+      }
+
+      return this.generateTokens(payload.sub, payload.email);
+    }
+    catch (error) {
       throw new UnauthorizedException("Invalid token");
     }
   }

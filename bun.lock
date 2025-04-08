@@ -41,7 +41,7 @@
         "typescript": "^5.8.3",
       },
     },
-    "apps/auth": {
+    "apps/auth-service": {
       "name": "auth",
       "version": "0.0.0",
       "dependencies": {
@@ -682,7 +682,7 @@
 
     "atomic-sleep": ["atomic-sleep@1.0.0", "", {}, "sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ=="],
 
-    "auth": ["auth@workspace:apps/auth"],
+    "auth": ["auth@workspace:apps/auth-service"],
 
     "avvio": ["avvio@9.1.0", "", { "dependencies": { "@fastify/error": "^4.0.0", "fastq": "^1.17.1" } }, "sha512-fYASnYi600CsH/j9EQov7lECAniYiBFiiAtBNuZYLA2leLe9qOvZzqYHFjtIj6gD2VMoMLP14834LFWvr4IfDw=="],
 

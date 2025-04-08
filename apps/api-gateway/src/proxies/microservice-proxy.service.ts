@@ -1,9 +1,16 @@
 import { HttpService } from "@nestjs/axios";
-import { Injectable } from "@nestjs/common";
+import {HttpException, Injectable} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { firstValueFrom } from "rxjs";
+import { AxiosError } from "axios";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+interface MicroserviceErrorResponse {
+  statusCode?: number;
+  message?: string;
+  error?: string;
+}
 
 /**
  * Service pour rediriger les requêtes vers les microservices appropriés.
@@ -40,26 +47,38 @@ export class MicroserviceProxyService {
 
     const url = `${microserviceUrl}${endpoint}`;
 
-    let response: { data: TResponse };
+    try {
+      let response: { data: TResponse };
 
-    switch (method) {
-      case "GET":
-        response = await firstValueFrom(this.httpService.get<TResponse>(url, { params }));
-        break;
-      case "POST":
-        response = await firstValueFrom(this.httpService.post<TResponse>(url, data, { params }));
-        break;
-      case "PUT":
-        response = await firstValueFrom(this.httpService.put<TResponse>(url, data, { params }));
-        break;
-      case "DELETE":
-        response = await firstValueFrom(this.httpService.delete<TResponse>(url, { params }));
-        break;
-      case "PATCH":
-        response = await firstValueFrom(this.httpService.patch<TResponse>(url, data, { params }));
-        break;
+      switch (method) {
+        case "GET":
+          response = await firstValueFrom(this.httpService.get<TResponse>(url, { params }));
+          break;
+        case "POST":
+          response = await firstValueFrom(this.httpService.post<TResponse>(url, data, { params }));
+          break;
+        case "PUT":
+          response = await firstValueFrom(this.httpService.put<TResponse>(url, data, { params }));
+          break;
+        case "DELETE":
+          response = await firstValueFrom(this.httpService.delete<TResponse>(url, { params }));
+          break;
+        case "PATCH":
+          response = await firstValueFrom(this.httpService.patch<TResponse>(url, data, { params }));
+          break;
+      }
+
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as AxiosError;
+
+      const data = err.response?.data as MicroserviceErrorResponse;
+
+      const status = err?.response?.status ?? 500;
+      const message =
+          data?.message || data?.error || "Erreur microservice inconnue";
+
+      throw new HttpException(`[${microservice}] ${message}`, status);
     }
-
-    return response.data;
   }
 }
