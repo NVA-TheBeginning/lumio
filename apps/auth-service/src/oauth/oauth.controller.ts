@@ -1,4 +1,3 @@
-// src/oauth/oauth.controller.ts
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthTokens } from "@/auth/auth.service";

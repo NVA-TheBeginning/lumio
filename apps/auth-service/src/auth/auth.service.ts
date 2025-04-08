@@ -1,10 +1,19 @@
-import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { createSigner, createVerifier } from "fast-jwt";
-import { PrismaService } from "@/prisma.service.js";
+import {ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
+import {createSigner, createVerifier} from "fast-jwt";
+import {PrismaService} from "@/prisma.service.js";
 
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface AuthLogin {
+  id: number;
+  email: string;
+  firstname: string;
+  lastname: string;
+  role: string;
+  AuthTokens: AuthTokens;
 }
 
 @Injectable()
@@ -48,7 +57,7 @@ export class AuthService {
     return this.generateTokens(newUser.id, newUser.email);
   }
 
-  async signIn(email: string, password: string): Promise<AuthTokens> {
+  async signIn(email: string, password: string): Promise<AuthLogin> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -57,7 +66,15 @@ export class AuthService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    return this.generateTokens(user.id, user.email);
+    const tokens = this.generateTokens(user.id, user.email);
+    return {
+      id: user.id,
+      email: user.email,
+      firstname: user.firstname || "",
+      lastname: user.lastname || "",
+      role: user.role,
+      AuthTokens: tokens,
+    };
   }
 
   async refreshToken(id: number, email: string): Promise<AuthTokens> {

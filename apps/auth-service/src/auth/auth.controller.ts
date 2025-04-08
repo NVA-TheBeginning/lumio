@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { AuthService, AuthTokens } from "./auth.service.js";
+import {AuthLogin, AuthService, AuthTokens} from "./auth.service.js";
 import { SignInDto, SignUpDto } from "./dto/dto.js";
 
 @ApiTags("auth")
@@ -30,7 +30,7 @@ export class AuthController {
     description: "User successfully logged in",
   })
   @ApiResponse({ status: 401, description: "Invalid credentials" })
-  signIn(@Body() signInDto: SignInDto): Promise<AuthTokens> {
+  signIn(@Body() signInDto: SignInDto): Promise<AuthLogin> {
     return this.authService.signIn(signInDto.email, signInDto.password);
   }
 
