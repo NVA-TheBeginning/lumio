@@ -18,8 +18,9 @@ L’application repose sur une **architecture microservices** avec une API Gatew
 ## 🚀 Lancer le projet
 
 ```bash
-bun db:migrate:dev
-bun dev
+bun upgrade && bun install
+bun run prisma
+bun run dev
 ```
 
 ## 📚 Documentation complète

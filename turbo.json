@@ -4,20 +4,18 @@
   "globalEnv": ["DATABASE_URL"],
   "envMode": "loose",
   "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    "prisma": {
+      "cache": false,
+      "persistent": false
     },
-    "db:push": {
-      "cache": false
+    "build": {
+      "cache": true,
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "cache": false,
-      "persistent": true
-    },
-    "generate": {
-      "dependsOn": ["^generate"],
-      "cache": false
+      "persistent": true,
+      "dependsOn": ["prisma"]
     },
     "start": {},
     "test": {}
