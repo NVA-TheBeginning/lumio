@@ -1,4 +1,3 @@
-// tests/oauth.test.ts
 import { afterAll, beforeAll, describe, expect, test, spyOn } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
