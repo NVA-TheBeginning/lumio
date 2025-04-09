@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { cn } from "@/lib/utils";
+import { GoogleOAuthButton } from "./google-auth-btn";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -77,9 +78,7 @@ export function LoginForm({ className, onLoginSubmit, ...props }: LoginFormProps
             <Button type="submit" className="w-full">
               Se connecter
             </Button>
-            <Button variant="outline" className="w-full">
-              Se connecter avec Google
-            </Button>
+            <GoogleOAuthButton className="mt-2" />
           </div>
         </form>
       </Form>
