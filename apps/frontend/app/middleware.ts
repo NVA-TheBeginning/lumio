@@ -18,7 +18,7 @@ export async function middleware(request: NextRequest) {
 
   if (refreshToken && !accessToken) {
     try {
-      await refreshTokens();
+      await refreshTokens(refreshToken);
     } catch (error) {
       return NextResponse.redirect(new URL("/login", request.url));
     }

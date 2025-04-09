@@ -22,7 +22,6 @@ export default function LoginPage() {
   const { mutateAsync: onLoginSubmit } = useMutation({
     mutationFn: loginApiClient,
     onSuccess: (role) => {
-      console.log("Connexion réussie, rôle:", role);
       switch (role) {
         case "ADMIN":
           router.push("/admin");
@@ -41,7 +40,7 @@ export default function LoginPage() {
     },
     onError: (error) => {
       console.error("Erreur de connexion:", error);
-      toast.error(error instanceof Error ? error.message : "Identifiants incorrects. Veuillez réessayer.");
+      toast.error("Identifiants incorrects. Veuillez réessayer.");
     },
   });
 

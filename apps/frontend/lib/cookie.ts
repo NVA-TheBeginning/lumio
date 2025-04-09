@@ -93,8 +93,7 @@ interface RefreshResponse {
   refreshToken: string;
 }
 
-export async function refreshTokens(): Promise<void> {
-  const { refreshToken } = await getTokens();
+export async function refreshTokens(refreshToken: string): Promise<void> {
   if (!refreshToken) {
     throw new Error("Refresh token is missing");
   }
