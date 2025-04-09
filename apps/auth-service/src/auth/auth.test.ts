@@ -26,18 +26,17 @@ describe("Auth", () => {
     });
     expect(response.statusCode).toEqual(201);
     const body = JSON.parse(response.body);
-    // Le endpoint signup ne renvoie qu'un message
+
     expect(body).toEqual({ message: "User successfully registered" });
   });
 
   test("/auth/signup (POST) - should return 409 if email already exists", async () => {
-    // Première inscription
     await app.inject({
       method: "POST",
       url: "/auth/signup",
       payload: { email, password },
     });
-    // Deuxième tentative avec le même email
+
     const response = await app.inject({
       method: "POST",
       url: "/auth/signup",
@@ -47,7 +46,6 @@ describe("Auth", () => {
   });
 
   test("/auth/login (POST) - should login existing user", async () => {
-    // Inscription préalable
     await app.inject({
       method: "POST",
       url: "/auth/signup",
@@ -60,15 +58,15 @@ describe("Auth", () => {
     });
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
-    // On s'attend à recevoir un objet AuthLogin :
-    // { id, email, firstname, lastname, role, accessToken, refreshToken }
+
     expect(body).toHaveProperty("id");
     expect(body).toHaveProperty("email", email);
     expect(body).toHaveProperty("firstname");
     expect(body).toHaveProperty("lastname");
     expect(body).toHaveProperty("role");
-    expect(body).toHaveProperty("accessToken");
-    expect(body).toHaveProperty("refreshToken");
+    expect(body).toHaveProperty("AuthTokens", expect.any(Object));
+    expect(body.AuthTokens).toHaveProperty("accessToken");
+    expect(body.AuthTokens).toHaveProperty("refreshToken");
   });
 
   test("/auth/login (POST) - should return 401 for invalid credentials", async () => {
@@ -81,7 +79,6 @@ describe("Auth", () => {
   });
 
   test("/auth/login (POST) - should return 401 for wrong password", async () => {
-    // Inscription préalable
     await app.inject({
       method: "POST",
       url: "/auth/signup",

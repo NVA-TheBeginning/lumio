@@ -1,9 +1,9 @@
-import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { AppModule } from "@/app.module.js";
 import { PrismaService } from "@/prisma.service.js";
+import { OAuthService } from "./oauth.service";
 
 describe("OAuth", () => {
   let app: NestFastifyApplication;
@@ -11,38 +11,31 @@ describe("OAuth", () => {
   const dummyMicrosoftToken = "dummy-microsoft-token";
 
   beforeAll(async () => {
-    spyOn(axios, "get").mockImplementation(
-      // @ts-ignore
-      async (url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> => {
-        if (url.startsWith("https://www.googleapis.com/oauth2/v3/tokeninfo")) {
-          const queryString = url.split("?")[1] || "";
-          const queryParams = new URLSearchParams(queryString);
-          if (queryParams.get("id_token") === dummyGoogleToken) {
-            return Promise.resolve({ data: { email: "google.user@example.com" } } as AxiosResponse);
-          } else {
-            return Promise.reject(new Error("Invalid Google token"));
-          }
-        }
-
-        if (url.startsWith("https://graph.microsoft.com/v1.0/me")) {
-          if (config?.headers && config.headers.Authorization === `Bearer·${dummyMicrosoftToken}`) {
-            return Promise.resolve({
-              data: {
-                mail: "microsoft.user@example.com",
-                userPrincipalName: "microsoft.user@example.com",
-              },
-            } as AxiosResponse);
-          } else {
-            return Promise.reject(new Error("Invalid Microsoft token"));
-          }
-        }
-        return Promise.reject(new Error("Unknown URL"));
-      },
-    );
-
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(OAuthService)
+      .useValue({
+        handleGoogle: mock(async (token: string) => {
+          if (token === dummyGoogleToken) {
+            return {
+              accessToken: "mock-access-token",
+              refreshToken: "mock-refresh-token",
+            };
+          }
+          throw new Error("Invalid token");
+        }),
+        handleMicrosoft: mock(async (token: string) => {
+          if (token === dummyMicrosoftToken) {
+            return {
+              accessToken: "mock-access-token",
+              refreshToken: "mock-refresh-token",
+            };
+          }
+          throw new Error("Invalid token");
+        }),
+      })
+      .compile();
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
