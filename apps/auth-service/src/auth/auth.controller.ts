@@ -17,8 +17,9 @@ export class AuthController {
     description: "User successfully registered",
   })
   @ApiResponse({ status: 409, description: "Email already in use" })
-  signUp(@Body() signUpDto: SignUpDto): Promise<AuthTokens> {
-    return this.authService.signUp(signUpDto.email, signUpDto.password);
+  async signUp(@Body() signUpDto: SignUpDto): Promise<{ message: string }> {
+    await this.authService.signUp(signUpDto.email, signUpDto.password);
+    return { message: "User successfully registered" };
   }
 
   @Post("login")

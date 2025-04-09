@@ -38,7 +38,7 @@ export class AuthService {
     });
   }
 
-  async signUp(email: string, password: string): Promise<AuthTokens> {
+  async signUp(email: string, password: string): Promise<void> {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -47,14 +47,12 @@ export class AuthService {
       throw new ConflictException("Email already in use");
     }
 
-    const newUser = await this.prisma.user.create({
+    await this.prisma.user.create({
       data: {
         email,
         password: await Bun.password.hash(password),
       },
     });
-
-    return this.generateTokens(newUser.id, newUser.email);
   }
 
   async signIn(email: string, password: string): Promise<AuthLogin> {
