@@ -8,13 +8,35 @@ import { loginApiClient } from "@/app/login/action";
 import { LoginForm } from "@/components/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const ROLES = {
+  ADMIN: "ADMIN",
+  TEACHER: "TEACHER",
+  STUDENT: "STUDENT",
+} as const;
+
+export type Role = (typeof ROLES)[keyof typeof ROLES];
+
 export default function LoginPage() {
   const router = useRouter();
 
   const { mutateAsync: onLoginSubmit } = useMutation({
     mutationFn: loginApiClient,
-    onSuccess: () => {
-      router.push("/dashboard");
+    onSuccess: (role) => {
+      console.log("Connexion réussie, rôle:", role);
+      switch (role) {
+        case "ADMIN":
+          router.push("/admin");
+          break;
+        case "TEACHER":
+          router.push("/teachers/dashboard");
+          break;
+        case "STUDENT":
+          router.push("/students/dashboard");
+          break;
+        default:
+          toast.error("Rôle inconnu");
+          return;
+      }
       router.refresh();
     },
     onError: (error) => {

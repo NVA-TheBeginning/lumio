@@ -20,9 +20,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const getBreadcrumbs = () => {
     const paths = pathname.split("/").filter(Boolean);
 
-    const breadcrumbs = [{ label: "Dashboard", path: "/dashboard" }];
+    const breadcrumbs = [{ label: "Dashboard", path: "/dashboard/teachers" }];
 
-    let currentPath = "/dashboard";
+    let currentPath = "/dashboard/teachers";
     for (let i = 1; i < paths.length; i++) {
       currentPath += `/${paths[i]}`;
       const pathSegment = paths[i] || "";

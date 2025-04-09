@@ -4,20 +4,42 @@ import { cookies } from "next/headers";
 interface User {
   id: string;
   email: string;
+  lastname?: string;
+  firstname?: string;
   role?: string;
 }
 
-export async function setUserCookie(user: User): Promise<void> {
+export async function setUserCookie(accessToken: string, refreshToken: string, user?: User): Promise<void> {
+  const cookieStore = await cookies();
   try {
-    const userCookie = JSON.stringify(user);
-    const cookieStore = await cookies();
+    const oneDay = 60 * 60 * 24;
+    const sevenDays = 60 * 60 * 24 * 7;
 
-    cookieStore.set("user", userCookie, {
+    if (user) {
+      const userCookie = JSON.stringify(user);
+      cookieStore.set("user", userCookie, {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: sevenDays,
+      });
+    }
+
+    cookieStore.set("accessToken", accessToken, {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 jours en secondes
+      maxAge: oneDay,
+    });
+
+    cookieStore.set("refreshToken", refreshToken, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: sevenDays,
     });
 
     console.log("User cookie set successfully");
@@ -47,10 +69,51 @@ export async function getUserFromCookie(): Promise<User | null> {
   }
 }
 
+export async function getTokens(): Promise<{ accessToken: string | null; refreshToken: string | null }> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken");
+  const refreshToken = cookieStore.get("refreshToken");
+
+  return {
+    accessToken: accessToken?.value || null,
+    refreshToken: refreshToken?.value || null,
+  };
+}
+
 export async function clearUserCookie(): Promise<void> {
   try {
     (await cookies()).delete("user");
   } catch (error) {
     console.error("Error clearing user cookie:", error);
   }
+}
+
+interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export async function refreshTokens(): Promise<void> {
+  const { refreshToken } = await getTokens();
+  if (!refreshToken) {
+    throw new Error("Refresh token is missing");
+  }
+
+  const API_URL = process.env.API_URL || "http://localhost:3000";
+  const response = await fetch(`${API_URL}/auth/refresh`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${refreshToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to refresh tokens");
+  }
+
+  const data = (await response.json()) as RefreshResponse;
+  const { accessToken, refreshToken: newRefreshToken } = data;
+
+  await setUserCookie(accessToken, newRefreshToken);
 }
