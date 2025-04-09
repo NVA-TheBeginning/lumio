@@ -20,12 +20,12 @@ export interface AuthLogin {
 export class AuthService {
   private readonly accessSigner;
   private readonly refreshSigner;
-  private readonly verifier;
+  private readonly refreshVerifier;
 
   constructor(private prisma: PrismaService) {
     this.accessSigner = createSigner({
       key: process.env.JWT_SECRET || "your-secret-key",
-      expiresIn: 86400, // 1 day
+      expiresIn: "1d",
     });
 
     this.refreshSigner = createSigner({
@@ -33,8 +33,8 @@ export class AuthService {
       expiresIn: "7d",
     });
 
-    this.verifier = createVerifier({
-      key: process.env.JWT_REFRESH_SECRET || "refresh-secret",
+    this.refreshVerifier = createVerifier({
+      key: process.env.JWT_REFRESH_SECRET ?? "refresh-secret",
     });
   }
 
@@ -75,12 +75,10 @@ export class AuthService {
     };
   }
 
-  async refreshToken(id: number, email: string): Promise<AuthTokens> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-    });
-    if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+  async refreshToken(token: string): Promise<AuthTokens> {
+    const { sub: id, email } = this.refreshVerifier(token);
+    if (!id || !email) {
+      throw new UnauthorizedException("Invalid refresh token");
     }
     return this.generateTokens(id, email);
   }

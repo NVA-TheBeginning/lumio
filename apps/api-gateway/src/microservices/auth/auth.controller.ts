@@ -40,9 +40,9 @@ export class AuthController {
   @UseGuards(AuthGuard("jwt-refresh"))
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  refresh(@Req() req: FastifyRequest & { user: JwtRefreshUser }): Promise<unknown> {
-    const user: JwtRefreshUser = req.user;
-    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", user);
+  refresh(@Req() req: FastifyRequest & { refreshToken: string }): Promise<unknown> {
+    const { refreshToken } = req;
+    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", { refreshToken });
   }
 
   @Post("oauth/google")

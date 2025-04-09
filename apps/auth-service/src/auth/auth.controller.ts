@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AuthLogin, AuthService, AuthTokens } from "./auth.service.js";
-import { SignInDto, SignUpDto } from "./dto/dto.js";
+import { RefreshTokenDto, SignInDto, SignUpDto } from "./dto/dto.js";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -38,8 +38,8 @@ export class AuthController {
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Generate new access/refresh token from validated user" })
-  @ApiBody({ type: Object })
-  refresh(@Body() user: { id: number; email: string }): Promise<AuthTokens> {
-    return this.authService.refreshToken(user.id, user.email);
+  @ApiBody({ type: RefreshTokenDto })
+  refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<AuthTokens> {
+    return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 }
