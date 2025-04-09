@@ -19,7 +19,7 @@ export default function RegisterPage() {
     },
     onError: (error) => {
       console.error("Erreur d'inscription:", error);
-      toast.error(error instanceof Error ? error.message : "L'inscription a échoué. Veuillez réessayer.");
+      toast.error("L'inscription a échoué. Veuillez réessayer.");
     },
   });
 

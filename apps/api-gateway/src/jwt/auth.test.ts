@@ -116,17 +116,17 @@ describe("AuthController", () => {
 
   describe("refresh", () => {
     test("should forward refresh token request to auth service", async () => {
-      const simulatedUser = { id: 1, email: "test@example.com" };
-
       const mockResponse = { token: "new-jwt-token", refreshToken: "new-refresh-token" };
 
       spyOn(proxyService, "forwardRequest").mockResolvedValue(mockResponse);
 
-      const req = { user: simulatedUser } as unknown as FastifyRequest & { user: typeof simulatedUser };
+      const req = { refreshToken: "some-refresh-token" } as FastifyRequest & { refreshToken: string };
 
       const result = await controller.refresh(req);
 
-      expect(proxyService.forwardRequest).toHaveBeenCalledWith("auth", "/auth/refresh", "POST", simulatedUser);
+      expect(proxyService.forwardRequest).toHaveBeenCalledWith("auth", "/auth/refresh", "POST", {
+        refreshToken: "some-refresh-token",
+      });
       expect(result).toEqual(mockResponse);
     });
   });

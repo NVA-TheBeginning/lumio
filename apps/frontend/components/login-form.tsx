@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Role } from "@/app/login/page";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ const loginSchema = z.object({
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginFormProps extends React.ComponentPropsWithoutRef<"div"> {
-  onLoginSubmit: (values: LoginFormValues) => Promise<void>;
+  onLoginSubmit: (values: LoginFormValues) => Promise<Role | undefined>;
 }
 
 export function LoginForm({ className, onLoginSubmit, ...props }: LoginFormProps) {

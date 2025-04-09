@@ -11,9 +11,7 @@ export async function registerApi(userData: RegisterFormValues): Promise<void> {
     body: JSON.stringify(userData),
   });
 
-  const data = await response.json();
-
   if (!response.ok) {
-    throw new Error(data.error || "Échec de l'inscription");
+    throw new Error("Échec de l'inscription");
   }
 }

@@ -19,7 +19,7 @@ export default async function Home() {
             <ModeToggle />
             {user ? (
               <>
-                <Link href={{ pathname: "/dashboard" }} prefetch>
+                <Link href={{ pathname: `/dashboard/${user.role?.toLowerCase()}s` }} prefetch>
                   <Button className="cursor-pointer">Tableau de bord</Button>
                 </Link>
                 <LogoutButton />
