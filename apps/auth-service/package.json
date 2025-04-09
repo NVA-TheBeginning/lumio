@@ -1,5 +1,5 @@
 {
-  "name": "auth",
+  "name": "auth-service",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -28,6 +28,7 @@
     "@nestjs/schematics": "^11.0.3",
     "@nestjs/testing": "^11.0.13",
     "@types/bun": "^1.2.8",
+    "nock": "^14.0.3",
     "prisma": "^6.5.0",
     "typescript": "^5.8.3"
   }

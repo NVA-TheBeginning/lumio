@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { AuthResult, AuthService } from "./auth.service.js";
+import { AuthLogin, AuthService, AuthTokens } from "./auth.service.js";
 import { SignInDto, SignUpDto } from "./dto/dto.js";
 
 @ApiTags("auth")
@@ -17,8 +17,9 @@ export class AuthController {
     description: "User successfully registered",
   })
   @ApiResponse({ status: 409, description: "Email already in use" })
-  signUp(@Body() signUpDto: SignUpDto): Promise<AuthResult> {
-    return this.authService.signUp(signUpDto.email, signUpDto.password);
+  async signUp(@Body() signUpDto: SignUpDto): Promise<{ message: string }> {
+    await this.authService.signUp(signUpDto.email, signUpDto.password);
+    return { message: "User successfully registered" };
   }
 
   @Post("login")
@@ -30,7 +31,15 @@ export class AuthController {
     description: "User successfully logged in",
   })
   @ApiResponse({ status: 401, description: "Invalid credentials" })
-  signIn(@Body() signInDto: SignInDto): Promise<AuthResult> {
+  signIn(@Body() signInDto: SignInDto): Promise<AuthLogin> {
     return this.authService.signIn(signInDto.email, signInDto.password);
+  }
+
+  @Post("refresh")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Generate new access/refresh token from validated user" })
+  @ApiBody({ type: Object })
+  refresh(@Body() user: { id: number; email: string }): Promise<AuthTokens> {
+    return this.authService.refreshToken(user.id, user.email);
   }
 }

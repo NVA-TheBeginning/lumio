@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { ArgumentsHost, HttpException, HttpStatus } from "@nestjs/common";
 import { HttpExceptionFilter } from "./http-exception.filter.js";
 
