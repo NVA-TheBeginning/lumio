@@ -11,34 +11,34 @@ describe("OAuth", () => {
   const dummyMicrosoftToken = "dummy-microsoft-token";
 
   beforeAll(async () => {
-    spyOn(axios, "get").mockImplementation((async (
-      url: string,
-      config?: AxiosRequestConfig<any>,
-    ): Promise<AxiosResponse<any>> => {
-      if (url.startsWith("https://www.googleapis.com/oauth2/v3/tokeninfo")) {
-        const queryString = url.split("?")[1] || "";
-        const queryParams = new URLSearchParams(queryString);
-        if (queryParams.get("id_token") === dummyGoogleToken) {
-          return Promise.resolve({ data: { email: "google.user@example.com" } } as AxiosResponse<any>);
-        } else {
-          return Promise.reject(new Error("Invalid Google token"));
+    spyOn(axios, "get").mockImplementation(
+      // @ts-ignore
+      async (url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> => {
+        if (url.startsWith("https://www.googleapis.com/oauth2/v3/tokeninfo")) {
+          const queryString = url.split("?")[1] || "";
+          const queryParams = new URLSearchParams(queryString);
+          if (queryParams.get("id_token") === dummyGoogleToken) {
+            return Promise.resolve({ data: { email: "google.user@example.com" } } as AxiosResponse);
+          } else {
+            return Promise.reject(new Error("Invalid Google token"));
+          }
         }
-      }
 
-      if (url.startsWith("https://graph.microsoft.com/v1.0/me")) {
-        if (config && config.headers && config.headers.Authorization === `Bearer ${dummyMicrosoftToken}`) {
-          return Promise.resolve({
-            data: {
-              mail: "microsoft.user@example.com",
-              userPrincipalName: "microsoft.user@example.com",
-            },
-          } as AxiosResponse<any>);
-        } else {
-          return Promise.reject(new Error("Invalid Microsoft token"));
+        if (url.startsWith("https://graph.microsoft.com/v1.0/me")) {
+          if (config?.headers && config.headers.Authorization === `Bearer·${dummyMicrosoftToken}`) {
+            return Promise.resolve({
+              data: {
+                mail: "microsoft.user@example.com",
+                userPrincipalName: "microsoft.user@example.com",
+              },
+            } as AxiosResponse);
+          } else {
+            return Promise.reject(new Error("Invalid Microsoft token"));
+          }
         }
-      }
-      return Promise.reject(new Error("Unknown URL"));
-    }) as any);
+        return Promise.reject(new Error("Unknown URL"));
+      },
+    );
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
