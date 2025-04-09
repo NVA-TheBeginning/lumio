@@ -28,7 +28,6 @@
     "@nestjs/schematics": "^11.0.4",
     "@nestjs/testing": "^11.0.14",
     "@types/bun": "^1.2.9",
-    "nock": "^14.0.3",
     "prisma": "^6.6.0",
     "typescript": "^5.8.3"
   }
