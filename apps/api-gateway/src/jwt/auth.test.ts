@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { UnauthorizedException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { FastifyRequest } from "fastify";
 import { AuthController } from "@/microservices/auth/auth.controller.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { JwtStrategy } from "./jwt.strategy.js";
@@ -115,14 +116,17 @@ describe("AuthController", () => {
 
   describe("refresh", () => {
     test("should forward refresh token request to auth service", async () => {
-      const refreshDto = { refreshToken: "refresh-token" };
+      const simulatedUser = { id: 1, email: "test@example.com" };
+
       const mockResponse = { token: "new-jwt-token", refreshToken: "new-refresh-token" };
 
       spyOn(proxyService, "forwardRequest").mockResolvedValue(mockResponse);
 
-      const result = await controller.refresh(refreshDto);
+      const req = { user: simulatedUser } as unknown as FastifyRequest & { user: typeof simulatedUser };
 
-      expect(proxyService.forwardRequest).toHaveBeenCalledWith("auth", "/auth/refresh", "POST", refreshDto);
+      const result = await controller.refresh(req);
+
+      expect(proxyService.forwardRequest).toHaveBeenCalledWith("auth", "/auth/refresh", "POST", simulatedUser);
       expect(result).toEqual(mockResponse);
     });
   });

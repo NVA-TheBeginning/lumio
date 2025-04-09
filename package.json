@@ -19,5 +19,8 @@
   },
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "dependencies": {
+    "nock": "^14.0.3"
+  }
 }
