@@ -21,14 +21,14 @@
     "@prisma/client": "^6.5.0",
     "class-validator": "^0.14.1",
     "fast-jwt": "^6.0.1",
-    "reflect-metadata": "^0.2.2",
-    "nock": "^14.0.3"
+    "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.6",
     "@nestjs/schematics": "^11.0.3",
     "@nestjs/testing": "^11.0.13",
     "@types/bun": "^1.2.8",
+    "nock": "^14.0.3",
     "prisma": "^6.5.0",
     "typescript": "^5.8.3"
   }
