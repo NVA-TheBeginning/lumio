@@ -32,10 +32,6 @@ const navData = {
       icon: <BookOpen className="size-4" />,
       items: [
         {
-          title: "Tous les projets",
-          url: "/dashboard/projects",
-        },
-        {
           title: "Créer un projet",
           url: "/dashboard/projects/new",
         },
