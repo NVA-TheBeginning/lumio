@@ -1,7 +1,8 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+// tests/oauth.test.ts
+import { afterAll, beforeAll, describe, expect, test, spyOn } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
-import nock from "nock";
+import axios, { AxiosResponse, AxiosRequestConfig } from "axios";
 import { AppModule } from "@/app.module.js";
 import { PrismaService } from "@/prisma.service.js";
 
@@ -11,18 +12,33 @@ describe("OAuth", () => {
   const dummyMicrosoftToken = "dummy-microsoft-token";
 
   beforeAll(async () => {
-    nock("https://www.googleapis.com")
-      .get("/oauth2/v3/tokeninfo")
-      .query({ id_token: dummyGoogleToken })
-      .reply(200, { email: "google.user@example.com" });
+    spyOn(axios, "get").mockImplementation(
+        (async (url: string, config?: AxiosRequestConfig<any>): Promise<AxiosResponse<any>> => {
+          if (url.startsWith("https://www.googleapis.com/oauth2/v3/tokeninfo")) {
+            const queryString = url.split("?")[1] || "";
+            const queryParams = new URLSearchParams(queryString);
+            if (queryParams.get("id_token") === dummyGoogleToken) {
+              return Promise.resolve({ data: { email: "google.user@example.com" } } as AxiosResponse<any>);
+            } else {
+              return Promise.reject(new Error("Invalid Google token"));
+            }
+          }
 
-    nock("https://graph.microsoft.com")
-      .get("/v1.0/me")
-      .matchHeader("Authorization", `Bearer ${dummyMicrosoftToken}`)
-      .reply(200, {
-        mail: "microsoft.user@example.com",
-        userPrincipalName: "microsoft.user@example.com",
-      });
+          if (url.startsWith("https://graph.microsoft.com/v1.0/me")) {
+            if (config && config.headers && config.headers.Authorization === `Bearer ${dummyMicrosoftToken}`) {
+              return Promise.resolve({
+                data: {
+                  mail: "microsoft.user@example.com",
+                  userPrincipalName: "microsoft.user@example.com",
+                },
+              } as AxiosResponse<any>);
+            } else {
+              return Promise.reject(new Error("Invalid Microsoft token"));
+            }
+          }
+          return Promise.reject(new Error("Unknown URL"));
+        }) as any
+  );
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -42,7 +58,6 @@ describe("OAuth", () => {
 
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
-    // On attend à recevoir des tokens JWT
     expect(body).toHaveProperty("accessToken");
     expect(body).toHaveProperty("refreshToken");
   });
@@ -56,7 +71,6 @@ describe("OAuth", () => {
 
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
-
     expect(body).toHaveProperty("accessToken");
     expect(body).toHaveProperty("refreshToken");
   });
@@ -64,6 +78,5 @@ describe("OAuth", () => {
   afterAll(async () => {
     await app.get(PrismaService).user.deleteMany({});
     await app.close();
-    nock.cleanAll();
   });
 });
