@@ -15,13 +15,13 @@ import { updateProfile } from "./actions";
 const profileSchema = z
   .object({
     lastname: z.string().min(3, {
-      message: "Le nom doit contenir au moins 3 caractères.",
+      error: "Le nom doit contenir au moins 3 caractères.",
     }),
     firstname: z.string().min(3, {
-      message: "Le prénom doit contenir au moins 3 caractères.",
+      error: "Le prénom doit contenir au moins 3 caractères.",
     }),
-    email: z.string().email({
-      message: "Veuillez entrer une adresse email valide.",
+    email: z.email({
+      error: "Veuillez entrer une adresse email valide.",
     }),
     currentPassword: z.string().optional(),
     newPassword: z.string().optional(),
