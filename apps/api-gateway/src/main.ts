@@ -52,7 +52,7 @@ async function bootstrap() {
 
   await setupFederatedSwagger(app);
 
-  await app.listen(port);
+  await app.listen(port, "0.0.0.0");
   const url = await app.getUrl();
 
   const microservices = configService.get<Record<string, string>>("microservices") ?? {};

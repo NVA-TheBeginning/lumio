@@ -8,7 +8,7 @@
     "start": "bun --bun nest start",
     "dev": "bun --bun nest start -w",
     "dev:debug": "bun --bun nest start --debug --watch",
-    "start:prod": "bun --bun dist/main",
+    "start:prod": "bun --bun dist/main.js",
     "test": "bun test",
     "lint": "biome check",
     "lint:fix": "biome check --fix"
