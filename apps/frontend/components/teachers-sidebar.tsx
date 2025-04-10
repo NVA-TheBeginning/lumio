@@ -23,39 +23,39 @@ const navData = {
   navMain: [
     {
       title: "Tableau de bord",
-      url: "/dashboard",
+      url: "/dashboard/teachers",
       icon: <LayoutDashboard className="size-4" />,
     },
     {
       title: "Projets",
-      url: "/dashboard/projects",
+      url: "/dashboard/teachers/projects",
       icon: <BookOpen className="size-4" />,
       items: [
         {
           title: "Créer un projet",
-          url: "/dashboard/projects/new",
+          url: "/dashboard/teachers/projects/new",
         },
       ],
     },
     {
       title: "Promotions",
-      url: "/dashboard/promotions",
+      url: "/dashboard/teachers/promotions",
       icon: <Users className="size-4" />,
       items: [
         {
           title: "Créer une promotion",
-          url: "/dashboard/promotions/new",
+          url: "/dashboard/teachers/promotions/new",
         },
       ],
     },
     {
       title: "Calendrier",
-      url: "/dashboard/calendar",
+      url: "/dashboard/teachers/calendar",
       icon: <Calendar className="size-4" />,
     },
     {
       title: "Paramètres",
-      url: "/dashboard/settings",
+      url: "/dashboard/teachers/settings",
       icon: <Settings className="size-4" />,
     },
   ],
@@ -92,7 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {navData.navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild isActive={isActive(item.url) && (!item.items || item.items.length === 0)}>
-                  <Link href={item.url} className="font-medium">
+                  <Link href={item.url} className="font-medium" prefetch={true}>
                     {item.icon}
                     {item.title}
                   </Link>
@@ -102,7 +102,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
-                          <Link href={subItem.url}>{subItem.title}</Link>
+                          <Link href={subItem.url} prefetch={false}>
+                            {subItem.title}
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}

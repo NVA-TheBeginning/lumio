@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import React from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/teachers-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
