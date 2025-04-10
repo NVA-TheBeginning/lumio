@@ -13,11 +13,8 @@ import { cn } from "@/lib/utils";
 import { GoogleOAuthButton } from "./google-auth-btn";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters long" })
-    .regex(/[a-zA-Z0-9]/, { message: "Password must be alphanumeric" }),
+  email: z.email({ error: "Addresse email invalide" }),
+  password: z.string().min(6, { error: "Le mot de passe doit contenir au moins 6 caractères" }),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;

@@ -31,13 +31,13 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: "Le nom doit contenir au moins 2 caractères",
+    error: "Le nom doit contenir au moins 2 caractères",
   }),
-  description: z.string().min(10, {
-    message: "La description doit contenir au moins 10 caractères",
+  description: z.string().min(5, {
+    error: "La description doit contenir au moins 5 caractères",
   }),
   students_csv: z.string().min(1, {
-    message: "Veuillez importer un fichier CSV",
+    error: "Veuillez importer un fichier CSV valide",
   }),
 });
 
