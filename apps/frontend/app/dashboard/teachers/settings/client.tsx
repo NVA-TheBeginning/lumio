@@ -1,14 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { updateProfile } from "./actions";
 
 const profileSchema = z
   .object({
@@ -21,9 +23,7 @@ const profileSchema = z
     email: z.string().email({
       message: "Veuillez entrer une adresse email valide.",
     }),
-    currentPassword: z.string().min(1, {
-      message: "Veuillez entrer votre mot de passe actuel pour confirmer.",
-    }),
+    currentPassword: z.string().optional(),
     newPassword: z.string().optional(),
     confirmPassword: z.string().optional(),
   })
@@ -52,6 +52,8 @@ const profileSchema = z
     },
   );
 
+export type ProfileFormValues = z.infer<typeof profileSchema>;
+
 export default function ParametersForm({
   firstname,
   lastname,
@@ -61,9 +63,7 @@ export default function ParametersForm({
   lastname: string | null | undefined;
   email: string;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const defaultValues = {
+  const defaultValues: ProfileFormValues = {
     lastname: lastname ?? "",
     firstname: firstname ?? "",
     email,
@@ -72,22 +72,40 @@ export default function ParametersForm({
     confirmPassword: "",
   };
 
-  const form = useForm<z.infer<typeof profileSchema>>({
+  const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues,
   });
 
-  async function onSubmit(_: z.infer<typeof profileSchema>) {
-    setIsLoading(true);
-    try {
+  const mutation = useMutation({
+    mutationFn: async (values: ProfileFormValues) => {
+      try {
+        await updateProfile({
+          firstname: values.firstname,
+          lastname: values.lastname,
+          email: values.email,
+          newPassword: values.newPassword || undefined,
+        });
+        return true;
+      } catch (error) {
+        console.error("Failed to update profile:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Profil mis à jour avec succès");
       form.setValue("currentPassword", "");
       form.setValue("newPassword", "");
       form.setValue("confirmPassword", "");
-    } catch (error) {
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    },
+    onError: () => {
+      toast.error("Échec de la mise à jour du profil");
+    },
+  });
+
+  const onSubmit = (values: ProfileFormValues) => {
+    mutation.mutate(values);
+  };
 
   return (
     <div className="flex justify-center w-full">
@@ -205,8 +223,8 @@ export default function ParametersForm({
                 )}
               />
 
-              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-                {isLoading ? "Mise à jour..." : "Enregistrer les modifications"}
+              <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
+                {mutation.isPending ? "Mise à jour..." : "Enregistrer les modifications"}
               </Button>
             </form>
           </Form>

@@ -3,7 +3,7 @@ import { PrismaService } from "@/prisma.service";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 
 @Injectable()
-export class StudentsService {
+export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   private generateRandomPassword(length: number): string {
@@ -76,7 +76,7 @@ export class StudentsService {
     });
   }
 
-  async findStudentById(id: number) {
+  async findUserById(id: number) {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -89,10 +89,14 @@ export class StudentsService {
     });
   }
 
-  async updateStudent(id: number, updateStudentDto: UpdateStudentDto) {
+  async updateUser(id: number, updateStudentDto: UpdateStudentDto) {
     return this.prisma.user.update({
       where: { id },
-      data: updateStudentDto,
+      data: {
+        lastname: updateStudentDto.lastname ?? undefined,
+        firstname: updateStudentDto.firstname ?? undefined,
+        email: updateStudentDto.email ?? undefined,
+      },
     });
   }
 
@@ -113,12 +117,12 @@ export class StudentsService {
     });
   }
 
-  async deleteStudent(id: number) {
-    const student = await this.prisma.user.findUnique({
+  async deleteUser(id: number) {
+    const user = await this.prisma.user.findUnique({
       where: { id },
     });
 
-    if (!student) {
+    if (!user) {
       throw new NotFoundException("User not found");
     }
 
