@@ -3,9 +3,9 @@ import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify
 import { Test } from "@nestjs/testing";
 import { AppModule } from "@/app.module.js";
 import { PrismaService } from "@/prisma.service.js";
-import { CreateStudentDto } from "@/students/dto/students.dto";
+import { CreateStudentDto } from "@/users/dto/students.dto";
 
-describe("Students", () => {
+describe("Users", () => {
   let app: NestFastifyApplication;
   let prisma: PrismaService;
   let studentId: number;
@@ -31,10 +31,10 @@ describe("Students", () => {
     },
   ];
 
-  test("/students (POST) - should create new students", async () => {
+  test("/users/students (POST) - should create new students", async () => {
     const response = await app.inject({
       method: "POST",
-      url: "/students",
+      url: "/users/students",
       payload: createStudentDtos,
     });
 
@@ -47,10 +47,10 @@ describe("Students", () => {
     studentId = body.students[0].studentId;
   });
 
-  test("/students/:id (GET) - should return a specific student", async () => {
+  test("/users/:id (GET) - should return a specific user", async () => {
     const response = await app.inject({
       method: "GET",
-      url: `/students/${studentId}`,
+      url: `/users/${studentId}`,
     });
 
     expect(response.statusCode).toEqual(200);
@@ -59,11 +59,11 @@ describe("Students", () => {
     expect(body).toHaveProperty("email", createStudentDtos[0].email);
   });
 
-  test("/students/:id (PATCH) - should update a specific student", async () => {
+  test("/users/:id (PATCH) - should update a specific user", async () => {
     const updateData = { firstname: "Updated John" };
     const response = await app.inject({
       method: "PATCH",
-      url: `/students/${studentId}`,
+      url: `/users/${studentId}`,
       payload: updateData,
     });
 
@@ -73,29 +73,29 @@ describe("Students", () => {
     expect(body).toHaveProperty("firstname", updateData.firstname);
   });
 
-  test("/students/:id/password (PATCH) - should update a student's password", async () => {
+  test("/users/:id/password (PATCH) - should update a user's password", async () => {
     const updatePasswordDto = { newPassword: "newPassword123" };
     const response = await app.inject({
       method: "PATCH",
-      url: `/students/${studentId}/password`,
+      url: `/users/${studentId}/password`,
       payload: updatePasswordDto,
     });
 
     expect(response.statusCode).toEqual(200);
   });
 
-  test("/students/:id (DELETE) - should delete a specific student", async () => {
+  test("/users/:id (DELETE) - should delete a specific user", async () => {
     const response = await app.inject({
       method: "DELETE",
-      url: `/students/${studentId}`,
+      url: `/users/${studentId}`,
     });
 
     expect(response.statusCode).toEqual(200);
 
-    const student = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: studentId },
     });
-    expect(student).toBeNull();
+    expect(user).toBeNull();
   });
 
   afterAll(async () => {

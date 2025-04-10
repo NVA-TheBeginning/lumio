@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
     reactCompiler: isProduction,
     optimizePackageImports: ["@radix-ui/*"],
     ppr: "incremental",
+    nodeMiddleware: true,
   },
   env: {
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,

@@ -2,9 +2,9 @@ import { Module } from "@nestjs/common";
 import { OAuthModule } from "@/oauth/oauth.module";
 import { AuthModule } from "./auth/auth.module.js";
 import { HealthModule } from "./health/health.module.js";
-import { StudentsModule } from "./students/students.module";
+import { UsersModule } from "./users/users.module.js";
 
 @Module({
-  imports: [HealthModule, AuthModule, StudentsModule, OAuthModule],
+  imports: [HealthModule, AuthModule, UsersModule, OAuthModule],
 })
 export class AppModule {}
