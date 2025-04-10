@@ -46,7 +46,7 @@ export class UsersController {
     @Param("id", ParseIntPipe) id: number,
     @Body() updateStudentDto: UpdateStudentDto,
   ): Promise<unknown> {
-    return this.proxy.forwardRequest("auth", `/users/${id}`, "PATCH", { students: updateStudentDto });
+    return this.proxy.forwardRequest("auth", `/users/${id}`, "PATCH", { updateStudentDto });
   }
 
   @Patch(":id/password")

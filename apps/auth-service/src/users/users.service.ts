@@ -90,12 +90,21 @@ export class UsersService {
   }
 
   async updateUser(id: number, updateStudentDto: UpdateStudentDto) {
-    return this.prisma.user.update({
+    const userExists = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return await this.prisma.user.update({
       where: { id },
       data: {
-        lastname: updateStudentDto.lastname ?? undefined,
-        firstname: updateStudentDto.firstname ?? undefined,
-        email: updateStudentDto.email ?? undefined,
+        ...(updateStudentDto.lastname && { lastname: updateStudentDto.lastname }),
+        ...(updateStudentDto.firstname && { firstname: updateStudentDto.firstname }),
+        ...(updateStudentDto.email && { email: updateStudentDto.email }),
       },
     });
   }
