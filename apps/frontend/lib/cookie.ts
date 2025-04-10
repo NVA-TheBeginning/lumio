@@ -81,8 +81,11 @@ export async function getTokens(): Promise<{ accessToken: string | null; refresh
 }
 
 export async function clearUserCookie(): Promise<void> {
+  const cookieStore = await cookies();
   try {
-    (await cookies()).delete("user");
+    cookieStore.delete("user");
+    cookieStore.delete("accessToken");
+    cookieStore.delete("refreshToken");
   } catch (error) {
     console.error("Error clearing user cookie:", error);
   }
@@ -103,8 +106,8 @@ export async function refreshTokens(refreshToken: string): Promise<void> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${refreshToken}`,
     },
+    body: JSON.stringify({ refreshToken }),
   });
 
   if (!response.ok) {

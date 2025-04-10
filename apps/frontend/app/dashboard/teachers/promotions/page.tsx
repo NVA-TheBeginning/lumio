@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { usePromotions } from "./hooks";
 import { PromotionSelector } from "./selector";
@@ -9,6 +9,12 @@ import { MembersTable } from "./table";
 export default function PromotionsPage() {
   const [selectedPromotionId, setSelectedPromotionId] = useState<number | null>(null);
   const { data: promotions, isLoading, isError } = usePromotions();
+
+  useEffect(() => {
+    if (!isLoading && !isError && promotions && promotions[0] && selectedPromotionId === null) {
+      setSelectedPromotionId(promotions[0].id);
+    }
+  }, [promotions, isLoading, isError, selectedPromotionId]);
 
   return (
     <div className="flex flex-col gap-6">
