@@ -99,12 +99,12 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    return await this.prisma.user.update({
+    return this.prisma.user.update({
       where: { id },
       data: {
-        ...(updateStudentDto.lastname && { lastname: updateStudentDto.lastname }),
-        ...(updateStudentDto.firstname && { firstname: updateStudentDto.firstname }),
-        ...(updateStudentDto.email && { email: updateStudentDto.email }),
+        lastname: updateStudentDto.lastname,
+        firstname: updateStudentDto.firstname,
+        email: updateStudentDto.email,
       },
     });
   }
