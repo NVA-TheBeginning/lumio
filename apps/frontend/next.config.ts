@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["@radix-ui/*"],
     ppr: "incremental",
   },
+  env: {
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+  },
 };
 
 export default nextConfig;

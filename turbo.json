@@ -12,6 +12,10 @@
       "cache": true,
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
+    "build:ci": {
+      "cache": true,
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true,
