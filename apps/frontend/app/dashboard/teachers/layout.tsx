@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const breadcrumbs = [{ label: "Dashboard", path: "/dashboard/teachers" }];
 
-    let currentPath = "/dashboard/teachers";
+    let currentPath = "/dashboard";
     for (let i = 1; i < paths.length; i++) {
       currentPath += `/${paths[i]}`;
       const pathSegment = paths[i] || "";

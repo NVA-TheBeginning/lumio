@@ -1,9 +1,12 @@
 import { ArrowLeft, Compass } from "lucide-react";
 import Link from "next/link";
-
 import { Button } from "@/components/ui/button";
+import { getUserFromCookie } from "@/lib/cookie";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const user = await getUserFromCookie();
+  const redirectPath = user !== null ? `/dashboard/${user.role?.toLowerCase()}s` : "/";
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
       <div className="relative mb-8 flex items-center justify-center">
@@ -24,7 +27,7 @@ export default function NotFound() {
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <Button asChild size="lg" className="gap-2">
-          <Link href="/">
+          <Link href={redirectPath}>
             <ArrowLeft className="h-4 w-4" />
             Retour à l'accueil
           </Link>

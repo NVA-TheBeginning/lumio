@@ -26,8 +26,8 @@ async function bootstrap() {
   });
 
   await app.register(rateLimit, {
-    max: 100,
-    timeWindow: "15 minutes",
+    max: 1000,
+    timeWindow: "1m",
     errorResponseBuilder: () => ({
       statusCode: 429,
       error: "Too Many Requests",
