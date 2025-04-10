@@ -86,9 +86,16 @@ export class PromotionsService {
         where: {
           creatorId,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
     }
-    return this.prisma.promotion.findMany();
+    return this.prisma.promotion.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
   }
 
   async findOne(id: number) {

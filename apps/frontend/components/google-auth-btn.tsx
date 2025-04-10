@@ -51,10 +51,10 @@ export function GoogleOAuthButton({ className }: GoogleOAuthButtonProps) {
           router.push("/admin");
           break;
         case "TEACHER":
-          router.push("/teachers/dashboard");
+          router.push("/dashboard/teachers");
           break;
         case "STUDENT":
-          router.push("/students/dashboard");
+          router.push("/dashboard/students");
           break;
         default:
           toast.error("Rôle inconnu");
@@ -64,7 +64,7 @@ export function GoogleOAuthButton({ className }: GoogleOAuthButtonProps) {
     },
     onError: (error) => {
       console.error("Erreur de connexion Google:", error);
-      toast.error(error instanceof Error ? error.message : "Échec de l'authentification Google");
+      toast.error("Échec de l'authentification Google");
     },
   });
 
