@@ -16,17 +16,19 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { usePromotions } from "./hooks";
+import { Promotion } from "./action";
 
 interface PromotionSelectorProps {
   value: number | null;
   onChange: (value: number | null) => void;
+  promotions: Promotion[];
+  isLoading: boolean;
+  isError: boolean;
 }
 
-export function PromotionSelector({ value, onChange }: PromotionSelectorProps) {
+export function PromotionSelector({ value, onChange, promotions, isLoading, isError }: PromotionSelectorProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { data: promotions, isLoading, isError } = usePromotions();
 
   const selectedPromotion = promotions?.find((p) => p.id === value);
 
@@ -80,7 +82,7 @@ export function PromotionSelector({ value, onChange }: PromotionSelectorProps) {
             <CommandItem
               className="cursor-pointer"
               onSelect={() => {
-                router.push("/dashboard/promotions/new");
+                router.push("/dashboard/teachers/promotions/new");
                 setOpen(false);
               }}
             >

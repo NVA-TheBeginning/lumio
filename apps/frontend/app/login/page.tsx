@@ -27,10 +27,10 @@ export default function LoginPage() {
           router.push("/admin");
           break;
         case "TEACHER":
-          router.push("/teachers/dashboard");
+          router.push("/dashboard/teachers");
           break;
         case "STUDENT":
-          router.push("/students/dashboard");
+          router.push("/dashboard/students");
           break;
         default:
           toast.error("Rôle inconnu");

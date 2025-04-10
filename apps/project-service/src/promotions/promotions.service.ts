@@ -80,7 +80,14 @@ export class PromotionsService {
     });
   }
 
-  findAll() {
+  findAll(creatorId?: number) {
+    if (creatorId) {
+      return this.prisma.promotion.findMany({
+        where: {
+          creatorId,
+        },
+      });
+    }
     return this.prisma.promotion.findMany();
   }
 

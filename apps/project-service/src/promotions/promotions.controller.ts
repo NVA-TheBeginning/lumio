@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
@@ -19,8 +19,9 @@ export class PromotionsController {
 
   @Get()
   @ApiOkResponse({ type: PromotionEntity, isArray: true })
-  async findAll() {
-    const promos = await this.promotionsService.findAll();
+  async findAll(@Query('creatorId') creatorId?: string) {
+    const creatorIdNumber = creatorId ? parseInt(creatorId, 10) : undefined;
+    const promos = await this.promotionsService.findAll(creatorIdNumber);
     return promos.map((promo) => new PromotionEntity(promo));
   }
 

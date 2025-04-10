@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getUserFromCookie } from "@/lib/cookie";
 
 export interface Promotion {
   id: number;
@@ -24,18 +25,21 @@ export interface Member {
 const API_URL = process.env.API_URL || "http://localhost:3000";
 
 export async function getPromotions(): Promise<Promotion[]> {
+  const user = await getUserFromCookie();
+  if (!user) {
+    return [];
+  }
   try {
-    const response = await fetch(`${API_URL}/promotions`);
+    const response = await fetch(`${API_URL}/promotions?creatorId=${Number(user?.id)}`);
     if (!response.ok) {
       throw new Error("Failed to fetch promotions");
     }
     return await response.json();
   } catch (error) {
     console.error("Error fetching promotions:", error);
-    return [];
+    throw error;
   }
 }
-
 export async function getPromotion(id: number): Promise<Promotion | null> {
   try {
     const response = await fetch(`${API_URL}/promotions/${id}`);
