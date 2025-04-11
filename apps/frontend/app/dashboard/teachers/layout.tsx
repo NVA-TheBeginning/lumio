@@ -1,5 +1,4 @@
 "use client";
-
 import { usePathname } from "next/navigation";
 import React from "react";
 import { AppSidebar } from "@/components/teachers-sidebar";
@@ -14,13 +13,24 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
+interface IBreadcrumbItem {
+  label: string;
+  path: string;
+  visible?: boolean;
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const getBreadcrumbs = () => {
+  const getBreadcrumbs = (): IBreadcrumbItem[] => {
     const paths = pathname.split("/").filter(Boolean);
+    const breadcrumbs: IBreadcrumbItem[] = [];
 
-    const breadcrumbs = [{ label: "Dashboard", path: "/dashboard/teachers" }];
+    breadcrumbs.push({
+      label: "Dashboard",
+      path: "/dashboard",
+      visible: false,
+    });
 
     let currentPath = "/dashboard";
     for (let i = 1; i < paths.length; i++) {
@@ -29,6 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       breadcrumbs.push({
         label: pathSegment.charAt(0).toUpperCase() + pathSegment.slice(1),
         path: currentPath,
+        visible: true,
       });
     }
 
@@ -36,6 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const breadcrumbs = getBreadcrumbs();
+  const visibleBreadcrumbs = breadcrumbs.filter((crumb) => crumb.visible !== false);
 
   return (
     <SidebarProvider>
@@ -47,10 +59,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={crumb.path}>
-                    {index < breadcrumbs.length - 1 ? (
-                      <BreadcrumbItem className="hidden md:block">
+                {visibleBreadcrumbs.map((crumb, index) => (
+                  <React.Fragment key={`${crumb.path}-${index}`}>
+                    {index < visibleBreadcrumbs.length - 1 ? (
+                      <BreadcrumbItem>
                         <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
                       </BreadcrumbItem>
                     ) : (
@@ -58,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                       </BreadcrumbItem>
                     )}
-                    {index < breadcrumbs.length - 1 && <BreadcrumbSeparator className="hidden md:block" />}
+                    {index < visibleBreadcrumbs.length - 1 && <BreadcrumbSeparator />}
                   </React.Fragment>
                 ))}
               </BreadcrumbList>
