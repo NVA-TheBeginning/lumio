@@ -204,8 +204,6 @@ export default function ParametersForm({
                 />
               </div>
 
-              <Separator className="my-6" />
-
               <FormField
                 control={form.control}
                 name="currentPassword"

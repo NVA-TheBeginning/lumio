@@ -34,7 +34,11 @@ export async function googleOAuthLogin(token: string): Promise<Role | undefined>
 
   const { id, email, lastname, firstname, role, AuthTokens } = data;
 
-  await setUserCookie(AuthTokens.accessToken, AuthTokens.refreshToken, { id, email, lastname, firstname, role });
+  await setUserCookie({
+    accessToken: AuthTokens.accessToken,
+    refreshToken: AuthTokens.refreshToken,
+    user: { id, email, lastname, firstname, role },
+  });
 
   return role;
 }
