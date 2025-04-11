@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getUserFromCookie } from "@/lib/cookie";
+import { authPostData } from "@/lib/utils";
 
 export interface Promotion {
   id: number;
@@ -14,8 +15,8 @@ export interface Promotion {
 
 export interface Member {
   id: number;
-  firstName: string;
-  lastName: string;
+  firstname: string;
+  lastname: string;
   email: string;
   promotionId: number;
   createdAt: string;
@@ -111,5 +112,13 @@ export async function removeMember(promotionId: number, memberId: number): Promi
     throw new Error(`Failed to remove member with id ${memberId} from promotion ${promotionId}`);
   }
 
+  revalidatePath(`/dashboard/promotions/${promotionId}`);
+}
+
+export async function addMember(
+  promotionId: number,
+  member: { lastname: string; firstname: string; email: string },
+): Promise<void> {
+  await authPostData(`${API_URL}/promotions/${promotionId}/members`, member);
   revalidatePath(`/dashboard/promotions/${promotionId}`);
 }

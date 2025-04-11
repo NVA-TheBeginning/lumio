@@ -1,7 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createPromotion, deletePromotion, getPromotionMembers, getPromotions, removeMember } from "./action";
+import {
+  addMember,
+  createPromotion,
+  deletePromotion,
+  getPromotionMembers,
+  getPromotions,
+  removeMember,
+} from "./action";
 
 export function usePromotions() {
   return useQuery({
@@ -51,3 +58,22 @@ export function useRemoveMember() {
     },
   });
 }
+
+export const useAddMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      promotionId,
+      member,
+    }: {
+      promotionId: number;
+      member: { lastname: string; firstname: string; email: string };
+    }) => addMember(promotionId, member),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["promotions", variables.promotionId, "members"],
+      });
+    },
+  });
+};

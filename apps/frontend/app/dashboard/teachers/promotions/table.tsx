@@ -1,8 +1,11 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { MoreHorizontal, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import * as z from "zod";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +21,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -30,11 +34,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { Member } from "./action";
-import { usePromotionMembers, useRemoveMember } from "./hooks";
+import { useAddMember, usePromotionMembers, useRemoveMember } from "./hooks";
+
+const memberFormSchema = z.object({
+  firstname: z.string().min(1, "Le prénom est requis"),
+  lastname: z.string().min(1, "Le nom est requis"),
+  email: z.email("L'adresse email n'est pas valide"),
+});
+
+type MemberFormValues = z.infer<typeof memberFormSchema>;
 
 interface MembersTableProps {
   promotionId: number | null;
@@ -48,6 +62,16 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   const { data: members, isLoading, isError, error } = usePromotionMembers(promotionId);
 
   const removeMutation = useRemoveMember();
+  const addMutation = useAddMember();
+
+  const form = useForm<MemberFormValues>({
+    resolver: zodResolver(memberFormSchema),
+    defaultValues: {
+      firstname: "",
+      lastname: "",
+      email: "",
+    },
+  });
 
   const handleDelete = async () => {
     if (!memberToDelete || !promotionId) return;
@@ -65,6 +89,27 @@ export function MembersTable({ promotionId }: MembersTableProps) {
         onError: () => {
           toast.error("Une erreur est survenue lors de la suppression");
           console.error("Error deleting member:", error);
+        },
+      },
+    );
+  };
+
+  const onSubmit = (data: MemberFormValues) => {
+    if (!promotionId) return;
+
+    addMutation.mutate(
+      {
+        promotionId,
+        member: data,
+      },
+      {
+        onSuccess: () => {
+          setAddMemberDialogOpen(false);
+          toast.success("Membre ajouté avec succès");
+          form.reset();
+        },
+        onError: () => {
+          toast.error("Une erreur est survenue lors de l'ajout du membre");
         },
       },
     );
@@ -95,7 +140,13 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     <>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">Membres ({members?.length || 0})</h3>
-        <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
+        <Dialog
+          open={addMemberDialogOpen}
+          onOpenChange={(open) => {
+            setAddMemberDialogOpen(open);
+            if (!open) form.reset();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
@@ -105,8 +156,61 @@ export function MembersTable({ promotionId }: MembersTableProps) {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Ajouter un membre</DialogTitle>
-              <DialogDescription>Ajoutez un nouveau membre à cette promotion. (TODO)</DialogDescription>
+              <DialogDescription>Ajoutez un nouveau membre à cette promotion.</DialogDescription>
             </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="lastname"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Dupont" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="firstname"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prénom</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Jean" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="jean.dupont@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter className="mt-6">
+                  <Button type="button" variant="outline" onClick={() => setAddMemberDialogOpen(false)}>
+                    Annuler
+                  </Button>
+                  <Button type="submit" disabled={addMutation.isPending}>
+                    {addMutation.isPending ? "Ajout en cours..." : "Ajouter"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
@@ -132,8 +236,8 @@ export function MembersTable({ promotionId }: MembersTableProps) {
             ) : (
               members.map((member) => (
                 <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.lastName}</TableCell>
-                  <TableCell>{member.firstName}</TableCell>
+                  <TableCell className="font-medium">{member.lastname}</TableCell>
+                  <TableCell>{member.firstname}</TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>{formatDate(member.createdAt)}</TableCell>
                   <TableCell>
@@ -173,7 +277,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action ne peut pas être annulée. Cela supprimera définitivement le membre
-              {memberToDelete ? ` "${memberToDelete.firstName} ${memberToDelete.lastName}"` : ""} de cette promotion.
+              {memberToDelete ? ` "${memberToDelete.firstname} ${memberToDelete.lastname}"` : ""} de cette promotion.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
