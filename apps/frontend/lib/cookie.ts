@@ -21,7 +21,7 @@ export async function setUserCookie(data: {
     const oneDay = 60 * 60 * 24;
     const sevenDays = 60 * 60 * 24 * 7;
 
-    if (user) {
+    if (user !== undefined) {
       const userCookie = JSON.stringify(user);
       cookieStore.set("user", userCookie, {
         secure: process.env.NODE_ENV === "production",
@@ -32,7 +32,7 @@ export async function setUserCookie(data: {
       });
     }
 
-    if (accessToken) {
+    if (accessToken !== undefined) {
       cookieStore.set("accessToken", accessToken, {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
@@ -42,7 +42,7 @@ export async function setUserCookie(data: {
       });
     }
 
-    if (refreshToken) {
+    if (refreshToken !== undefined) {
       cookieStore.set("refreshToken", refreshToken, {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
