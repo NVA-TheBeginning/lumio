@@ -33,7 +33,11 @@ export async function loginApiClient(credentials: LoginFormValues): Promise<Role
 
     const { id, email, lastname, firstname, role, AuthTokens } = data;
 
-    await setUserCookie(AuthTokens.accessToken, AuthTokens.refreshToken, { id, email, lastname, firstname, role });
+    await setUserCookie({
+      accessToken: AuthTokens.accessToken,
+      refreshToken: AuthTokens.refreshToken,
+      user: { id, email, lastname, firstname, role },
+    });
 
     return role;
   } catch (error) {

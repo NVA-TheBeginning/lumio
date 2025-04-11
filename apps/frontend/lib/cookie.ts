@@ -9,13 +9,19 @@ interface User {
   role?: string;
 }
 
-export async function setUserCookie(accessToken: string, refreshToken: string, user?: User): Promise<void> {
+export async function setUserCookie(data: {
+  accessToken: string | undefined;
+  refreshToken: string | undefined;
+  user?: User;
+}): Promise<void> {
+  const { accessToken, refreshToken, user } = data;
+
   const cookieStore = await cookies();
   try {
     const oneDay = 60 * 60 * 24;
     const sevenDays = 60 * 60 * 24 * 7;
 
-    if (user) {
+    if (user !== undefined) {
       const userCookie = JSON.stringify(user);
       cookieStore.set("user", userCookie, {
         secure: process.env.NODE_ENV === "production",
@@ -26,21 +32,25 @@ export async function setUserCookie(accessToken: string, refreshToken: string, u
       });
     }
 
-    cookieStore.set("accessToken", accessToken, {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: oneDay,
-    });
+    if (accessToken !== undefined) {
+      cookieStore.set("accessToken", accessToken, {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: oneDay,
+      });
+    }
 
-    cookieStore.set("refreshToken", refreshToken, {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: sevenDays,
-    });
+    if (refreshToken !== undefined) {
+      cookieStore.set("refreshToken", refreshToken, {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: sevenDays,
+      });
+    }
 
     console.log("User cookie set successfully");
   } catch (error) {
@@ -117,5 +127,5 @@ export async function refreshTokens(refreshToken: string): Promise<void> {
   const data = (await response.json()) as RefreshResponse;
   const { accessToken, refreshToken: newRefreshToken } = data;
 
-  await setUserCookie(accessToken, newRefreshToken);
+  await setUserCookie({ accessToken, refreshToken: newRefreshToken });
 }
