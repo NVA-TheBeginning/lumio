@@ -1,5 +1,4 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import axios from "axios";
 import { AuthService } from "@/auth/auth.service";
 import { PrismaService } from "@/prisma.service.js";
 
@@ -34,7 +33,13 @@ export class OAuthService {
 
   private async verifyGoogleToken(token: string): Promise<string> {
     try {
-      const { data } = await axios.get(`https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${token}`);
+      const response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${token}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const data = await response.json();
       return data.email;
     } catch {
       throw new UnauthorizedException("Invalid Google token");
@@ -43,9 +48,15 @@ export class OAuthService {
 
   private async verifyMicrosoftToken(token: string): Promise<string> {
     try {
-      const { data } = await axios.get("https://graph.microsoft.com/v1.0/me", {
+      const response = await fetch("https://graph.microsoft.com/v1.0/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const data = await response.json();
       return data.mail || data.userPrincipalName;
     } catch {
       throw new UnauthorizedException("Invalid Microsoft token");

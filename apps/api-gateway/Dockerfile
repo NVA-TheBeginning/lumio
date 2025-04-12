@@ -16,7 +16,6 @@ WORKDIR /app
 COPY --from=base /app/package.json /app/bun.lock  ./
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/apps/api-gateway/dist ./apps/api-gateway/dist
-COPY --from=base /app/apps/api-gateway/prisma ./apps/api-gateway/prisma
 
 ENV NODE_ENV=production
 ENV BUN_ENV=production
