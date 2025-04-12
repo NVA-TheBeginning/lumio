@@ -20,15 +20,13 @@ RUN bun --bun run build -F project-service
 FROM oven/bun:1.2 AS production
 WORKDIR /app
 
-COPY --from=base /app/package.json /app/bun.lock  ./
+COPY --from=base /app/package.json /app/bun.lock ./
 COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/apps/project-service/dist ./apps/project-service/dist
-COPY --from=base /app/apps/project-service/prisma ./apps/project-service/prisma
+COPY --from=base /app/apps/project-service ./apps/project-service
 
 ENV NODE_ENV=production
 ENV BUN_ENV=production
 ENV PORT=3003
 EXPOSE $PORT
 
-WORKDIR /app/apps/project-service
-CMD ["bun", "run" , "start:prod"]
+CMD ["bun", "apps/project-service/dist/main.js"]

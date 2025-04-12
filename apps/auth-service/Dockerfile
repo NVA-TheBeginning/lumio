@@ -20,15 +20,13 @@ RUN bun --bun run build -F auth-service
 FROM oven/bun:1.2 AS production
 WORKDIR /app
 
-COPY --from=base /app/package.json /app/bun.lock  ./
+COPY --from=base /app/package.json /app/bun.lock ./
 COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/apps/auth-service/dist ./apps/auth-service/dist
-COPY --from=base /app/apps/auth-service/prisma ./apps/auth-service/prisma
+COPY --from=base /app/apps/auth-service ./apps/auth-service
 
 ENV NODE_ENV=production
 ENV BUN_ENV=production
 ENV PORT=3002
 EXPOSE $PORT
 
-WORKDIR /app/apps/auth-service
-CMD ["bun", "run" , "start:prod"]
+CMD ["bun", "apps/auth-service/dist/main.js"]
