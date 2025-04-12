@@ -20,7 +20,11 @@ RUN bun --bun run build -F project-service
 FROM oven/bun:1.2 AS production
 WORKDIR /app
 
-COPY --from=base /app/package.json /app/bun.lock ./
+RUN apt update && apt install curl -y --no-install-recommends \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=base /app/package.json ./
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/apps/project-service ./apps/project-service
 
@@ -28,5 +32,8 @@ ENV NODE_ENV=production
 ENV BUN_ENV=production
 ENV PORT=3003
 EXPOSE $PORT
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://127.0.0.1:$PORT/health || exit 1
 
 CMD ["bun", "apps/project-service/dist/main.js"]

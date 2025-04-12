@@ -13,6 +13,10 @@ RUN bun --bun run build -F frontend
 FROM oven/bun:1.2 AS production
 WORKDIR /app
 
+RUN apt update && apt install curl -y --no-install-recommends \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=base /app/apps/frontend/package.json ./apps/frontend/package.json
 COPY --from=base /app/apps/frontend/.next/standalone ./
 COPY --from=base /app/apps/frontend/.next/static ./apps/frontend/.next/static
@@ -22,6 +26,9 @@ ENV NODE_ENV=production
 ENV BUN_ENV=production
 ENV PORT=3000
 EXPOSE $PORT
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://127.0.0.1:$PORT/api/health || exit 1
 
 ENV HOSTNAME=0.0.0.0
 CMD ["bun", "apps/frontend/server.js"]
