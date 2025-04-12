@@ -8,6 +8,7 @@ import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -18,6 +19,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { NavUser, NavUserProps } from "../nav-user";
 
 const navData = {
   navMain: [
@@ -61,7 +63,7 @@ const navData = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function TeachersSidebar({ user, ...props }: { user: NavUserProps } & React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
   const isActive = (url: string) => {
@@ -115,6 +117,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser
+          user={{
+            firstname: user.firstname,
+            email: user.email || "",
+            role: user?.role || "TEACHER",
+          }}
+        />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
