@@ -136,6 +136,28 @@ describe("Projects", () => {
     expect(body.message).toContain("minMembers cannot be greater than maxMembers");
   });
 
+  test("/projects (POST) - should fail with invalid group settings (deadline in the past)", async () => {
+    const invalidGroupSettingsDto = {
+      ...createProjectDto(),
+      groupSettings: promotionIds.map((promotionId) => ({
+        promotionId,
+        minMembers: 2,
+        maxMembers: 5,
+        mode: GroupMode.FREE,
+        deadline: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      })),
+    };
+    const response = await app.inject({
+      method: "POST",
+      url: "/projects",
+      payload: invalidGroupSettingsDto,
+    });
+
+    expect(response.statusCode).toEqual(400);
+    const body = JSON.parse(response.body);
+    expect(body.message).toContain("Deadline must be in the future");
+  });
+
   afterAll(async () => {
     if (projectId) {
       await prisma.groupSettings.deleteMany({
