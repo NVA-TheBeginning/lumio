@@ -133,7 +133,6 @@ describe("Projects", () => {
 
     expect(response.statusCode).toEqual(400);
     const body = JSON.parse(response.body);
-    console.log(body);
     expect(body.message).toContain("minMembers cannot be greater than maxMembers");
   });
 
