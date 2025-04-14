@@ -18,14 +18,14 @@ datasource db {
 }
 
 model Project {
-  id          Int           @id @default(autoincrement())
-  name        String        @db.VarChar(255)
-  description String        @db.Text
-  status      ProjectStatus @default(DRAFT)
-  creatorId   Int
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?     @db.Timestamptz(6)
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(255)
+  description      String             @db.Text
+  creatorId        Int
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?          @db.Timestamptz(6)
+  ProjectPromotion ProjectPromotion[]
 
   @@map("PROJECT")
   @@schema("project_schema")
@@ -67,11 +67,13 @@ model Promotion {
 }
 
 model ProjectPromotion {
-  id          Int       @id @default(autoincrement())
+  status      ProjectStatus @default(DRAFT)
   projectId   Int
   promotionId Int
-  promotion   Promotion @relation("PromotionToProjectPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
+  promotion   Promotion     @relation("PromotionToProjectPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@id([projectId, promotionId])
   @@map("PROJECT_PROMOTION")
   @@schema("project_schema")
 }
@@ -83,5 +85,46 @@ model StudentPromotion {
   promotion   Promotion @relation("PromotionToStudentPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
 
   @@map("STUDENT_PROMOTION")
+  @@schema("project_schema")
+}
+
+model Groups {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  @@map("GROUPS")
+  @@schema("project_schema")
+}
+
+model GroupMembers {
+  groupId   Int
+  studentId Int
+  createdAt DateTime @default(now())
+
+  @@id([groupId, studentId])
+  @@map("GROUP_MEMBERS")
+  @@schema("project_schema")
+}
+
+model GroupSettings {
+  projectId   Int
+  promotionId Int
+  minMembers  Int
+  maxMembers  Int
+  mode        GroupMode @default(RANDOM)
+  deadline    DateTime  @db.Timestamptz(6)
+
+  @@id([projectId, promotionId])
+  @@map("GROUP_SETTINGS")
+  @@schema("project_schema")
+}
+
+enum GroupMode {
+  RANDOM
+  MANUAL
+  FREE
+
   @@schema("project_schema")
 }
