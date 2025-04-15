@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { getPromotions } from "@/app/dashboard/teachers/promotions/action";
@@ -45,7 +45,6 @@ type CreateProjectFormValues = z.infer<typeof createProjectSchema>;
 export default function CreateProjectForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [groupSettingErrors, setGroupSettingErrors] = useState<Record<number, string>>({});
 
   const {
     data: promotions = [],
@@ -59,7 +58,7 @@ export default function CreateProjectForm() {
   const defaultValues: Partial<CreateProjectFormValues> = {
     name: "",
     description: "",
-    creatorId: 1,
+    creatorId: 1, // Will be replaced during request
     promotionIds: [],
     groupSettings: [],
   };
@@ -111,21 +110,6 @@ export default function CreateProjectForm() {
   }, [promotionIds, groupSettings, setValue]);
 
   const onSubmit = async (data: CreateProjectFormValues) => {
-    setGroupSettingErrors({});
-
-    const missingGroupSettings = data.promotionIds.filter(
-      (promotionId) => !data.groupSettings.find((gs) => gs.promotionId === promotionId),
-    );
-
-    if (missingGroupSettings.length > 0) {
-      const newErrors: Record<number, string> = {};
-      missingGroupSettings.forEach((promotionId) => {
-        newErrors[promotionId] = "Un paramètre de groupe est requis pour cette promotion.";
-      });
-      setGroupSettingErrors(newErrors);
-      return;
-    }
-
     createProjectMutation.mutate(data);
   };
 
@@ -298,9 +282,6 @@ export default function CreateProjectForm() {
                             </SelectContent>
                           </Select>
                         )}
-                        {groupSettingErrors[groupSetting.promotionId] && (
-                          <FormMessage>{groupSettingErrors[groupSetting.promotionId]}</FormMessage>
-                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -407,6 +388,7 @@ export default function CreateProjectForm() {
                               selected={field.value ? new Date(field.value) : undefined}
                               onSelect={(date) => field.onChange(date?.toISOString())}
                               initialFocus
+                              disabled={(date) => date < new Date()}
                             />
                           </PopoverContent>
                         </Popover>
