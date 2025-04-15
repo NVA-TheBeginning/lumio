@@ -25,7 +25,7 @@ const groupSettingSchema = z.object({
   minMembers: z.number().min(1, "Minimum 1 membre requis"),
   maxMembers: z.number().min(1, "Minimum 1 membre requis"),
   mode: z.string().refine((val) => ["AUTO", "FREE", "MANUAL"].includes(val), {
-    error: "Mode invalide",
+    message: "Mode invalide",
   }),
   deadline: z.string().min(1, "La date limite est requise"),
 });
@@ -405,7 +405,10 @@ export default function CreateProjectForm() {
             <Button type="button" variant="outline" onClick={() => router.push("/dashboard/teachers/projects")}>
               Annuler
             </Button>
-            <Button type="submit" disabled={createProjectMutation.isPending || isLoadingPromotions}>
+            <Button
+              type="submit"
+              disabled={createProjectMutation.isPending || isLoadingPromotions || form.formState.isSubmitting}
+            >
               {createProjectMutation.isPending ? "Création en cours..." : "Créer le projet"}
             </Button>
           </CardFooter>
