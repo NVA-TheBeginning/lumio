@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
 
 interface StudentData {
   name: string;
@@ -9,9 +11,23 @@ interface StudentData {
   email: string;
 }
 
+interface CreatedStudent {
+  studentId: number;
+  email: string;
+  initialPassword: string;
+}
+
+interface CreateStudentsResponse {
+  count: number;
+  students: CreatedStudent[];
+}
+
 @Injectable()
 export class PromotionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService,
+  ) {}
 
   private parseStudentsCsv(csv: string): StudentData[] {
     if (!csv || !csv.trim()) {
@@ -49,24 +65,27 @@ export class PromotionsService {
 
   async create(createPromotionDto: CreatePromotionDto) {
     const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
-
     const { students_csv, ...promotionData } = createPromotionDto;
 
     return this.prisma.$transaction(async (prisma) => {
+      // First create the students in the auth service
+      const response = await firstValueFrom(
+        this.httpService.post<CreateStudentsResponse>("http://localhost:3002/users/students", studentsData),
+      );
+      const createdStudents = response.data;
+
+      // Then create the promotion
       const promotion = await prisma.promotion.create({
         data: promotionData,
       });
 
-      let id = 0;
+      // Create student promotion records with the actual student IDs
       const studentPromotions = await Promise.all(
-        studentsData.map(async () => {
-          const studentId = id;
-          id++;
-
+        createdStudents.students.map(async (student: CreatedStudent) => {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              studentId: studentId,
+              studentId: student.studentId,
             },
           });
         }),
@@ -75,7 +94,7 @@ export class PromotionsService {
       return {
         ...promotion,
         studentPromotions,
-        studentsData,
+        students: createdStudents.students.map((student: CreatedStudent) => student.studentId),
       };
     });
   }
@@ -86,12 +105,26 @@ export class PromotionsService {
         where: {
           creatorId,
         },
+        include: {
+          studentPromotions: {
+            select: {
+              studentId: true,
+            },
+          },
+        },
         orderBy: {
           createdAt: "desc",
         },
       });
     }
     return this.prisma.promotion.findMany({
+      include: {
+        studentPromotions: {
+          select: {
+            studentId: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -101,6 +134,13 @@ export class PromotionsService {
   async findOne(id: number) {
     const item = await this.prisma.promotion.findUnique({
       where: { id },
+      include: {
+        studentPromotions: {
+          select: {
+            studentId: true,
+          },
+        },
+      },
     });
     if (!item) {
       throw new NotFoundException(`Promotion with id ${id} not found`);
