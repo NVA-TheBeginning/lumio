@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Filter, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const datePeriods = [
 
 export default function ProjectList() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [filters, setFilters] = useState<FilterState>({
     promotions: [],
@@ -225,7 +227,7 @@ export default function ProjectList() {
         </div>
         <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
           {projects.length > 0 && (
-            <Button size="sm">
+            <Button size="sm" onClick={() => router.push("/dashboard/teachers/projects/new")}>
               <Plus className="mr-2 h-4 w-4" />
               Nouveau projet
             </Button>
@@ -469,7 +471,7 @@ export default function ProjectList() {
         <div className="text-center py-12 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-medium">Aucun projet trouvé</h3>
           <p className="text-gray-500 mt-2">Modifiez vos critères de recherche ou créez un nouveau projet</p>
-          <Button className="mt-4" size="sm">
+          <Button className="mt-4" size="sm" onClick={() => router.push("/dashboard/teachers/projects/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau projet
           </Button>

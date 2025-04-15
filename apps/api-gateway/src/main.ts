@@ -52,6 +52,11 @@ async function bootstrap() {
 
   await setupFederatedSwagger(app);
 
+  app.enableCors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  });
+
   await app.listen(port, "0.0.0.0");
   const url = await app.getUrl();
 

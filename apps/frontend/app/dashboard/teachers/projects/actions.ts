@@ -1,5 +1,10 @@
 "use client";
 
+import { getUserFromCookie } from "@/lib/cookie";
+import { authPostData } from "@/lib/utils";
+
+const API_URL = process.env.API_URL || "http://localhost:3000";
+
 interface Project {
   id: number;
   title: string;
@@ -7,6 +12,20 @@ interface Project {
   promotions: string[];
   date: string;
   status: "visible" | "draft" | "hidden";
+}
+
+interface CreateProjectData {
+  name: string;
+  description: string;
+  creatorId: number;
+  promotionIds: number[];
+  groupSettings: {
+    promotionId: number;
+    minMembers: number;
+    maxMembers: number;
+    mode: string;
+    deadline: string;
+  }[];
 }
 
 const mockProjects: Project[] = [
@@ -91,3 +110,9 @@ export const getAllProjects = async (): Promise<{ projects: Project[]; promotion
     promotions: Array.from(new Set(mockProjects.flatMap((project) => project.promotions))),
   };
 };
+
+export async function createProject(data: CreateProjectData): Promise<void> {
+  const user = await getUserFromCookie();
+  data.creatorId = Number(user?.id);
+  await authPostData(`${API_URL}/projects`, data);
+}

@@ -31,21 +31,20 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    error: "Le nom doit contenir au moins 2 caractères",
+    message: "Le nom doit contenir au moins 2 caractères",
   }),
   description: z.string().min(5, {
-    error: "La description doit contenir au moins 5 caractères",
+    message: "La description doit contenir au moins 5 caractères",
   }),
   students_csv: z.string().min(1, {
-    error: "Veuillez importer un fichier CSV valide",
+    message: "Veuillez importer un fichier CSV valide",
   }),
 });
 
 type StudentData = {
-  nom: string;
-  prenom: string;
-  email: string;
-  [key: string]: string;
+  nom: string | undefined;
+  prenom: string | undefined;
+  email: string | undefined;
 };
 
 const generateTemplateCSV = () => {
@@ -72,20 +71,11 @@ const downloadTemplateCSV = () => {
 
 const parseCSV = (csvText: string): StudentData[] => {
   const lines = csvText.split("\n").filter((line) => line.trim() !== "");
-  const headers = lines[0]?.split(",").map((header) => header.trim().toLowerCase()) || [];
-
-  return lines.slice(1).map((line) => {
-    const values = line.split(",").map((value) => value.trim());
-    const student: StudentData = { nom: "", prenom: "", email: "" };
-
-    headers.forEach((header, index) => {
-      if (index < values.length && values[index]) {
-        student[header] = values[index];
-      }
-    });
-
-    return student;
+  const data = lines.map((line) => {
+    const [nom, prenom, email] = line.split(",").map((item) => item.trim());
+    return { nom, prenom, email };
   });
+  return data;
 };
 
 const validateCSVData = (data: StudentData[]): { valid: boolean; errors: string[] } => {
