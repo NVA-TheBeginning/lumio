@@ -1,5 +1,6 @@
 "use client";
 
+import { getUserFromCookie } from "@/lib/cookie";
 import { authPostData } from "@/lib/utils";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
@@ -111,5 +112,7 @@ export const getAllProjects = async (): Promise<{ projects: Project[]; promotion
 };
 
 export async function createProject(data: CreateProjectData): Promise<void> {
+  const user = await getUserFromCookie();
+  data.creatorId = Number(user?.id);
   await authPostData(`${API_URL}/projects`, data);
 }
