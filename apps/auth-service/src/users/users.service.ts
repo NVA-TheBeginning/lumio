@@ -152,16 +152,16 @@ export class UsersService {
     return this.prisma.user.findMany({
       where: {
         id: {
-          in: ids
-        }
+          in: ids,
+        },
       },
       select: {
         id: true,
         email: true,
         firstname: true,
         lastname: true,
-        role: true
-      }
+        role: true,
+      },
     });
   }
 }

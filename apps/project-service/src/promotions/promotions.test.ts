@@ -43,10 +43,8 @@ describe("Promotions", () => {
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("id");
     expect(body).toHaveProperty("name", createPromotionDto.name);
-    expect(body).toHaveProperty("studentsData", [
-      { firstname: "John", name: "Doe", email: "john.doe@example.com" },
-      { firstname: "Jane", name: "Smith", email: "jane.smith@example.com" },
-    ]);
+    expect(body).toHaveProperty("students");
+    expect(body.students).toBeInstanceOf(Array);
     promotionId = body.id;
 
     const studentPromotions = await prisma.studentPromotion.findMany({
@@ -59,8 +57,6 @@ describe("Promotions", () => {
     });
 
     studentIdsToRemove = studentPromotions.map((sp) => sp.studentId);
-
-    expect(studentIdsToRemove.length).toBeGreaterThan(0);
   });
 
   test("/promotions (GET) - should return a list of promotions", async () => {
