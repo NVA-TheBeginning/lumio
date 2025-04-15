@@ -66,37 +66,22 @@ describe("setupFederatedSwagger", () => {
       },
     };
 
-    (axios.get as ReturnType<typeof mock>).mockImplementation(() =>
-        Promise.resolve(mockServiceResponse)
-    );
+    (axios.get as ReturnType<typeof mock>).mockImplementation(() => Promise.resolve(mockServiceResponse));
 
     await setupFederatedSwagger(mockApp);
 
     expect(DocumentBuilder).toHaveBeenCalled();
-    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(
-        mockApp,
-        expect.anything()
-    );
-    expect(SwaggerModule.setup).toHaveBeenCalledWith(
-        "ui",
-        mockApp,
-        expect.anything()
-    );
+    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(mockApp, expect.anything());
+    expect(SwaggerModule.setup).toHaveBeenCalledWith("ui", mockApp, expect.anything());
     expect(axios.get).toHaveBeenCalledTimes(microservicesDocs.length);
-    expect(consoleInfoSpy).toHaveBeenCalledWith(
-        expect.stringContaining("\x1b[34m")
-    );
+    expect(consoleInfoSpy).toHaveBeenCalledWith(expect.stringContaining("\x1b[34m"));
   });
 
   test("should handle failure gracefully when microservices are unavailable", async () => {
-    (axios.get as ReturnType<typeof mock>).mockImplementation(() =>
-        Promise.reject(new Error("Service unavailable"))
-    );
+    (axios.get as ReturnType<typeof mock>).mockImplementation(() => Promise.reject(new Error("Service unavailable")));
 
     await setupFederatedSwagger(mockApp);
     expect(consoleInfoSpy).toHaveBeenCalledWith("Aucun swagger disponible.");
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Service unavailable")
-    );
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Service unavailable"));
   });
 });
