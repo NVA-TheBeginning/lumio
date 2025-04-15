@@ -2,6 +2,14 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 
+export interface UserResponse {
+  id: number;
+  email: string;
+  firstname: string | null;
+  lastname: string | null;
+  role: string;
+}
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -140,7 +148,7 @@ export class UsersService {
     });
   }
 
-  async findUsersByIds(ids: number[]): Promise<any[]> {
+  async findUsersByIds(ids: number[]): Promise<UserResponse[]> {
     return this.prisma.user.findMany({
       where: {
         id: {

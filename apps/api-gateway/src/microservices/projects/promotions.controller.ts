@@ -91,33 +91,31 @@ export class PromotionsController {
   async findAllWithStudents(): Promise<PromotionWithStudents[]> {
     // First get all promotions
     const promotions = await this.proxy.forwardRequest<Promotion[]>("project", "/promotions", "GET");
-    
+
     // Get all unique student IDs from all promotions
-    const studentIds = [...new Set(promotions.flatMap(promo => 
-      promo.studentPromotions.map(sp => sp.studentId)
-    ))];
-    
+    const studentIds = [...new Set(promotions.flatMap((promo) => promo.studentPromotions.map((sp) => sp.studentId)))];
+
     // If there are no students, return promotions with empty student arrays
     if (studentIds.length === 0) {
-      return promotions.map(promo => ({
+      return promotions.map((promo) => ({
         id: promo.id,
         name: promo.name,
         description: promo.description,
         creatorId: promo.creatorId,
         createdAt: promo.createdAt,
         updatedAt: promo.updatedAt,
-        students: []
+        students: [],
       }));
     }
-    
+
     // Get all students in one request
-    const students = await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(',')}`, "GET");
-    
+    const students = await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
+
     // Create a map of student ID to student data for quick lookup
-    const studentMap = new Map(students.map(student => [student.id, student]));
-    
+    const studentMap = new Map(students.map((student) => [student.id, student]));
+
     // Combine promotions with their students
-    return promotions.map(promo => ({
+    return promotions.map((promo) => ({
       id: promo.id,
       name: promo.name,
       description: promo.description,
@@ -125,8 +123,8 @@ export class PromotionsController {
       createdAt: promo.createdAt,
       updatedAt: promo.updatedAt,
       students: promo.studentPromotions
-        .map(sp => studentMap.get(sp.studentId))
-        .filter((student): student is Student => student !== undefined)
+        .map((sp) => studentMap.get(sp.studentId))
+        .filter((student): student is Student => student !== undefined),
     }));
   }
 }

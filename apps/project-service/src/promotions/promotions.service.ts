@@ -1,9 +1,9 @@
+import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { firstValueFrom } from "rxjs";
 import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
-import { HttpService } from "@nestjs/axios";
-import { firstValueFrom } from "rxjs";
 
 interface StudentData {
   name: string;

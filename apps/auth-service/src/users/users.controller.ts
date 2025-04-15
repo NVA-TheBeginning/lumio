@@ -55,7 +55,7 @@ export class UsersController {
   @ApiOkResponse({ description: "Users found successfully" })
   @ApiQuery({ name: "ids", type: [Number], description: "Array of user IDs to find", required: true })
   async findUsers(@Query("ids") ids: string) {
-    const userIds = ids.split(',').map(id => parseInt(id, 10));
+    const userIds = ids.split(",").map((id) => parseInt(id, 10));
     return await this.usersService.findUsersByIds(userIds);
   }
 }
