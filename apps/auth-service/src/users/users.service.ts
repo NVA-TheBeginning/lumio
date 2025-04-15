@@ -139,4 +139,21 @@ export class UsersService {
       where: { id },
     });
   }
+
+  async findUsersByIds(ids: number[]): Promise<any[]> {
+    return this.prisma.user.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        role: true
+      }
+    });
+  }
 }
