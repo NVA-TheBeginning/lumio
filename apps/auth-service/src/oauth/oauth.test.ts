@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { AppModule } from "@/app.module.js";
-import { PrismaService } from "@/prisma.service.js";
 import { OAuthService } from "./oauth.service";
 
 describe("OAuth", () => {
@@ -69,7 +68,6 @@ describe("OAuth", () => {
   });
 
   afterAll(async () => {
-    await app.get(PrismaService).user.deleteMany({});
     await app.close();
   });
 });

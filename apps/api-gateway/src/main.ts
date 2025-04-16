@@ -46,8 +46,8 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  const startDelay = 3000;
-  logger.log("⏳ Delaying federated Swagger setup for 3 seconds...");
+  const startDelay = 5000;
+  logger.log("⏳ Delaying federated Swagger setup for 5 seconds...");
   await sleep(startDelay);
 
   await setupFederatedSwagger(app);

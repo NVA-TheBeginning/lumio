@@ -31,7 +31,7 @@ export class AuthController {
     description: "User successfully logged in",
   })
   @ApiResponse({ status: 401, description: "Invalid credentials" })
-  signIn(@Body() signInDto: SignInDto): Promise<AuthLogin> {
+  login(@Body() signInDto: SignInDto): Promise<AuthLogin> {
     return this.authService.signIn(signInDto.email, signInDto.password);
   }
 

@@ -9,6 +9,7 @@ mock.module("axios", () => ({
   default: {
     get: mock(() => Promise.resolve({ data: {} })),
   },
+  get: mock(() => Promise.resolve({ data: {} })),
 }));
 
 mock.module("@nestjs/swagger", () => ({
@@ -38,9 +39,7 @@ describe("setupFederatedSwagger", () => {
 
   beforeEach(() => {
     mockApp = {
-      get: mock(() => {
-        return {};
-      }),
+      get: mock(() => ({})),
     } as unknown as INestApplication;
 
     consoleInfoSpy = spyOn(console, "info");
@@ -74,15 +73,15 @@ describe("setupFederatedSwagger", () => {
     expect(DocumentBuilder).toHaveBeenCalled();
     expect(SwaggerModule.createDocument).toHaveBeenCalledWith(mockApp, expect.anything());
     expect(SwaggerModule.setup).toHaveBeenCalledWith("ui", mockApp, expect.anything());
-
     expect(axios.get).toHaveBeenCalledTimes(microservicesDocs.length);
-    expect(consoleInfoSpy).toHaveBeenCalled();
+    expect(consoleInfoSpy).toHaveBeenCalledWith(expect.stringContaining("\x1b[34m"));
   });
-  test("should fail gracefully when no microservices are available", async () => {
+
+  test("should handle failure gracefully when microservices are unavailable", async () => {
     (axios.get as ReturnType<typeof mock>).mockImplementation(() => Promise.reject(new Error("Service unavailable")));
 
     await setupFederatedSwagger(mockApp);
-
-    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Aucun microservice n'a pu être chargé"));
+    expect(consoleInfoSpy).toHaveBeenCalledWith("Aucun swagger disponible.");
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Service unavailable"));
   });
 });
