@@ -57,7 +57,7 @@ export class DocumentController {
     },
   })
   @ApiConsumes("multipart/form-data")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor("file", { preservePath: true }))
   @ApiBadRequestResponse({ description: "Invalid file or user ID provided" })
   async uploadDocument(@UploadedFile() file: File, @Body("name") name: string, @Body("userId") userId: number) {
     if (!file) {

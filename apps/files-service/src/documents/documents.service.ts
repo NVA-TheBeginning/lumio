@@ -26,7 +26,7 @@ export class DocumentService {
       const document = await this.prisma.documents.create({
         data: {
           name: name,
-          ownerId,
+          ownerId: Number(ownerId),
           fileKey,
           sizeInBytes: file.size || 0,
           mimeType: file.mimetype,

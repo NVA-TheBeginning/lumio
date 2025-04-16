@@ -1,4 +1,4 @@
-import { fastifyMultipart } from "@fastify/multipart";
+import fastifyMultipart from "@fastify/multipart";
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -16,6 +16,7 @@ async function bootstrap() {
     jsonDocumentUrl: "docs",
   });
 
+  await app.register(fastifyMultipart);
   app.enableCors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

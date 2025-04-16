@@ -7,6 +7,7 @@ interface S3Config {
   accessKeyId: string;
   secretAccessKey: string;
   bucket: string;
+  endpoint: string;
 }
 
 @Injectable()
@@ -19,6 +20,7 @@ export class S3Service {
       accessKeyId: process.env.ACCESS_KEY_ID || "",
       secretAccessKey: process.env.SECRET_ACCESS_KEY || "",
       bucket: process.env.S3_BUCKET_NAME || "",
+      endpoint: process.env.MINIO_ENDPOINT || "",
     };
 
     this.s3Client = new S3Client({
@@ -26,6 +28,7 @@ export class S3Service {
       accessKeyId: s3Config.accessKeyId,
       secretAccessKey: s3Config.secretAccessKey,
       bucket: s3Config.bucket,
+      endpoint: s3Config.endpoint,
     });
   }
 
