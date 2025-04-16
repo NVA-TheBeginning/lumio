@@ -83,10 +83,13 @@ enum SubmissionStatus {
 }
 
 model Documents {
-  id         Int      @id @default(autoincrement())
-  name       String
-  ownerId    Int
-  uploadedAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  name        String
+  ownerId     Int
+  fileKey     String
+  sizeInBytes Int
+  mimeType    String
+  uploadedAt  DateTime @default(now())
 
   @@map("DOCUMENTS")
   @@schema("files_schema")
