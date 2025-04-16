@@ -25,7 +25,7 @@ async function bootstrap() {
   await app.listen(3004, "0.0.0.0");
 
   const url = await app.getUrl();
-  Logger.log(`Project service is running on: ${url}`);
+  Logger.log(`Files service is running on: ${url}`);
   Logger.log(`API Docs available at: ${url}/docs`);
   Logger.log(`Swagger UI available at: ${url}/ui`);
 }
