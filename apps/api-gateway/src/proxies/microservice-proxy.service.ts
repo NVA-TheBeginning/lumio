@@ -35,8 +35,8 @@ export class MicroserviceProxyService {
     microservice: string,
     endpoint: string,
     method: HttpMethod,
-    data?: Record<string, unknown>,
-    params?: Record<string, unknown>,
+    data?: object,
+    params?: object,
   ): Promise<TResponse> {
     console.log(`Forwarding request to ${microservice} at ${endpoint} with method ${method}`);
     const microserviceUrl = this.configService.get<string>(`microservices.${microservice}`);
