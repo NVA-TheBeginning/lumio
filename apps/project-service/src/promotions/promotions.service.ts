@@ -29,63 +29,20 @@ export class PromotionsService {
     private readonly httpService: HttpService,
   ) {}
 
-  private parseStudentsCsv(csv: string): StudentData[] {
-    if (!csv || !csv.trim()) {
-      return [];
-    }
-
-    const lines = csv
-      .trim()
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    if (lines.length === 0) {
-      return [];
-    }
-
-    const students: StudentData[] = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      const parts = line.split(",").map((part) => part.trim());
-
-      if (parts.length < 3) {
-        throw new BadRequestException(`Invalid CSV format at line ${i + 1}. Not enough columns.`);
-      }
-
-      const [name, firstname, email] = parts;
-
-      students.push({ name, firstname, email });
-    }
-
-    return students;
-  }
-
   async create(createPromotionDto: CreatePromotionDto) {
-    const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
-    const { students_csv, ...promotionData } = createPromotionDto;
+    const { studentsIds, ...promotionData } = createPromotionDto;
 
     return this.prisma.$transaction(async (prisma) => {
-      // First create the students in the auth service
-      const response = await firstValueFrom(
-        this.httpService.post<CreateStudentsResponse>("http://localhost:3002/users/students", studentsData),
-      );
-      const createdStudents = response.data;
-
-      // Then create the promotion
       const promotion = await prisma.promotion.create({
         data: promotionData,
       });
 
-      // Create student promotion records with the actual student IDs
       const studentPromotions = await Promise.all(
-        createdStudents.students.map(async (student: CreatedStudent) => {
+        studentsIds.map(async (studentId: number) => {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              studentId: student.studentId,
+              studentId,
             },
           });
         }),
@@ -94,7 +51,7 @@ export class PromotionsService {
       return {
         ...promotion,
         studentPromotions,
-        students: createdStudents.students.map((student: CreatedStudent) => student.studentId),
+        students: studentsIds,
       };
     });
   }
