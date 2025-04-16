@@ -7,9 +7,11 @@ import { OAuthService } from "./oauth.service";
 
 describe("OAuth", () => {
   let app: NestFastifyApplication;
+  let prisma: PrismaService;
   const dummyGoogleToken = "dummy-google-token";
   const dummyMicrosoftToken = "dummy-microsoft-token";
-
+  const testEmails = ["google-test@example.com", "microsoft-test@example.com"];
+  
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -36,10 +38,12 @@ describe("OAuth", () => {
         }),
       })
       .compile();
-
+      
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+    
+    prisma = app.get(PrismaService);
   });
 
   test("/auth/oauth/google (POST) - should authenticate using Google OAuth", async () => {
@@ -48,7 +52,7 @@ describe("OAuth", () => {
       url: "/auth/oauth/google",
       payload: { token: dummyGoogleToken },
     });
-
+    
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("accessToken");
@@ -61,7 +65,7 @@ describe("OAuth", () => {
       url: "/auth/oauth/microsoft",
       payload: { token: dummyMicrosoftToken },
     });
-
+    
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("accessToken");
@@ -69,7 +73,14 @@ describe("OAuth", () => {
   });
 
   afterAll(async () => {
-    await app.get(PrismaService).user.deleteMany({});
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          in: testEmails,
+        },
+      },
+    });
+    
     await app.close();
   });
 });
