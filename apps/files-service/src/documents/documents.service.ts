@@ -70,7 +70,7 @@ export class DocumentService {
   }
 
   async deleteDocument(id: number) {
-    const document = await this.prisma.documents.findFirst({
+    const document = await this.prisma.documents.findUnique({
       where: {
         id,
       },
