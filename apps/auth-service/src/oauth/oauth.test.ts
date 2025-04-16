@@ -7,8 +7,10 @@ import { OAuthService } from "./oauth.service";
 
 describe("OAuth", () => {
   let app: NestFastifyApplication;
+  let prisma: PrismaService;
   const dummyGoogleToken = "dummy-google-token";
   const dummyMicrosoftToken = "dummy-microsoft-token";
+  const testEmails = ["google-test@example.com", "microsoft-test@example.com"];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -40,6 +42,8 @@ describe("OAuth", () => {
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+
+    prisma = app.get(PrismaService);
   });
 
   test("/auth/oauth/google (POST) - should authenticate using Google OAuth", async () => {
@@ -69,7 +73,14 @@ describe("OAuth", () => {
   });
 
   afterAll(async () => {
-    await app.get(PrismaService).user.deleteMany({});
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          in: testEmails,
+        },
+      },
+    });
+
     await app.close();
   });
 });
