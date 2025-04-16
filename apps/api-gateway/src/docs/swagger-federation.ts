@@ -4,67 +4,57 @@ import axios from "axios";
 import { microservicesDocs } from "@/config/microservices.config.js";
 
 export async function setupFederatedSwagger(app: INestApplication): Promise<void> {
-  // 🧱 1. Générer Swagger local (Gateway)
+  const availableLinks: string[] = [];
+  const unavailableLinks: string[] = [];
+
+  for (const { name, url } of microservicesDocs) {
+    try {
+      await axios.get(`${url}/docs`);
+      availableLinks.push(`- **${name}** : [Voir Swagger](${url}/ui/)`);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error("Unknown error");
+      unavailableLinks.push(`- **${name}** (${url}): ${err.message}`);
+    }
+  }
+
+  console.info("✅ Swagger disponibles:");
+  if (availableLinks.length > 0) {
+    availableLinks.forEach((link) => {
+      console.info(`\x1b[34m${link}\x1b[0m`);
+    });
+  } else {
+    console.info("Aucun swagger disponible.");
+  }
+
+  console.warn("⚠️ Swagger indisponibles:");
+  if (unavailableLinks.length > 0) {
+    unavailableLinks.forEach((link) => {
+      console.warn(`\x1b[31m${link}\x1b[0m`);
+    });
+  } else {
+    console.info("Tous les swagger sont disponibles.");
+  }
+
+  const description = [
+    "Documentation de l'API Gateway.",
+    "",
+    "### Documentation des microservices disponibles :",
+    ...availableLinks,
+    "",
+    "### Documentation des microservices indisponibles :",
+    ...unavailableLinks,
+  ].join("\n");
+
   const localDocConfig = new DocumentBuilder()
     .setTitle("API Gateway")
-    .setDescription("Documentation centralisée des microservices")
-    .setVersion("1.0")
+    .setDescription(description)
+    .setVersion("1.1")
     .addBearerAuth()
     .build();
 
   const localDocument = SwaggerModule.createDocument(app, localDocConfig);
-
-  // 🌐 2. Récupérer les Swagger distants
-  const remoteDocs = await Promise.all(
-    microservicesDocs.map(async ({ name, url }) => {
-      try {
-        const { data } = await axios.get(`${url}/docs`);
-        return { name, doc: data };
-      } catch (error) {
-        const err = error as Error;
-        console.warn(`⚠️\x1b[31m  Swagger indisponible pour ${name} (${url}): ${err.message}\x1b[0m`);
-        return null;
-      }
-    }),
-  );
-
-  // 🧩 3. Fusionner local + distants
-  const merged = {
-    ...localDocument,
-    paths: (() => {
-      const paths = { ...localDocument.paths };
-      for (const doc of remoteDocs) {
-        if (doc) {
-          Object.assign(paths, doc.doc.paths);
-        }
-      }
-      return paths;
-    })(),
-    components: {
-      ...(localDocument.components || {}),
-      schemas: (() => {
-        const schemas = { ...(localDocument.components?.schemas || {}) };
-        for (const doc of remoteDocs) {
-          if (doc?.doc.components?.schemas) {
-            Object.assign(schemas, doc.doc.components.schemas);
-          }
-        }
-        return schemas;
-      })(),
-    },
-  };
-
-  // 6. Log propre des microservices intégrés
-  const loaded = remoteDocs.filter((doc): doc is { name: string; doc: unknown } => !!doc);
-  if (loaded.length === 0) {
-    console.warn("⚠️ \x1b[31m Aucun microservice n'a pu être chargé.\x1b[0m");
-  } else {
-    console.info(`✅ Swagger fusionné depuis : ${loaded.map((d) => d.name).join(", ")}`);
-  }
-
-  // 🔧 4. Exposer sur /docs
-  SwaggerModule.setup("ui", app, merged);
-  SwaggerModule.setup("swagger", app, merged, {
+  SwaggerModule.setup("ui", app, localDocument);
+  SwaggerModule.setup("swagger", app, localDocument, {
     jsonDocumentUrl: "docs",
   });
 }
