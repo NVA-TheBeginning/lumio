@@ -54,11 +54,11 @@ describe("Promotions", () => {
         promotionId: promotionId,
       },
       select: {
-        studentId: true,
+        userId: true,
       },
     });
 
-    studentIdsToRemove = studentPromotions.map((sp) => sp.studentId);
+    studentIdsToRemove = studentPromotions.map((sp) => sp.userId);
 
     expect(studentIdsToRemove.length).toBeGreaterThan(0);
   });
@@ -112,7 +112,7 @@ describe("Promotions", () => {
     const studentPromotions = await prisma.studentPromotion.findMany({
       where: {
         promotionId: promotionId,
-        studentId: {
+        userId: {
           in: studentIdsToRemove,
         },
       },

@@ -66,7 +66,7 @@ export class PromotionsService {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              studentId: studentId,
+              userId: studentId,
             },
           });
         }),
@@ -135,7 +135,7 @@ export class PromotionsService {
     return this.prisma.studentPromotion.deleteMany({
       where: {
         promotionId,
-        studentId: {
+        userId: {
           in: studentIds,
         },
       },
