@@ -9,7 +9,7 @@ export default () => ({
   microservices: {
     auth: process.env.AUTH_SERVICE_URL || "http://localhost:3002",
     project: process.env.PROJECT_SERVICE_URL || "http://localhost:3003",
-    deliverable: process.env.DELIVERABLE_SERVICE_URL || "http://localhost:3004",
+    files: process.env.FILES_SERVICE_URL || "http://localhost:3004",
     report: process.env.REPORT_SERVICE_URL || "http://localhost:3005",
     evaluation: process.env.EVALUATION_SERVICE_URL || "http://localhost:3006",
     notification: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:3007",

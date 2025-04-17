@@ -1,4 +1,5 @@
 import fastifyHelmet from "@fastify/helmet";
+import fastifyMultipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -57,6 +58,7 @@ async function bootstrap() {
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   });
 
+  await app.register(fastifyMultipart);
   await app.listen(port, "0.0.0.0");
   const url = await app.getUrl();
 

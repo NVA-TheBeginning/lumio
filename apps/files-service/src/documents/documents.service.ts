@@ -43,7 +43,7 @@ export class DocumentService {
   async getDocumentsByOwner(ownerId: number) {
     return this.prisma.documents.findMany({
       where: {
-        ownerId,
+        ownerId: Number(ownerId),
       },
       orderBy: {
         uploadedAt: "desc",
@@ -54,25 +54,15 @@ export class DocumentService {
   async getDocumentById(id: number) {
     return this.prisma.documents.findUnique({
       where: {
-        id,
+        id: Number(id),
       },
     });
-  }
-
-  async downloadDocument(id: number) {
-    const document = await this.getDocumentById(id);
-
-    if (!document) {
-      throw new BadRequestException("Document not found");
-    }
-
-    return this.s3Service.getFile(document.fileKey);
   }
 
   async deleteDocument(id: number) {
     const document = await this.prisma.documents.findUnique({
       where: {
-        id,
+        id: Number(id),
       },
     });
 
@@ -84,7 +74,7 @@ export class DocumentService {
 
     await this.prisma.documents.delete({
       where: {
-        id,
+        id: Number(id),
       },
     });
 
