@@ -89,6 +89,20 @@ export class PromotionsController {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "GET");
   }
 
+  @Get(":id/students")
+  @HttpCode(HttpStatus.OK)
+  async getPromotionStudents(@Param("id", ParseIntPipe) id: number): Promise<Student[]> {
+    const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
+
+    const studentIds = promotion.studentPromotions.map((sp) => sp.studentId);
+
+    if (studentIds.length === 0) {
+      return [];
+    }
+
+    return await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
+  }
+
   @Patch(":id")
   @HttpCode(HttpStatus.OK)
   async update(@Param("id", ParseIntPipe) id: number, @Body() updatePromotionDto: UpdatePromotionDto) {
