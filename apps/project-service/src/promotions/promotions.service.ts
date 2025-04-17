@@ -1,4 +1,6 @@
+import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { firstValueFrom } from "rxjs";
 import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
@@ -9,64 +11,42 @@ interface StudentData {
   email: string;
 }
 
+interface CreatedStudent {
+  studentId: number;
+  email: string;
+  initialPassword: string;
+}
+
+interface CreateStudentsResponse {
+  count: number;
+  students: CreatedStudent[];
+}
+
 @Injectable()
 export class PromotionsService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private parseStudentsCsv(csv: string): StudentData[] {
-    if (!csv || !csv.trim()) {
-      return [];
-    }
-
-    const lines = csv
-      .trim()
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    if (lines.length === 0) {
-      return [];
-    }
-
-    const students: StudentData[] = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      const parts = line.split(",").map((part) => part.trim());
-
-      if (parts.length < 3) {
-        throw new BadRequestException(`Invalid CSV format at line ${i + 1}. Not enough columns.`);
-      }
-
-      const [name, firstname, email] = parts;
-
-      students.push({ name, firstname, email });
-    }
-
-    return students;
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService,
+  ) {}
 
   async create(createPromotionDto: CreatePromotionDto) {
-    const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
+    const { studentIds, ...promotionData } = createPromotionDto;
 
-    const { students_csv, ...promotionData } = createPromotionDto;
+    if (!studentIds || !Array.isArray(studentIds)) {
+      throw new BadRequestException("studentIds must be provided and must be an array");
+    }
 
     return this.prisma.$transaction(async (prisma) => {
       const promotion = await prisma.promotion.create({
         data: promotionData,
       });
 
-      let id = 0;
       const studentPromotions = await Promise.all(
-        studentsData.map(async () => {
-          const studentId = id;
-          id++;
-
+        studentIds.map(async (studentId: number) => {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              studentId: studentId,
+              studentId,
             },
           });
         }),
@@ -75,7 +55,7 @@ export class PromotionsService {
       return {
         ...promotion,
         studentPromotions,
-        studentsData,
+        students: studentIds,
       };
     });
   }
@@ -86,12 +66,26 @@ export class PromotionsService {
         where: {
           creatorId,
         },
+        include: {
+          studentPromotions: {
+            select: {
+              studentId: true,
+            },
+          },
+        },
         orderBy: {
           createdAt: "desc",
         },
       });
     }
     return this.prisma.promotion.findMany({
+      include: {
+        studentPromotions: {
+          select: {
+            studentId: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -101,6 +95,13 @@ export class PromotionsService {
   async findOne(id: number) {
     const item = await this.prisma.promotion.findUnique({
       where: { id },
+      include: {
+        studentPromotions: {
+          select: {
+            studentId: true,
+          },
+        },
+      },
     });
     if (!item) {
       throw new NotFoundException(`Promotion with id ${id} not found`);
