@@ -30,10 +30,10 @@ export class PromotionsService {
   ) {}
 
   async create(createPromotionDto: CreatePromotionDto) {
-    const { studentsIds, ...promotionData } = createPromotionDto;
+    const { studentIds, ...promotionData } = createPromotionDto;
 
-    if (!studentsIds || !Array.isArray(studentsIds)) {
-      throw new BadRequestException("studentsIds must be provided and must be an array");
+    if (!studentIds || !Array.isArray(studentIds)) {
+      throw new BadRequestException("studentIds must be provided and must be an array");
     }
 
     return this.prisma.$transaction(async (prisma) => {
@@ -42,7 +42,7 @@ export class PromotionsService {
       });
 
       const studentPromotions = await Promise.all(
-        studentsIds.map(async (studentId: number) => {
+        studentIds.map(async (studentId: number) => {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
@@ -55,7 +55,7 @@ export class PromotionsService {
       return {
         ...promotion,
         studentPromotions,
-        students: studentsIds,
+        students: studentIds,
       };
     });
   }

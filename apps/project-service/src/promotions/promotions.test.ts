@@ -30,7 +30,7 @@ describe("Promotions", () => {
     name: promotionName,
     description: "Test promotion description",
     creatorId: 1,
-    studentsIds: [1, 2],
+    studentIds: [1, 2],
   });
 
   test("/promotions (POST) - should create a new promotion", async () => {
@@ -56,7 +56,7 @@ describe("Promotions", () => {
       name: promotionName,
       description: "Test promotion description",
       creatorId: 1,
-      // Missing studentsIds
+      // Missing studentIds
     };
 
     const response = await app.inject({
@@ -67,7 +67,7 @@ describe("Promotions", () => {
 
     expect(response.statusCode).toEqual(400);
     const body = JSON.parse(response.body);
-    expect(body.message).toContain("studentsIds must be provided and must be an array");
+    expect(body.message).toContain("studentIds must be provided and must be an array");
   });
 
   test("/promotions (GET) - should return all promotions", async () => {

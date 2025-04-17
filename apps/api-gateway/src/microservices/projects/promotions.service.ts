@@ -35,7 +35,7 @@ export class PromotionsService {
 
     const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>(
       "auth",
-      "users/students",
+      "/users/students",
       "POST",
       studentsData,
     );
