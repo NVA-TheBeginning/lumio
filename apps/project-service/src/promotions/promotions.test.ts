@@ -110,6 +110,9 @@ describe("Promotions", () => {
   });
 
   afterAll(async () => {
+    await prisma.studentPromotion.deleteMany({
+      where: { promotionId },
+    });
     await app.close();
   });
 });
