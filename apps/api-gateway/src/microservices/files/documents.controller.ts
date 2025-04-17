@@ -59,7 +59,6 @@ export class DocumentController {
   @ApiBadRequestResponse({ description: "Invalid file or user ID provided" })
   async uploadDocument(@UploadedFile() file: File, @Body("name") name: string, @Body("userId") userId: number) {
     if (!file || !file.buffer) {
-      console.log("userId", userId);
       throw new BadRequestException("No file uploaded");
     }
 

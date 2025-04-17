@@ -1,7 +1,7 @@
 "use server";
 
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
-import { authFetchData, authPostData } from "@/lib/utils";
+import { authFetchData, authPostFormData } from "@/lib/utils";
 
 const API_URL = `${process.env.API_URL}/documents`;
 
@@ -10,8 +10,7 @@ export interface Document {
   name: string;
   mimeType: string;
   sizeInBytes: number;
-  createdAt: string;
-  updatedAt: string;
+  uploadedAt: string;
   userId: number;
 }
 
@@ -22,6 +21,7 @@ export async function getDocuments(): Promise<Document[]> {
   }
   const userId = user.id;
   const response = (await authFetchData(`${API_URL}?userId=${userId}`)) as Document[];
+  console.log("Documents response:", response);
   return response;
 }
 
@@ -42,18 +42,8 @@ export async function uploadDocument(file: File, name: string): Promise<Document
   formData.append("name", name);
   formData.append("userId", user.id.toString());
 
-  console.log("Upload request:", {
-    fileName: file.name,
-    fileSize: file.size,
-    documentName: name,
-    userId: user.id,
-  });
-
   try {
-    const response = await authPostData(`${API_URL}/upload`, {
-      method: "POST",
-      body: formData,
-    });
+    const response = await authPostFormData(`${API_URL}/upload`, formData);
 
     return response as Document;
   } catch (error) {

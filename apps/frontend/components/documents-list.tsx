@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { DownloadIcon, FileIcon, FileImageIcon, FileIcon as FilePdfIcon, FileTextIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
+import type { Document } from "@/app/dashboard/teachers/documents/actions";
 import { downloadDocument } from "@/app/dashboard/teachers/documents/actions";
 import {
   AlertDialog,
@@ -17,16 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBytes, formatDate } from "@/lib/utils";
-
-interface Document {
-  id: number;
-  name: string;
-  mimeType: string;
-  sizeInBytes: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: number;
-}
 
 interface DocumentListProps {
   documents: Document[];
@@ -113,7 +104,6 @@ export default function DocumentList({ documents, isLoading, onDocumentDeleted }
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
-              <TableHead>Type</TableHead>
               <TableHead>Taille</TableHead>
               <TableHead>Uploaded</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -126,9 +116,8 @@ export default function DocumentList({ documents, isLoading, onDocumentDeleted }
                   {getFileIcon(document.mimeType)}
                   {document.name}
                 </TableCell>
-                <TableCell>{document.mimeType}</TableCell>
                 <TableCell>{formatBytes(document.sizeInBytes)}</TableCell>
-                <TableCell>{document.createdAt}</TableCell>
+                <TableCell>{formatDate(document.uploadedAt)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button
@@ -154,7 +143,7 @@ export default function DocumentList({ documents, isLoading, onDocumentDeleted }
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
               Le document sera supprimé de manière permanente. Cette action ne peut pas être annulée.
             </AlertDialogDescription>

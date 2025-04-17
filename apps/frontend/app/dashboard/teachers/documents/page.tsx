@@ -6,17 +6,8 @@ import { useState } from "react";
 import DocumentList from "@/components/documents-list";
 import { Button } from "@/components/ui/button";
 import UploadModal from "@/components/upload-modal";
+import type { Document } from "./actions";
 import { deleteDocument, getDocuments } from "./actions";
-
-interface Document {
-  id: number;
-  name: string;
-  mimeType: string;
-  sizeInBytes: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: number;
-}
 
 export default function DocumentDrive() {
   const [isUploading, setIsUploading] = useState(false);
