@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import React from "react";
 import { NavUserProps } from "@/components/nav-user";
-import { StudentsSidebar } from "@/components/teachers/students-sidebar";
+import { StudentsSidebar } from "@/components/students/students-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,

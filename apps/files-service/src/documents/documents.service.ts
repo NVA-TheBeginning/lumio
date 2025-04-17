@@ -16,7 +16,7 @@ export class DocumentService {
     }
 
     try {
-      const fileKey = this.s3Service.generateFileKey(ownerId, file.filename || file.originalname);
+      const fileKey = this.s3Service.generateFileKey(file.filename || file.originalname);
       if (!file.buffer) {
         throw new BadRequestException("File buffer or data is required");
       }

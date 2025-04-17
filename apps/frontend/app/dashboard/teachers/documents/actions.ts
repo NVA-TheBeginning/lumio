@@ -21,7 +21,6 @@ export async function getDocuments(): Promise<Document[]> {
   }
   const userId = user.id;
   const response = (await authFetchData(`${API_URL}?userId=${userId}`)) as Document[];
-  console.log("Documents response:", response);
   return response;
 }
 
