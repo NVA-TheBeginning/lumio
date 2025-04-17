@@ -11,13 +11,13 @@ generator client {
   binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
-/// === ENUMS ===
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
   schemas  = ["project_schema"]
 }
+
+/// === ENUMS ===
 
 enum ProjectStatus {
   VISIBLE
@@ -27,8 +27,6 @@ enum ProjectStatus {
   @@schema("project_schema")
 }
 
-/// === MODELS ===
-
 enum GroupMode {
   RANDOM
   MANUAL
@@ -36,6 +34,8 @@ enum GroupMode {
 
   @@schema("project_schema")
 }
+
+/// === MODELS ===
 
 model Project {
   id          Int       @id @default(autoincrement())
