@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@prisma-files"
+  previewFeatures = ["multiSchema"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["files_schema"]
+}
+
+model Deliverables {
+  projectId             Int
+  promotionId           Int
+  name                  String
+  description           String?
+  deadline              DateTime
+  allowLateSubmission   Boolean
+  lateSubmissionPenalty Decimal
+  type                  DeliverableType
+  createdAt             DateTime        @default(now())
+
+  @@id([projectId, promotionId])
+  @@map("DELIVERABLES")
+  @@schema("files_schema")
+}
+
+enum DeliverableType {
+  FILE
+  GIT
+
+  @@schema("files_schema")
+}
+
+model DeliverablesRules {
+  id              Int      @id @default(autoincrement())
+  develiverableId Int
+  ruleType        RuleType
+  ruleDetails     String
+
+  @@map("DELIVERABLES_RULES")
+  @@schema("files_schema")
+}
+
+enum RuleType {
+  SIZE_LIMIT
+  FILE_PRESENCE
+  DIRECTORY_STRUCTURE
+  FILE_CONTENT
+
+  @@schema("files_schema")
+}
+
+model Submissions {
+  id             Int              @id @default(autoincrement())
+  deliverableId  Int
+  groupId        Int
+  submissionDate DateTime         @default(now())
+  status         SubmissionStatus
+  penalty        Decimal
+  fileUrl        String?
+  gitUrl         String?
+
+  @@map("SUBMISSIONS")
+  @@schema("files_schema")
+}
+
+enum SubmissionStatus {
+  PENDING
+  PASSED
+  FAILED
+  LATE
+
+  @@schema("files_schema")
+}
+
+model Documents {
+  id          Int      @id @default(autoincrement())
+  name        String
+  ownerId     Int
+  fileKey     String
+  sizeInBytes Int
+  mimeType    String
+  uploadedAt  DateTime @default(now())
+
+  @@map("DOCUMENTS")
+  @@schema("files_schema")
+}
+
+model ProjectDocuments {
+  id         Int @id @default(autoincrement())
+  projectId  Int
+  documentId Int
+
+  @@map("PROJECT_DOCUMENTS")
+  @@schema("files_schema")
+}

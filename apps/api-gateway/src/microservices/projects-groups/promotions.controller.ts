@@ -66,8 +66,8 @@ interface PromotionWithStudents {
 @Controller("promotions")
 export class PromotionsController {
   constructor(
-    private readonly proxy: MicroserviceProxyService,
-    private readonly promotionsService: PromotionsService,
+      private readonly proxy: MicroserviceProxyService,
+      private readonly promotionsService: PromotionsService,
   ) {}
 
   @Post()
@@ -152,8 +152,8 @@ export class PromotionsController {
       createdAt: promo.createdAt,
       updatedAt: promo.updatedAt,
       students: promo.studentPromotions
-        .map((sp) => studentMap.get(sp.studentId))
-        .filter((student): student is Student => student !== undefined),
+          .map((sp) => studentMap.get(sp.studentId))
+          .filter((student): student is Student => student !== undefined),
     }));
   }
 }
