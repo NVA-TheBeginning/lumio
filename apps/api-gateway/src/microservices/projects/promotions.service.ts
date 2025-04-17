@@ -1,6 +1,4 @@
-import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { Observable } from "rxjs";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { CreatePromotionDto } from "./promotions.controller.js";
 
@@ -20,6 +18,13 @@ interface CreateStudentsResponse {
   students: CreatedStudent[];
 }
 
+interface ProjectPromotionDto {
+  name: string;
+  description: string;
+  creatorId: number;
+  studentIds: number[];
+}
+
 @Injectable()
 export class PromotionsService {
   constructor(private readonly proxy: MicroserviceProxyService) {}
@@ -28,34 +33,22 @@ export class PromotionsService {
     const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
     const { students_csv, ...promotionData } = createPromotionDto;
 
-    const { Students } = await this.proxy.forwardRequest<CreateStudentsResponse>(
-      "auth-service",
+    const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>(
+      "auth",
       "users/students",
       "POST",
       studentsData,
     );
-    const createdStudents = response.data;
+    const studentIds = students.map((s) => s.studentId);
 
-    const promotion = await prisma.promotion.create({
-      data: promotionData,
-    });
-
-    const studentPromotions = await Promise.all(
-      createdStudents.students.map(async (student: CreatedStudent) => {
-        return prisma.studentPromotion.create({
-          data: {
-            promotionId: promotion.id,
-            studentId: student.studentId,
-          },
-        });
-      }),
-    );
-
-    return {
-      ...promotion,
-      studentPromotions,
-      students: createdStudents.students.map((student: CreatedStudent) => student.studentId),
+    const projectDto: ProjectPromotionDto = {
+      name: createPromotionDto.name,
+      description: createPromotionDto.description,
+      creatorId: createPromotionDto.creatorId,
+      studentIds,
     };
+
+    return this.proxy.forwardRequest("project", "/promotions", "POST", projectDto);
   }
 
   private parseStudentsCsv(csv: string): StudentData[] {
@@ -91,7 +84,4 @@ export class PromotionsService {
 
     return students;
   }
-}
-function firstValueFrom(arg0: Observable<AxiosResponse<CreateStudentsResponse, any>>) {
-  throw new Error("Function not implemented.");
 }

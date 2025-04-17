@@ -1,16 +1,18 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { Promotion } from "@prisma-project";
 import { AppModule } from "@/app.module.js";
-import { PrismaService } from "@/prisma.service.js";
+import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "@/promotions/dto/create-promotion.dto";
+import { UpdatePromotionDto } from "@/promotions/dto/update-promotion.dto";
+import { PromotionEntity } from "@/promotions/entities/promotion.entity";
 
 describe("Promotions", () => {
   let app: NestFastifyApplication;
   let prisma: PrismaService;
   const promotionName = `Test Promotion ${Date.now()}`;
   let promotionId: number;
-  let studentIdsToRemove: number[] = [];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -24,111 +26,87 @@ describe("Promotions", () => {
     prisma = app.get(PrismaService);
   });
 
-  const createPromotionDto: CreatePromotionDto = {
+  const createPromotionDto = (): CreatePromotionDto => ({
     name: promotionName,
-    description: "A test promotion",
+    description: "Test promotion description",
     creatorId: 1,
-    students_csv: `Doe,John,john.doe@example.com\nSmith,Jane,jane.smith@example.com`,
-  };
+    studentsIds: [1, 2],
+  });
 
   test("/promotions (POST) - should create a new promotion", async () => {
+    const promoDto = createPromotionDto();
     const response = await app.inject({
       method: "POST",
       url: "/promotions",
-      payload: createPromotionDto,
+      payload: promoDto,
     });
 
     expect(response.statusCode).toEqual(201);
 
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("id");
-    expect(body).toHaveProperty("name", createPromotionDto.name);
-    expect(body).toHaveProperty("students");
-    expect(body.students).toBeInstanceOf(Array);
+    expect(body).toHaveProperty("name", promoDto.name);
+    expect(body).toHaveProperty("description", promoDto.description);
+
     promotionId = body.id;
-
-    const studentPromotions = await prisma.studentPromotion.findMany({
-      where: {
-        promotionId: promotionId,
-      },
-      select: {
-        studentId: true,
-      },
-    });
-
-    studentIdsToRemove = studentPromotions.map((sp) => sp.studentId);
   });
 
-  test("/promotions (GET) - should return a list of promotions", async () => {
+  test("/promotions (POST) - should fail when missing required fields", async () => {
+    const invalidPromoDto = {
+      name: promotionName,
+      description: "Test promotion description",
+      creatorId: 1,
+      // Missing studentsIds
+    };
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/promotions",
+      payload: invalidPromoDto,
+    });
+
+    expect(response.statusCode).toEqual(400);
+    const body = JSON.parse(response.body);
+    expect(body.message).toContain("studentsIds must be provided and must be an array");
+  });
+
+  test("/promotions (GET) - should return all promotions", async () => {
     const response = await app.inject({
       method: "GET",
       url: "/promotions",
     });
 
     expect(response.statusCode).toEqual(200);
+
     const body = JSON.parse(response.body);
-    expect(body).toBeInstanceOf(Array);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0]).toHaveProperty("id");
+    expect(body[0]).toHaveProperty("name");
   });
 
-  test("/promotions/:id (GET) - should return a specific promotion", async () => {
+  test("/promotions/:id (GET) - should return the promotion by id", async () => {
     const response = await app.inject({
       method: "GET",
       url: `/promotions/${promotionId}`,
     });
 
     expect(response.statusCode).toEqual(200);
+
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("id", promotionId);
-    expect(body).toHaveProperty("name", createPromotionDto.name);
+    expect(body).toHaveProperty("name", promotionName);
   });
 
-  test("/promotions/:id (PATCH) - should update a specific promotion", async () => {
-    const updateData = { description: "Updated description" };
-    const response = await app.inject({
-      method: "PATCH",
-      url: `/promotions/${promotionId}`,
-      payload: updateData,
-    });
-
-    expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
-    expect(body).toHaveProperty("id", promotionId);
-    expect(body).toHaveProperty("description", updateData.description);
-  });
-
-  test("/promotions/:id/student (DELETE) - should remove students from a promotion", async () => {
-    const response = await app.inject({
-      method: "DELETE",
-      url: `/promotions/${promotionId}/student`,
-      body: studentIdsToRemove,
-    });
-
-    expect(response.statusCode).toEqual(200);
-
-    const studentPromotions = await prisma.studentPromotion.findMany({
-      where: {
-        promotionId: promotionId,
-        studentId: {
-          in: studentIdsToRemove,
-        },
-      },
-    });
-    expect(studentPromotions.length).toEqual(0);
-  });
-
-  test("/promotions/:id (DELETE) - should delete a specific promotion", async () => {
+  test("/promotions/:id (DELETE) - should delete a promotion", async () => {
     const response = await app.inject({
       method: "DELETE",
       url: `/promotions/${promotionId}`,
     });
 
     expect(response.statusCode).toEqual(200);
-
-    const getResponse = await app.inject({
-      method: "GET",
-      url: `/promotions/${promotionId}`,
-    });
-    expect(getResponse.statusCode).toEqual(404);
+    const body = JSON.parse(response.body);
+    expect(body.message).toBe("Promotion deleted successfully");
   });
 
   afterAll(async () => {

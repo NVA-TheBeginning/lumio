@@ -32,6 +32,10 @@ export class PromotionsService {
   async create(createPromotionDto: CreatePromotionDto) {
     const { studentsIds, ...promotionData } = createPromotionDto;
 
+    if (!studentsIds || !Array.isArray(studentsIds)) {
+      throw new BadRequestException("studentsIds must be provided and must be an array");
+    }
+
     return this.prisma.$transaction(async (prisma) => {
       const promotion = await prisma.promotion.create({
         data: promotionData,

@@ -1,12 +1,28 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import { ApiCreatedResponse, ApiProperty } from "@nestjs/swagger";
+import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { PromotionsService } from "./promotions.service.js";
 
-export interface CreatePromotionDto extends Record<string, unknown> {
-  name: string;
-  description: string;
-  students_csv: string;
-  creatorId: number;
+export class CreatePromotionDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  description!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  students_csv!: string;
+
+  @ApiProperty()
+  @IsNumber()
+  creatorId!: number;
 }
 
 interface UpdatePromotionDto extends Record<string, unknown> {
@@ -56,6 +72,7 @@ export class PromotionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({ type: CreatePromotionDto })
   async create(@Body() createPromotionDto: CreatePromotionDto) {
     return await this.promotionsService.create(createPromotionDto);
   }
