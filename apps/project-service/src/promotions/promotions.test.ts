@@ -1,12 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
-import { Promotion } from "@prisma-project";
 import { AppModule } from "@/app.module.js";
 import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "@/promotions/dto/create-promotion.dto";
-import { UpdatePromotionDto } from "@/promotions/dto/update-promotion.dto";
-import { PromotionEntity } from "@/promotions/entities/promotion.entity";
 
 describe("Promotions", () => {
   let app: NestFastifyApplication;
@@ -45,6 +42,7 @@ describe("Promotions", () => {
 
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("id");
+
     expect(body).toHaveProperty("name", promoDto.name);
     expect(body).toHaveProperty("description", promoDto.description);
 

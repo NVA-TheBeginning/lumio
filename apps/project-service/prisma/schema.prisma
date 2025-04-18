@@ -17,19 +17,7 @@ datasource db {
   schemas  = ["project_schema"]
 }
 
-model Project {
-  id               Int                @id @default(autoincrement())
-  name             String             @db.VarChar(255)
-  description      String             @db.Text
-  creatorId        Int
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  deletedAt        DateTime?          @db.Timestamptz(6)
-  ProjectPromotion ProjectPromotion[]
-
-  @@map("PROJECT")
-  @@schema("project_schema")
-}
+/// === ENUMS ===
 
 enum ProjectStatus {
   VISIBLE
@@ -39,69 +27,98 @@ enum ProjectStatus {
   @@schema("project_schema")
 }
 
-model ProjectStep {
-  id        Int      @id @default(autoincrement())
-  projectId Int
-  name      String   @db.VarChar(255)
-  content   String   @db.Text
-  dueDate   DateTime @db.Timestamptz(6)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum GroupMode {
+  RANDOM
+  MANUAL
+  FREE
 
-  @@map("PROJECT_STEP")
+  @@schema("project_schema")
+}
+
+/// === MODELS ===
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  description String    @db.Text
+  creatorId   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? @db.Timestamptz(6)
+
+  projectPromotions ProjectPromotion[] @relation("ProjectToPromotion")
+
+  @@index([creatorId])
+  @@map("PROJECTS")
   @@schema("project_schema")
 }
 
 model Promotion {
-  id                Int                @id @default(autoincrement())
-  name              String             @db.VarChar(255)
-  description       String             @db.Text
-  creatorId         Int
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  studentPromotions StudentPromotion[] @relation("PromotionToStudentPromotion")
-  projectPromotions ProjectPromotion[] @relation("PromotionToProjectPromotion")
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  description String   @db.Text
+  creatorId   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@map("PROMOTION")
-  @@schema("project_schema")
-}
+  projectPromotions ProjectPromotion[] @relation("PromotionToProject")
+  studentPromotions StudentPromotion[] @relation("PromotionToStudent")
 
-model ProjectPromotion {
-  status      ProjectStatus @default(DRAFT)
-  projectId   Int
-  promotionId Int
-  promotion   Promotion     @relation("PromotionToProjectPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
-  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@id([projectId, promotionId])
-  @@map("PROJECT_PROMOTION")
+  @@index([creatorId])
+  @@map("PROMOTIONS")
   @@schema("project_schema")
 }
 
 model StudentPromotion {
-  id          Int       @id @default(autoincrement())
-  studentId   Int
   promotionId Int
-  promotion   Promotion @relation("PromotionToStudentPromotion", fields: [promotionId], references: [id], onDelete: Cascade)
+  userId      Int
+  addedAt     DateTime @default(now())
 
-  @@map("STUDENT_PROMOTION")
+  promotion Promotion @relation("PromotionToStudent", fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, userId])
+  @@map("STUDENT_PROMOTIONS")
   @@schema("project_schema")
 }
 
-model Groups {
-  id        Int      @id @default(autoincrement())
-  projectId Int
-  name      String   @db.VarChar(255)
-  createdAt DateTime @default(now())
+model ProjectPromotion {
+  projectId   Int
+  promotionId Int
+  status      ProjectStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
 
+  project       Project        @relation("ProjectToPromotion", fields: [projectId], references: [id], onDelete: Cascade)
+  promotion     Promotion      @relation("PromotionToProject", fields: [promotionId], references: [id], onDelete: Cascade)
+  groupSettings GroupSettings?
+  groups        Group[]
+
+  @@id([projectId, promotionId])
+  @@map("PROJECT_PROMOTIONS")
+  @@schema("project_schema")
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  promotionId Int
+  name        String   @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projectPromotion ProjectPromotion @relation(fields: [projectId, promotionId], references: [projectId, promotionId])
+  members          GroupMember[]
+
+  @@index([promotionId])
   @@map("GROUPS")
   @@schema("project_schema")
 }
 
-model GroupMembers {
+model GroupMember {
   groupId   Int
   studentId Int
-  createdAt DateTime @default(now())
+  addedAt   DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([groupId, studentId])
   @@map("GROUP_MEMBERS")
@@ -115,16 +132,11 @@ model GroupSettings {
   maxMembers  Int
   mode        GroupMode @default(RANDOM)
   deadline    DateTime  @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt
+
+  projectPromotion ProjectPromotion @relation(fields: [projectId, promotionId], references: [projectId, promotionId], onDelete: Cascade)
 
   @@id([projectId, promotionId])
   @@map("GROUP_SETTINGS")
-  @@schema("project_schema")
-}
-
-enum GroupMode {
-  RANDOM
-  MANUAL
-  FREE
-
   @@schema("project_schema")
 }

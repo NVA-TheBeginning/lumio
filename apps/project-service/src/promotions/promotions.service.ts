@@ -37,11 +37,11 @@ export class PromotionsService {
       });
 
       const studentPromotions = await Promise.all(
-        studentIds.map(async (studentId: number) => {
+        studentIds.map(async (userId: number) => {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              studentId,
+              userId,
             },
           });
         }),
@@ -64,7 +64,7 @@ export class PromotionsService {
         include: {
           studentPromotions: {
             select: {
-              studentId: true,
+              userId: true,
             },
           },
         },
@@ -77,7 +77,7 @@ export class PromotionsService {
       include: {
         studentPromotions: {
           select: {
-            studentId: true,
+            userId: true,
           },
         },
       },
@@ -93,7 +93,7 @@ export class PromotionsService {
       include: {
         studentPromotions: {
           select: {
-            studentId: true,
+            userId: true,
           },
         },
       },
@@ -131,7 +131,7 @@ export class PromotionsService {
     return this.prisma.studentPromotion.deleteMany({
       where: {
         promotionId,
-        studentId: {
+        userId: {
           in: studentIds,
         },
       },
