@@ -64,9 +64,9 @@ describe("Auth", () => {
     expect(body).toHaveProperty("firstname");
     expect(body).toHaveProperty("lastname");
     expect(body).toHaveProperty("role");
-    expect(body).toHaveProperty("AuthTokens", expect.any(Object));
-    expect(body.AuthTokens).toHaveProperty("accessToken");
-    expect(body.AuthTokens).toHaveProperty("refreshToken");
+    expect(body).toHaveProperty("tokens", expect.any(Object));
+    expect(body.tokens).toHaveProperty("accessToken");
+    expect(body.tokens).toHaveProperty("refreshToken");
   });
 
   test("/auth/login (POST) - should return 401 for invalid credentials", async () => {
