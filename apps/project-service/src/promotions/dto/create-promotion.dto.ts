@@ -2,11 +2,11 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class CreatePromotionDto {
-  constructor(name: string, description: string, creatorId: number, students_csv: string) {
+  constructor(name: string, description: string, creatorId: number, studentIds: number[]) {
     this.name = name;
     this.description = description;
     this.creatorId = creatorId;
-    this.students_csv = students_csv;
+    this.studentIds = studentIds;
   }
 
   @ApiProperty()
@@ -26,5 +26,6 @@ export class CreatePromotionDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  students_csv: string;
+  @IsNumber({}, { each: true })
+  studentIds: number[];
 }

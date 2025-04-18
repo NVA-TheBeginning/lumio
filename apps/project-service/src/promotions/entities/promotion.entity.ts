@@ -23,4 +23,7 @@ export class PromotionEntity implements Promotion {
 
   @ApiProperty()
   updatedAt!: Date;
+
+  @ApiProperty({ type: [Number], description: "List of student IDs in the promotion" })
+  students?: number[];
 }

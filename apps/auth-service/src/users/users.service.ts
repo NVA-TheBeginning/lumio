@@ -2,6 +2,14 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 
+export interface UserResponse {
+  id: number;
+  email: string;
+  firstname: string | null;
+  lastname: string | null;
+  role: string;
+}
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -29,23 +37,19 @@ export class UsersService {
       }),
     );
 
-    return this.prisma.$transaction(async (tx) => {
-      const studentsData = studentsWithPasswords.map((item) => ({
-        lastname: item.student.lastname,
-        firstname: item.student.firstname,
-        email: item.student.email,
-        password: item.hashedPassword,
-        role: "STUDENT" as const,
-      }));
+    const studentsData = studentsWithPasswords.map((item) => ({
+      lastname: item.student.lastname,
+      firstname: item.student.firstname,
+      email: item.student.email,
+      password: item.hashedPassword,
+      role: "STUDENT" as const,
+    }));
 
+    return this.prisma.$transaction(async (tx) => {
       const insertResult = await tx.user.createMany({
         data: studentsData,
         skipDuplicates: true,
       });
-
-      if (insertResult.count === 0) {
-        return { count: 0, students: [] };
-      }
 
       const createdStudents = await tx.user.findMany({
         where: {
@@ -59,19 +63,22 @@ export class UsersService {
         },
       });
 
-      const students = studentsWithPasswords.map((user) => {
-        const createdStudent = createdStudents.find((s) => s.email === user.student.email);
-        return {
-          studentId: createdStudent?.id,
-          email: user.student.email,
-          initialPassword: user.randomPassword,
-        };
-      });
+      const students = studentsWithPasswords
+        .map((user) => {
+          const createdStudent = createdStudents.find((s) => s.email === user.student.email);
+          if (!createdStudent) return null;
 
-      // TODO: Send emails to students with their passwords
+          return {
+            studentId: createdStudent.id,
+            email: user.student.email,
+            initialPassword: user.randomPassword,
+          };
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== null);
+
       return {
         count: insertResult.count,
-        students: students,
+        students,
       };
     });
   }
@@ -137,6 +144,23 @@ export class UsersService {
 
     return this.prisma.user.delete({
       where: { id },
+    });
+  }
+
+  async findUsersByIds(ids: number[]): Promise<UserResponse[]> {
+    return this.prisma.user.findMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        role: true,
+      },
     });
   }
 }

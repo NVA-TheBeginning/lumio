@@ -1,138 +1,159 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
-import {
-  ApiBody,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiProperty,
-  ApiTags,
-} from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import { PromotionsService } from "./promotions.service.js";
 
 export class CreatePromotionDto {
-  @ApiProperty({ example: "Promo Spring 2025" })
-  @IsNotEmpty()
+  @ApiProperty()
   @IsString()
+  @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({ example: "Promotion pour le semestre de printemps" })
-  @IsNotEmpty()
+  @ApiProperty()
   @IsString()
+  @IsNotEmpty()
   description!: string;
 
-  @ApiProperty({
-    example: "Doe,John,john.doe@example.com\nSmith,Jane,jane.smith@example.com",
-  })
+  @ApiProperty()
+  @IsString()
   @IsNotEmpty()
   students_csv!: string;
 
-  @ApiProperty({ example: 1 })
-  @IsNotEmpty()
+  @ApiProperty()
   @IsNumber()
   creatorId!: number;
 }
 
-export class UpdatePromotionDto {
-  @ApiProperty({ required: false, example: "Nouvelle promo 2025" })
-  @IsString()
+interface UpdatePromotionDto extends Record<string, unknown> {
   name?: string;
-
-  @ApiProperty({
-    required: false,
-    example: "Mise à jour de la description",
-  })
-  @IsString()
   description?: string;
-
-  @ApiProperty({
-    required: false,
-    example: "Doe,John,john.doe@example.com\nSmith,Jane,jane.smith@example.com",
-  })
   students_csv?: string;
 }
 
-@ApiTags("promotions")
+interface StudentPromotion {
+  studentId: number;
+}
+
+interface Promotion {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  studentPromotions: StudentPromotion[];
+}
+
+interface Student {
+  id: number;
+  email: string;
+  firstname: string;
+  lastname: string;
+  role: string;
+}
+
+interface PromotionWithStudents {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  students: Student[];
+}
+
 @Controller("promotions")
 export class PromotionsController {
-  constructor(private readonly proxy: MicroserviceProxyService) {}
+  constructor(
+    private readonly proxy: MicroserviceProxyService,
+    private readonly promotionsService: PromotionsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Create a new promotion" })
-  @ApiBody({ type: CreatePromotionDto })
-  @ApiCreatedResponse({
-    description: "The promotion has been successfully created",
-    type: Object,
-  })
+  @ApiCreatedResponse({ type: CreatePromotionDto })
   async create(@Body() createPromotionDto: CreatePromotionDto) {
-    return this.proxy.forwardRequest("project", "/promotions", "POST", createPromotionDto);
+    return await this.promotionsService.create(createPromotionDto);
   }
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Retrieve all promotions" })
-  @ApiOkResponse({
-    description: "List of promotions",
-    type: [Object],
-  })
   async findAll() {
     return this.proxy.forwardRequest("project", "/promotions", "GET");
   }
 
   @Get(":id")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Retrieve a promotion by ID" })
-  @ApiParam({ name: "id", type: Number, description: "Promotion ID" })
-  @ApiOkResponse({
-    description: "The promotion details",
-    type: Object,
-  })
   async findOne(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "GET");
   }
 
+  @Get(":id/students")
+  @HttpCode(HttpStatus.OK)
+  async getPromotionStudents(@Param("id", ParseIntPipe) id: number): Promise<Student[]> {
+    const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
+
+    const studentIds = promotion.studentPromotions.map((sp) => sp.studentId);
+
+    if (studentIds.length === 0) {
+      return [];
+    }
+
+    return await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
+  }
+
   @Patch(":id")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Update a promotion by ID" })
-  @ApiParam({ name: "id", type: Number, description: "Promotion ID" })
-  @ApiBody({ type: UpdatePromotionDto })
-  @ApiOkResponse({
-    description: "The updated promotion",
-    type: Object,
-  })
   async update(@Param("id", ParseIntPipe) id: number, @Body() updatePromotionDto: UpdatePromotionDto) {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "PATCH", updatePromotionDto);
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Delete a promotion by ID" })
-  @ApiParam({ name: "id", type: Number, description: "Promotion ID" })
-  @ApiOkResponse({ description: "Promotion successfully deleted" })
   async remove(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "DELETE");
   }
 
   @Delete(":id/student")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: "Remove one or more students from a promotion (by student IDs)",
-  })
-  @ApiParam({ name: "id", type: Number, description: "Promotion ID" })
-  @ApiBody({
-    schema: {
-      type: "array",
-      items: { type: "number" },
-      example: [1, 2, 3],
-      description: "Array of student IDs to remove",
-    },
-  })
-  @ApiOkResponse({
-    description: "Students successfully removed from the promotion",
-  })
   async removeStudentsFromPromotion(@Param("id", ParseIntPipe) promoId: number, @Body() studentIds: number[]) {
     return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "DELETE", { studentIds });
+  }
+
+  @Get("with-students")
+  @HttpCode(HttpStatus.OK)
+  async findAllWithStudents(): Promise<PromotionWithStudents[]> {
+    const promotions = await this.proxy.forwardRequest<Promotion[]>("project", "/promotions", "GET");
+
+    const studentIds = [...new Set(promotions.flatMap((promo) => promo.studentPromotions.map((sp) => sp.studentId)))];
+
+    if (studentIds.length === 0) {
+      return promotions.map((promo) => ({
+        id: promo.id,
+        name: promo.name,
+        description: promo.description,
+        creatorId: promo.creatorId,
+        createdAt: promo.createdAt,
+        updatedAt: promo.updatedAt,
+        students: [],
+      }));
+    }
+
+    const students = await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
+
+    const studentMap = new Map(students.map((student) => [student.id, student]));
+
+    return promotions.map((promo) => ({
+      id: promo.id,
+      name: promo.name,
+      description: promo.description,
+      creatorId: promo.creatorId,
+      createdAt: promo.createdAt,
+      updatedAt: promo.updatedAt,
+      students: promo.studentPromotions
+        .map((sp) => studentMap.get(sp.studentId))
+        .filter((student): student is Student => student !== undefined),
+    }));
   }
 }

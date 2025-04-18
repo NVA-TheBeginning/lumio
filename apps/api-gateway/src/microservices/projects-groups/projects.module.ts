@@ -7,10 +7,11 @@ import { JwtRefreshStrategy } from "@/jwt/jwt-refresh.strategy.js";
 import { MicroserviceProxyModule } from "@/proxies/microservice-proxy.module.js";
 import { ProjectsController } from "./projects.controller.js";
 import { PromotionsController } from "./promotions.controller.js";
+import { PromotionsService } from "./promotions.service.js";
 
 @Module({
   imports: [ConfigModule, PassportModule, JwtModule.register({}), MicroserviceProxyModule],
   controllers: [PromotionsController, ProjectsController],
-  providers: [JwtStrategy, JwtRefreshStrategy],
+  providers: [JwtStrategy, JwtRefreshStrategy, PromotionsService],
 })
 export class ProjectsModule {}

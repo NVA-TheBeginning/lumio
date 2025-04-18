@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
+import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 import { UsersService } from "./users.service";
 
@@ -48,5 +48,14 @@ export class UsersController {
   @ApiParam({ name: "id", type: Number, description: "ID of the user" })
   async deleteUser(@Param("id", ParseIntPipe) id: number) {
     return await this.usersService.deleteUser(id);
+  }
+
+  @Get()
+  @ApiOperation({ summary: "Find multiple users by their IDs" })
+  @ApiOkResponse({ description: "Users found successfully" })
+  @ApiQuery({ name: "ids", type: [Number], description: "Array of user IDs to find", required: true })
+  async findUsers(@Query("ids") ids: string) {
+    const userIds = ids.split(",").map((id) => parseInt(id, 10));
+    return await this.usersService.findUsersByIds(userIds);
   }
 }
