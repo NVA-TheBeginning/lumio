@@ -22,9 +22,7 @@ interface CreateStudentsResponse {
 
 @Injectable()
 export class PromotionsService {
-
   constructor(private readonly prisma: PrismaService) {}
-
 
   async create(createPromotionDto: CreatePromotionDto) {
     const { studentIds, ...promotionData } = createPromotionDto;
