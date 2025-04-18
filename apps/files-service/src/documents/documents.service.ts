@@ -1,4 +1,4 @@
-import { type File } from "@nest-lab/fastify-multer";
+import type { File } from "@nest-lab/fastify-multer";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { S3Service } from "@/s3.service";

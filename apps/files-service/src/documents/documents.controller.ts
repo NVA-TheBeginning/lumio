@@ -9,8 +9,6 @@ import {
   ParseIntPipe,
   Post,
   Query,
-  Res,
-  Response,
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
