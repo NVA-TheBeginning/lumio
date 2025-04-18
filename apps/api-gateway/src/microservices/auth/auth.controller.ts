@@ -8,21 +8,25 @@ import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.j
 export class LoginDto {
   @ApiProperty({ example: "user@example.com" })
   @IsEmail()
+  @IsNotEmpty()
   email!: string;
 
   @ApiProperty({ example: "password123" })
   @IsString()
+  @IsNotEmpty()
   @MinLength(6)
   password!: string;
 }
 
 export class SignUpDto {
   @ApiProperty({ example: "user@example.com" })
+  @IsNotEmpty()
   @IsEmail()
   email!: string;
 
   @ApiProperty({ example: "password123" })
   @IsString()
+  @IsNotEmpty()
   @MinLength(6)
   password!: string;
 }

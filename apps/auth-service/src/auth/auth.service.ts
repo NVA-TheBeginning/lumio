@@ -2,18 +2,18 @@ import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/co
 import { createSigner, createVerifier } from "fast-jwt";
 import { PrismaService } from "@/prisma.service.js";
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
+export class AuthTokens {
+  accessToken!: string;
+  refreshToken!: string;
 }
 
-export interface AuthLogin {
-  id: number;
-  email: string;
-  firstname: string;
-  lastname: string;
-  role: string;
-  AuthTokens: AuthTokens;
+export class AuthLogin {
+  id!: number;
+  email!: string;
+  firstname!: string;
+  lastname!: string;
+  role!: string;
+  AuthTokens!: AuthTokens;
 }
 
 @Injectable()
