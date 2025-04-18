@@ -1,6 +1,8 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
 import { FastifyReply, FastifyRequest } from "fastify";
 
+const REGEX = /^\[\w+\]\s/;
+
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
@@ -20,7 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error(`[${request.method}] ${request.url} → ${status}: ${JSON.stringify(rawMessage)}`);
 
-    const message = typeof rawMessage === "string" ? rawMessage.replace(/^\[\w+\]\s/, "") : rawMessage;
+    const message = typeof rawMessage === "string" ? rawMessage.replace(REGEX, "") : rawMessage;
 
     response.status(status).send({
       statusCode: status,

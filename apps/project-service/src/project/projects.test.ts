@@ -11,7 +11,7 @@ describe("Projects", () => {
   let prisma: PrismaService;
   const projectName = `Test Project ${Date.now()}`;
   let projectId: number;
-  let promotionIds: number[] = [];
+  const promotionIds: number[] = [];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

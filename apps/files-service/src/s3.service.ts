@@ -1,6 +1,6 @@
+import * as path from "node:path";
 import { Injectable, Optional } from "@nestjs/common";
 import { randomUUIDv7, S3Client } from "bun";
-import * as path from "path";
 
 interface S3Config {
   region: string;
