@@ -1,6 +1,4 @@
-import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { firstValueFrom } from "rxjs";
 import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
@@ -26,7 +24,6 @@ interface CreateStudentsResponse {
 export class PromotionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly httpService: HttpService,
   ) {}
 
   async create(createPromotionDto: CreatePromotionDto) {
@@ -42,11 +39,11 @@ export class PromotionsService {
       });
 
       const studentPromotions = await Promise.all(
-        studentIds.map(async (studentId: number) => {
+        studentIds.map(async (userId: number) => {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              studentId,
+              userId,
             },
           });
         }),
@@ -69,7 +66,7 @@ export class PromotionsService {
         include: {
           studentPromotions: {
             select: {
-              studentId: true,
+              userId: true,
             },
           },
         },
@@ -82,7 +79,7 @@ export class PromotionsService {
       include: {
         studentPromotions: {
           select: {
-            studentId: true,
+            userId: true,
           },
         },
       },
@@ -98,7 +95,7 @@ export class PromotionsService {
       include: {
         studentPromotions: {
           select: {
-            studentId: true,
+            userId: true,
           },
         },
       },
