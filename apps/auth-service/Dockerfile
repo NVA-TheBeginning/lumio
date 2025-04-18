@@ -33,7 +33,7 @@ ENV BUN_ENV=production
 ENV PORT=3002
 EXPOSE $PORT
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://127.0.0.1:$PORT/health || exit 1
 
 CMD ["bun", "apps/auth-service/dist/main.js"]

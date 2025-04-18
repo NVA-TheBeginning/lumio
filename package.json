@@ -10,7 +10,7 @@
     "dev": "turbo run dev",
     "start": "turbo run start",
     "format": "biome format --fix",
-    "lint": "biome check --fix",
+    "lint": "biome check --fix --unsafe",
     "prisma": "turbo run prisma"
   },
   "devDependencies": {

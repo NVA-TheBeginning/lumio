@@ -18,7 +18,40 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 30
+          }
+        }
+      },
+      "correctness": {
+        "noUnusedImports": "error"
+      },
+      "performance": "error",
+      "style": {
+        "useLiteralEnumMembers": "error",
+        "noCommaOperator": "error",
+        "useNodejsImportProtocol": "error",
+        "useAsConstAssertion": "error",
+        "useNumericLiterals": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useConst": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "noInferrableTypes": "error",
+        "useExponentiationOperator": "error",
+        "useTemplate": "error",
+        "noParameterAssign": "error",
+        "noNonNullAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "noArguments": "error",
+        "useExportType": "error",
+        "useShorthandFunctionType": "error"
+      }
     }
   },
   "javascript": {
