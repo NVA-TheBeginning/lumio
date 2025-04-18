@@ -1,6 +1,4 @@
-import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { firstValueFrom } from "rxjs";
 import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
@@ -24,10 +22,7 @@ interface CreateStudentsResponse {
 
 @Injectable()
 export class PromotionsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly httpService: HttpService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createPromotionDto: CreatePromotionDto) {
     const { studentIds, ...promotionData } = createPromotionDto;
