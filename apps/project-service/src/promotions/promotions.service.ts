@@ -46,7 +46,7 @@ export class PromotionsService {
           return prisma.studentPromotion.create({
             data: {
               promotionId: promotion.id,
-              userId: studentId,
+              studentId,
             },
           });
         }),
