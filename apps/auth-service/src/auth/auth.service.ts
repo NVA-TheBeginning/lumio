@@ -1,19 +1,34 @@
 import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { createSigner, createVerifier } from "fast-jwt";
 import { PrismaService } from "@/prisma.service.js";
+import {ApiProperty} from "@nestjs/swagger";
 
 export class AuthTokens {
+  @ApiProperty({ example: "eyJhbGciOi..." })
   accessToken!: string;
+
+  @ApiProperty({ example: "eyJhbGciOi..." })
   refreshToken!: string;
 }
 
 export class AuthLogin {
+  @ApiProperty({ example: 42 })
   id!: number;
+
+  @ApiProperty({ example: "user@example.com" })
   email!: string;
+
+  @ApiProperty({ example: "Marie" })
   firstname!: string;
+
+  @ApiProperty({ example: "Dupont" })
   lastname!: string;
+
+  @ApiProperty({ example: "STUDENT", enum: ["STUDENT","TEACHER","ADMIN"] })
   role!: string;
-  AuthTokens!: AuthTokens;
+
+  @ApiProperty({ type: () => AuthTokens })
+  tokens!: AuthTokens;
 }
 
 @Injectable()
@@ -71,7 +86,7 @@ export class AuthService {
       firstname: user.firstname || "",
       lastname: user.lastname || "",
       role: user.role,
-      AuthTokens: tokens,
+      tokens: tokens,
     };
   }
 
