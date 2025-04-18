@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthTokens } from "@/auth/auth.service";
 import { OAuthDto } from "./dto/dto.js";
 import { OAuthService } from "./oauth.service.js";
@@ -12,7 +12,6 @@ export class OAuthController {
   @Post("google")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Authenticate using Google OAuth2 token" })
-  @ApiBody({ type: OAuthDto })
   google(@Body() dto: OAuthDto): Promise<AuthTokens> {
     return this.oauthService.handleGoogle(dto.token);
   }
@@ -20,7 +19,6 @@ export class OAuthController {
   @Post("microsoft")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Authenticate using Microsoft OAuth2 token" })
-  @ApiBody({ type: OAuthDto })
   microsoft(@Body() dto: OAuthDto): Promise<AuthTokens> {
     return this.oauthService.handleMicrosoft(dto.token);
   }

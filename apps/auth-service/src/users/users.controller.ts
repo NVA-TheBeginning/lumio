@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 import { UsersService } from "./users.service";
 
@@ -11,7 +11,6 @@ export class UsersController {
   @Post("/students")
   @ApiOperation({ summary: "Create multiple students" })
   @ApiCreatedResponse({ description: "Students created successfully" })
-  @ApiBody({ type: [CreateStudentDto], description: "Array of students to create" })
   async createStudents(@Body() students: CreateStudentDto[]) {
     return this.usersService.createStudents(students);
   }
@@ -28,7 +27,6 @@ export class UsersController {
   @ApiOperation({ summary: "Update a user by ID" })
   @ApiOkResponse({ description: "User updated successfully" })
   @ApiParam({ name: "id", type: Number, description: "ID of the user" })
-  @ApiBody({ type: UpdateStudentDto, description: "Fields to update" })
   async updateUser(@Param("id", ParseIntPipe) id: number, @Body() updateStudentDto: UpdateStudentDto) {
     return await this.usersService.updateUser(id, updateStudentDto);
   }
@@ -37,7 +35,6 @@ export class UsersController {
   @ApiOperation({ summary: "Update a user's password" })
   @ApiOkResponse({ description: "Password updated successfully" })
   @ApiParam({ name: "id", type: Number, description: "ID of the user" })
-  @ApiBody({ type: UpdatePasswordDto, description: "New password" })
   async updatePassword(@Param("id", ParseIntPipe) id: number, @Body() updatePasswordDto: UpdatePasswordDto) {
     return await this.usersService.updatePassword(id, updatePasswordDto);
   }

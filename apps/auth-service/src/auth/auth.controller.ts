@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AuthLogin, AuthService, AuthTokens } from "./auth.service.js";
 import { RefreshTokenDto, SignInDto, SignUpDto } from "./dto/dto.js";
 
@@ -11,7 +11,6 @@ export class AuthController {
   @Post("signup")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Register a new user" })
-  @ApiBody({ type: SignUpDto })
   @ApiResponse({
     status: 201,
     description: "User successfully registered",
@@ -25,7 +24,6 @@ export class AuthController {
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Login with email and password" })
-  @ApiBody({ type: SignInDto })
   @ApiResponse({
     status: 200,
     description: "User successfully logged in",
@@ -38,7 +36,6 @@ export class AuthController {
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Generate new access/refresh token from validated user" })
-  @ApiBody({ type: RefreshTokenDto })
   refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<AuthTokens> {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
