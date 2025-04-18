@@ -9,8 +9,6 @@ import {
   ParseIntPipe,
   Post,
   Query,
-  Res,
-  Response,
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
@@ -25,12 +23,12 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { DocumentService } from "@/documents/documents.service";
+import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 @ApiTags("Documents")
 @Controller("documents")
 export class DocumentController {
-  constructor(private documentService: DocumentService) {}
+  constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post("upload")
   @ApiOperation({ summary: "Upload a new document" })
@@ -60,11 +58,18 @@ export class DocumentController {
   @UseInterceptors(FileInterceptor("file", { preservePath: true }))
   @ApiBadRequestResponse({ description: "Invalid file or user ID provided" })
   async uploadDocument(@UploadedFile() file: File, @Body("name") name: string, @Body("userId") userId: number) {
-    if (!file) {
+    if (!file || !file.buffer) {
       throw new BadRequestException("No file uploaded");
     }
 
-    return this.documentService.uploadDocument(file, name, userId);
+    const formData = new FormData();
+    formData.append("file", new Blob([file.buffer]), file.originalname);
+    formData.append("name", name);
+    formData.append("userId", userId.toString());
+
+    return this.proxy.forwardRequest("files", "/documents/upload", "POST", formData, {
+      "Content-Type": "multipart/form-data",
+    });
   }
 
   @Get()
@@ -79,7 +84,7 @@ export class DocumentController {
     description: "List of documents",
   })
   async getDocuments(@Query("userId") userId: number) {
-    return this.documentService.getDocumentsByOwner(userId);
+    return this.proxy.forwardRequest("files", `/documents?userId=${userId}`, "GET");
   }
 
   @Get(":id")
@@ -92,13 +97,7 @@ export class DocumentController {
   @ApiBadRequestResponse({ description: "Invalid document ID" })
   @ApiNotFoundResponse({ description: "Document not found" })
   async getDocument(@Param("id", ParseIntPipe) id: number) {
-    const document = await this.documentService.getDocumentById(id);
-
-    if (!document) {
-      throw new BadRequestException("Document not found");
-    }
-
-    return document;
+    return this.proxy.forwardRequest("files", `/documents/${id}`, "GET");
   }
 
   @Delete(":id")
@@ -108,6 +107,6 @@ export class DocumentController {
   @ApiBadRequestResponse({ description: "Invalid document ID" })
   @ApiNotFoundResponse({ description: "Document not found" })
   async deleteDocument(@Param("id", ParseIntPipe) id: number) {
-    return this.documentService.deleteDocument(id);
+    return this.proxy.forwardRequest("files", `/documents/${id}`, "DELETE");
   }
 }

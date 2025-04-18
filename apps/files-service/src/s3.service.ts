@@ -63,11 +63,10 @@ export class S3Service {
 
   /**
    * Generate a unique file key for S3
-   * @param ownerId The owner's ID
    * @param originalFilename The original filename
    * @returns A unique S3 key
    */
-  generateFileKey(ownerId: number, originalFilename: string): string {
-    return `documents/${ownerId}/${randomUUIDv7()}-${path.basename(originalFilename)}`;
+  generateFileKey(originalFilename: string): string {
+    return `${randomUUIDv7()}-${path.basename(originalFilename)}`;
   }
 }

@@ -56,6 +56,11 @@ const navData = {
       icon: <Calendar className="size-4" />,
     },
     {
+      title: "Documents",
+      url: "/dashboard/teachers/documents",
+      icon: <BookOpen className="size-4" />,
+    },
+    {
       title: "Paramètres",
       url: "/dashboard/teachers/settings",
       icon: <Settings className="size-4" />,
