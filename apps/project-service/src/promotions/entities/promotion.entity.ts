@@ -6,22 +6,22 @@ export class PromotionEntity implements Promotion {
     Object.assign(this, partial);
   }
 
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   id!: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   name!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   description!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   creatorId!: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   createdAt!: Date;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   updatedAt!: Date;
 
   @ApiProperty({ type: [Number], description: "List of student IDs in the promotion" })
