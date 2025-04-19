@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
-import { ApiBody, ApiCreatedResponse, ApiOperation, ApiProperty, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiCreatedResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   ArrayMinSize,
@@ -21,67 +21,45 @@ export enum GroupMode {
 }
 
 export class GroupSettingDto {
-  @ApiProperty({ example: 5, description: "ID de la promotion associée" })
   @IsNotEmpty()
   @IsNumber()
   promotionId!: number;
 
-  @ApiProperty({ example: 2, description: "Nombre minimum d'étudiants par groupe" })
   @IsNotEmpty()
   @IsNumber()
   minMembers!: number;
 
-  @ApiProperty({ example: 4, description: "Nombre maximum d'étudiants par groupe" })
   @IsNotEmpty()
   @IsNumber()
   maxMembers!: number;
 
-  @ApiProperty({ enum: GroupMode, description: "Mode de constitution des groupes" })
   @IsNotEmpty()
   @IsEnum(GroupMode)
   mode!: GroupMode;
 
-  @ApiProperty({
-    example: "2025-05-15T23:59:59Z",
-    description: "Date limite de constitution des groupes (ISO 8601)",
-  })
   @IsNotEmpty()
   @IsDateString()
   deadline!: string;
 }
 
 export class CreateProjectDto {
-  @ApiProperty({ example: "Mon super projet", description: "Nom du projet", type: "string" })
   @IsNotEmpty()
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: "Description détaillée du projet", description: "Description du projet", type: "string" })
   @IsNotEmpty()
   @IsString()
   description!: string;
 
-  @ApiProperty({ example: 1, description: "ID de l'enseignant créateur", type: "number" })
   @IsNotEmpty()
   @IsNumber()
   creatorId!: number;
 
-  @ApiProperty({
-    example: [1, 2],
-    description: "Liste des IDs de promotions associées",
-    type: "number",
-    isArray: true,
-  })
   @IsArray()
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   promotionIds!: number[];
 
-  @ApiProperty({
-    type: GroupSettingDto,
-    isArray: true,
-    description: "Paramètres de constitution des groupes pour chaque promotion",
-  })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

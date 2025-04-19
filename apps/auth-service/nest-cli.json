@@ -11,6 +11,7 @@
   "compilerOptions": {
     "manualRestart": true,
     "tsConfigPath": "./tsconfig.build.json",
+    "plugins": ["@nestjs/swagger"],
     "deleteOutDir": true,
     "builder": "tsc"
   }

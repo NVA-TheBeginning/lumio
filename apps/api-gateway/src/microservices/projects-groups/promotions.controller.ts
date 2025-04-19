@@ -1,26 +1,22 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
-import { ApiCreatedResponse, ApiProperty } from "@nestjs/swagger";
+import { ApiCreatedResponse } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { PromotionsService } from "./promotions.service.js";
 
 export class CreatePromotionDto {
-  @ApiProperty({ type: "string" })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({ type: "string" })
   @IsString()
   @IsNotEmpty()
   description!: string;
 
-  @ApiProperty({ type: "string" })
   @IsString()
   @IsNotEmpty()
   students_csv!: string;
 
-  @ApiProperty({ type: "number" })
   @IsNumber()
   creatorId!: number;
 }
