@@ -24,7 +24,7 @@ export class CreateGroupDto {
   @ApiProperty({
     example: 5,
     description: "Nombre de groupes à créer pour ce project–promotion",
-    type: "string",
+    type: "number",
   })
   @IsNotEmpty()
   @IsNumber()
