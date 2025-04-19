@@ -24,7 +24,7 @@ export class CreateGroupDto {
   @ApiProperty({
     example: 5,
     description: "Nombre de groupes à créer pour ce project–promotion",
-    type: "string",
+    type: "number",
   })
   @IsNotEmpty()
   @IsNumber()
@@ -76,12 +76,12 @@ export class AddMembersDto {
  * DTO pour récupérer ou mettre à jour les réglages d'un project–promotion.
  */
 export class GroupSettingsDto {
-  @ApiProperty({ example: 2, description: "Nombre minimum d'étudiants par groupe", type: "string" })
+  @ApiProperty({ example: 2, description: "Nombre minimum d'étudiants par groupe", type: "number" })
   @IsNotEmpty()
   @IsNumber()
   minMembers!: number;
 
-  @ApiProperty({ example: 5, description: "Nombre maximum d'étudiants par groupe", type: "string" })
+  @ApiProperty({ example: 5, description: "Nombre maximum d'étudiants par groupe", type: "number" })
   @IsNotEmpty()
   @IsNumber()
   maxMembers!: number;
