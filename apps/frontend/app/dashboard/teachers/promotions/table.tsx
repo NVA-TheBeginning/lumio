@@ -74,7 +74,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   });
 
   const handleDelete = async () => {
-    if (!memberToDelete || !promotionId) return;
+    if (!(memberToDelete && promotionId)) return;
 
     removeMutation.mutate(
       {

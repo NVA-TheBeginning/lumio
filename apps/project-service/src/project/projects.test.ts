@@ -29,12 +29,14 @@ describe("Projects", () => {
       { name: `Test Promotion 2 ${Date.now()}`, description: "Second test promotion", creatorId: 1 },
     ];
 
-    for (const promotionData of promotionsData) {
-      const promotion = await prisma.promotion.create({
-        data: promotionData,
-      });
-      promotionIds.push(promotion.id);
-    }
+    await Promise.all(
+      promotionsData.map(async (promotionData) => {
+        const promotion = await prisma.promotion.create({
+          data: promotionData,
+        });
+        promotionIds.push(promotion.id);
+      }),
+    );
   });
 
   const createGroupSettings = (promotionIds: number[]): GroupSettingDto[] => {
@@ -179,13 +181,21 @@ describe("Projects", () => {
       });
     }
 
-    for (const promotionId of promotionIds) {
-      await prisma.promotion.delete({
-        where: {
-          id: promotionId,
+    await prisma.promotion.deleteMany({
+      where: {
+        id: {
+          in: promotionIds,
         },
-      });
-    }
+      },
+    });
+
+    await prisma.promotion.deleteMany({
+      where: {
+        id: {
+          in: promotionIds,
+        },
+      },
+    });
 
     await app.close();
   });

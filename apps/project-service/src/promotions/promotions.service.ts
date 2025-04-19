@@ -3,23 +3,6 @@ import { PrismaService } from "@/prisma.service";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
 
-interface StudentData {
-  name: string;
-  firstname: string;
-  email: string;
-}
-
-interface CreatedStudent {
-  studentId: number;
-  email: string;
-  initialPassword: string;
-}
-
-interface CreateStudentsResponse {
-  count: number;
-  students: CreatedStudent[];
-}
-
 @Injectable()
 export class PromotionsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -27,7 +10,7 @@ export class PromotionsService {
   async create(createPromotionDto: CreatePromotionDto) {
     const { studentIds, ...promotionData } = createPromotionDto;
 
-    if (!studentIds || !Array.isArray(studentIds)) {
+    if (!(studentIds && Array.isArray(studentIds))) {
       throw new BadRequestException("studentIds must be provided and must be an array");
     }
 

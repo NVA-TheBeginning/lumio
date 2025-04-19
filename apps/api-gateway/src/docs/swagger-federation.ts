@@ -7,15 +7,17 @@ export async function setupFederatedSwagger(app: INestApplication): Promise<void
   const availableLinks: string[] = [];
   const unavailableLinks: string[] = [];
 
-  for (const { name, url } of microservicesDocs) {
-    try {
-      await axios.get(`${url}/docs`);
-      availableLinks.push(`- **${name}** : [Voir Swagger](${url}/ui/)`);
-    } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error("Unknown error");
-      unavailableLinks.push(`- **${name}** (${url}): ${err.message}`);
-    }
-  }
+  await Promise.all(
+    microservicesDocs.map(async ({ name, url }) => {
+      try {
+        await axios.get(`${url}/docs`);
+        availableLinks.push(`- **${name}** : [Voir Swagger](${url}/ui/)`);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error("Unknown error");
+        unavailableLinks.push(`- **${name}** (${url}): ${err.message}`);
+      }
+    }),
+  );
 
   console.info("✅ Swagger disponibles:");
   if (availableLinks.length > 0) {

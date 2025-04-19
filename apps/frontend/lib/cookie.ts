@@ -68,7 +68,7 @@ export async function getUserFromCookie(): Promise<User | null> {
     }
 
     const userData = JSON.parse(userCookie.value) as User;
-    if (!userData.id || !userData.email) {
+    if (!(userData.id && userData.email)) {
       return null;
     }
 

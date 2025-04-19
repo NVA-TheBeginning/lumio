@@ -58,7 +58,7 @@ export class DocumentController {
   @UseInterceptors(FileInterceptor("file", { preservePath: true }))
   @ApiBadRequestResponse({ description: "Invalid file or user ID provided" })
   async uploadDocument(@UploadedFile() file: File, @Body("name") name: string, @Body("userId") userId: number) {
-    if (!file || !file.buffer) {
+    if (!file?.buffer) {
       throw new BadRequestException("No file uploaded");
     }
 

@@ -30,4 +30,4 @@ async function bootstrap() {
   Logger.log(`Swagger UI available at: ${url}/ui`);
   Logger.log("This is the Auth Service");
 }
-bootstrap();
+void bootstrap();
