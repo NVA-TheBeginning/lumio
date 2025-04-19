@@ -25,10 +25,15 @@
           "options": {
             "maxAllowedComplexity": 30
           }
-        }
+        },
+        "noUselessStringConcat": "error",
+        "useDateNow": "error",
+        "useSimplifiedLogicExpression": "error"
       },
       "correctness": {
-        "noUnusedImports": "error"
+        "noUnusedImports": "error",
+        "useArrayLiterals": "error",
+        "useExhaustiveDependencies": "error"
       },
       "performance": "error",
       "style": {
@@ -51,6 +56,12 @@
         "noArguments": "error",
         "useExportType": "error",
         "useShorthandFunctionType": "error"
+      },
+      "nursery": {
+        "noAwaitInLoop": "error",
+        "noDuplicateElseIf": "error",
+        "noFloatingPromises": "error",
+        "noSubstr": "error"
       }
     }
   },

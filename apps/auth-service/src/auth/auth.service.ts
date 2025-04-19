@@ -60,7 +60,7 @@ export class AuthService {
       where: { email },
     });
 
-    if (!user || !(await Bun.password.verify(password, user.password))) {
+    if (!(user && (await Bun.password.verify(password, user.password)))) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -77,7 +77,7 @@ export class AuthService {
 
   async refreshToken(token: string): Promise<AuthTokens> {
     const { sub: id, email } = this.refreshVerifier(token);
-    if (!id || !email) {
+    if (!(id && email)) {
       throw new UnauthorizedException("Invalid refresh token");
     }
     return this.generateTokens(id, email);

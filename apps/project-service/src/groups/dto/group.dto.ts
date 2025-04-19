@@ -63,7 +63,8 @@ export class AddMembersDto {
   @ApiProperty({
     example: [12, 15, 18],
     description: "Liste des IDs d'étudiants à ajouter au groupe",
-    type: "array",
+    type: "number",
+    isArray: true,
   })
   @IsArray()
   @ArrayNotEmpty()

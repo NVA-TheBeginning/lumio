@@ -29,4 +29,4 @@ async function bootstrap() {
   Logger.log(`API Docs available at: ${url}/docs`);
   Logger.log(`Swagger UI available at: ${url}/ui`);
 }
-bootstrap();
+void bootstrap();

@@ -11,7 +11,7 @@ export default function PromotionsPage() {
   const { data: promotions, isLoading, isError } = usePromotions();
 
   useEffect(() => {
-    if (!isLoading && !isError && promotions && promotions[0] && selectedPromotionId === null) {
+    if (!(isLoading || isError) && promotions && promotions[0] && selectedPromotionId === null) {
       setSelectedPromotionId(promotions[0].id);
     }
   }, [promotions, isLoading, isError, selectedPromotionId]);

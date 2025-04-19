@@ -5,22 +5,22 @@ import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.j
 import { PromotionsService } from "./promotions.service.js";
 
 export class CreatePromotionDto {
-  @ApiProperty()
+  @ApiProperty({ type: "string" })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: "string" })
   @IsString()
   @IsNotEmpty()
   description!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: "string" })
   @IsString()
   @IsNotEmpty()
   students_csv!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: "number" })
   @IsNumber()
   creatorId!: number;
 }

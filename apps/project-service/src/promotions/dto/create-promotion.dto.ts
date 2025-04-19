@@ -9,22 +9,22 @@ export class CreatePromotionDto {
     this.studentIds = studentIds;
   }
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: "string" })
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: "string" })
   @IsNotEmpty()
   @IsString()
   description: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: "number" })
   @IsNotEmpty()
   @IsNumber()
   creatorId: number;
 
-  @ApiProperty({ type: [Number] })
+  @ApiProperty({ type: "number", isArray: true })
   @IsNotEmpty()
   @IsNumber({}, { each: true })
   studentIds: number[];

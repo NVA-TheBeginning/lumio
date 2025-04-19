@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
 
   const accessToken = cookiesStore.get("accessToken")?.value;
   const refreshToken = cookiesStore.get("refreshToken")?.value;
-  if (!accessToken && !refreshToken) {
+  if (!(accessToken || refreshToken)) {
     cookiesStore.delete("user");
     return NextResponse.redirect(new URL("/login", request.url));
   }

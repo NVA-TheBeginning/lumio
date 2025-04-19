@@ -52,7 +52,7 @@ export class PromotionsService {
   }
 
   private parseStudentsCsv(csv: string): StudentData[] {
-    if (!csv || !csv.trim()) {
+    if (!csv?.trim()) {
       return [];
     }
 
