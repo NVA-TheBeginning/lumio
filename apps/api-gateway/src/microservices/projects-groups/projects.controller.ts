@@ -51,17 +51,17 @@ export class GroupSettingDto {
 }
 
 export class CreateProjectDto {
-  @ApiProperty({ example: "Mon super projet", description: "Nom du projet" })
+  @ApiProperty({ example: "Mon super projet", description: "Nom du projet", type: "string" })
   @IsNotEmpty()
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: "Description détaillée du projet", description: "Description du projet" })
+  @ApiProperty({ example: "Description détaillée du projet", description: "Description du projet", type: "string" })
   @IsNotEmpty()
   @IsString()
   description!: string;
 
-  @ApiProperty({ example: 1, description: "ID de l'enseignant créateur" })
+  @ApiProperty({ example: 1, description: "ID de l'enseignant créateur", type: "number" })
   @IsNotEmpty()
   @IsNumber()
   creatorId!: number;
@@ -69,6 +69,8 @@ export class CreateProjectDto {
   @ApiProperty({
     example: [1, 2],
     description: "Liste des IDs de promotions associées",
+    type: "number",
+    isArray: true,
   })
   @IsArray()
   @ArrayNotEmpty()
@@ -76,7 +78,8 @@ export class CreateProjectDto {
   promotionIds!: number[];
 
   @ApiProperty({
-    type: [GroupSettingDto],
+    type: GroupSettingDto,
+    isArray: true,
     description: "Paramètres de constitution des groupes pour chaque promotion",
   })
   @IsArray()
