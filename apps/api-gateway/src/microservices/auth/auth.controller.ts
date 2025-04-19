@@ -1,34 +1,29 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { ApiBody, ApiOperation, ApiProperty, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
 import type { FastifyRequest } from "fastify";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export class LoginDto {
-  @ApiProperty({ example: "user@example.com", type: "string" })
   @IsEmail()
   email!: string;
 
-  @ApiProperty({ example: "password123", type: "string" })
   @IsString()
   @MinLength(6)
   password!: string;
 }
 
 export class SignUpDto {
-  @ApiProperty({ example: "user@example.com", type: "string" })
   @IsEmail()
   email!: string;
 
-  @ApiProperty({ example: "password123", type: "string" })
   @IsString()
   @MinLength(6)
   password!: string;
 }
 
 export class OAuthDto {
-  @ApiProperty({ example: "ya29.a0AfH6SM...", type: "string" })
   @IsString()
   @IsNotEmpty()
   token!: string;

@@ -1,4 +1,3 @@
-import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class CreatePromotionDto {
@@ -9,22 +8,18 @@ export class CreatePromotionDto {
     this.studentIds = studentIds;
   }
 
-  @ApiProperty({ type: "string" })
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty({ type: "string" })
   @IsNotEmpty()
   @IsString()
   description: string;
 
-  @ApiProperty({ type: "number" })
   @IsNotEmpty()
   @IsNumber()
   creatorId: number;
 
-  @ApiProperty({ type: "number", isArray: true })
   @IsNotEmpty()
   @IsNumber({}, { each: true })
   studentIds: number[];
