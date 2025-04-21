@@ -29,17 +29,6 @@ const navData = {
       icon: <LayoutDashboard className="size-4" />,
     },
     {
-      title: "Projets",
-      url: "/dashboard/teachers/projects",
-      icon: <BookOpen className="size-4" />,
-      items: [
-        {
-          title: "Créer un projet",
-          url: "/dashboard/teachers/projects/new",
-        },
-      ],
-    },
-    {
       title: "Promotions",
       url: "/dashboard/teachers/promotions",
       icon: <Users className="size-4" />,
@@ -47,6 +36,17 @@ const navData = {
         {
           title: "Créer une promotion",
           url: "/dashboard/teachers/promotions/new",
+        },
+      ],
+    },
+    {
+      title: "Projets",
+      url: "/dashboard/teachers/projects",
+      icon: <BookOpen className="size-4" />,
+      items: [
+        {
+          title: "Créer un projet",
+          url: "/dashboard/teachers/projects/new",
         },
       ],
     },

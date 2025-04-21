@@ -11,19 +11,21 @@ import { cn } from "@/lib/utils";
 
 const registerSchema = z
   .object({
-    email: z.string().email({ message: "Invalid email address" }),
-    password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
+    email: z.string().email({ message: "Address email invalide" }),
+    password: z.string().min(6, {
+      message: "Le mot de passe doit contenir au moins 6 caractères",
+    }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
-    message: "Passwords do not match",
+    message: "Les mots de passe ne correspondent pas",
   });
 
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps extends React.ComponentPropsWithoutRef<"div"> {
-  onRegisterSubmit: (values: RegisterFormValues) => Promise<void>;
+  onRegisterSubmit: (values: Omit<RegisterFormValues, "confirmPassword">) => Promise<void>;
 }
 
 export function RegisterForm({ className, onRegisterSubmit, ...props }: RegisterFormProps) {
@@ -37,7 +39,8 @@ export function RegisterForm({ className, onRegisterSubmit, ...props }: Register
   });
 
   const handleSubmit = async (values: RegisterFormValues) => {
-    await onRegisterSubmit(values);
+    const { confirmPassword, ...submitValues } = values;
+    await onRegisterSubmit(submitValues);
   };
 
   return (
