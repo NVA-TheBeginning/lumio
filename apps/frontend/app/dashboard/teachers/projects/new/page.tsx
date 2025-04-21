@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon, Trash } from "lucide-react";
+import { CalendarIcon, FilePlus, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -117,14 +117,28 @@ export default function CreateProjectForm() {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="text-center py-12 border rounded-lg bg-red-50 text-red-800">
-          <h3 className="text-lg font-medium">Erreur lors du chargement des promotions</h3>
-          <p className="mt-2">Une erreur s'est produite lors du chargement des promotions. Veuillez réessayer.</p>
+          <h2 className="text-2xl font-bold">Erreur</h2>
+          <p className="mt-4">Impossible de charger les promotions. Veuillez réessayer plus tard.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (promotions.length === 0 && !isLoadingPromotions) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center py-12 border rounded-lg bg-yellow-50 text-yellow-800">
+          <h2 className="text-2xl font-bold">Aucune promotion disponible</h2>
+          <p className="mt-4">Vous devez créer une promotion avant de pouvoir créer un projet.</p>
           <Button
+            variant="outline"
             className="mt-4"
-            size="sm"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["promotions"] })}
+            onClick={() => {
+              router.push("/dashboard/teachers/promotions/new");
+            }}
           >
-            Réessayer
+            <FilePlus className="mr-2 h-4 w-4" />
+            Créer une promotion
           </Button>
         </div>
       </div>
@@ -187,7 +201,18 @@ export default function CreateProjectForm() {
                   <FormItem>
                     <FormLabel>Promotions concernées</FormLabel>
                     {isLoadingPromotions ? (
-                      <Skeleton className="h-10 w-full" />
+                      <FormControl>
+                        <Select disabled>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner des promotions" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="loading" disabled>
+                              <Skeleton className="h-10 w-full" />
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
                     ) : (
                       <FormControl>
                         <Select

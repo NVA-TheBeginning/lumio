@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-const PasswordInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+const PasswordInput = React.forwardRef<HTMLInputElement, React.ComponentProps<typeof Input>>(
   ({ className, ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false);
     const disabled = props.value === "" || props.value === undefined || props.disabled;
