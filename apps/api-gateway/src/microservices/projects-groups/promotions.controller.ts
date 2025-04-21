@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { ApiCreatedResponse } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
@@ -75,8 +87,8 @@ export class PromotionsController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll() {
-    return this.proxy.forwardRequest("project", "/promotions", "GET");
+  async findAll(@Query("creatorId") creatorId?: string) {
+    return this.proxy.forwardRequest("project", "/promotions", "GET", undefined, { creatorId });
   }
 
   @Get(":id")
