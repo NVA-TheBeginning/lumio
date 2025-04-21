@@ -25,7 +25,7 @@ const registerSchema = z
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps extends React.ComponentPropsWithoutRef<"div"> {
-  onRegisterSubmit: (values: Omit<RegisterFormValues, "confirmPassword">) => Promise<void>;
+  onRegisterSubmit: (values: RegisterFormValues) => Promise<void>;
 }
 
 export function RegisterForm({ className, onRegisterSubmit, ...props }: RegisterFormProps) {
@@ -39,8 +39,7 @@ export function RegisterForm({ className, onRegisterSubmit, ...props }: Register
   });
 
   const handleSubmit = async (values: RegisterFormValues) => {
-    const { confirmPassword, ...submitValues } = values;
-    await onRegisterSubmit(submitValues);
+    await onRegisterSubmit(values);
   };
 
   return (
