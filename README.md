@@ -1,9 +1,9 @@
 # 🎓 Lumio — Gestionnaire de projets étudiants
 
+[![CI](https://github.com/NVA-TheBeginning/lumio/actions/workflows/ci.yaml/badge.svg)](https://github.com/NVA-TheBeginning/lumio/actions/workflows/ci.yaml)
+
 **Lumio** est une application web et mobile permettant aux enseignants de gérer des projets étudiants et leurs étapes clés : création de promotions, constitution de groupes, dépôt de livrables, soutenances, évaluations et détection de plagiat.
 
-## 🤖 CI
-[![CI](https://github.com/NVA-TheBeginning/lumio/actions/workflows/ci.yaml/badge.svg)](https://github.com/NVA-TheBeginning/lumio/actions/workflows/ci.yaml)
 ## 🏗️ Architecture
 
 L’application repose sur une **architecture microservices** avec une API Gateway en NestJS + Fastify.
