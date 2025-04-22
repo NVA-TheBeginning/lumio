@@ -101,13 +101,16 @@ export class PromotionsController {
   @HttpCode(HttpStatus.OK)
   async getPromotionStudents(@Param("id", ParseIntPipe) id: number): Promise<Student[]> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
+    console.log("Promotion:" + promotion)
 
     const studentIds = promotion.studentPromotions.map((sp) => sp.userId);
 
+    console.log("StudentsIds 2:" + studentIds)
     if (studentIds.length === 0) {
       return [];
     }
 
+    console.log("StudentsIds 3:" + studentIds)
     return await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
   }
 
