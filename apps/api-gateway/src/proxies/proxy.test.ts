@@ -79,7 +79,7 @@ describe("MicroserviceProxyService", () => {
       spyOn(configService, "get").mockReturnValue(undefined);
       const microservice = "auth";
 
-      await expect(
+      expect(
         service.forwardRequest<LoginResponse>(microservice, "/auth/login", "POST", { email: "test@example.com" }),
       ).rejects.toThrow(`URL du microservice ${microservice} non configurée.`);
     });
