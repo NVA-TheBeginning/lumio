@@ -1,4 +1,4 @@
-import { type File, FileInterceptor } from "@nest-lab/fastify-multer";
+import { File, FileInterceptor } from "@nest-lab/fastify-multer";
 import {
   BadRequestException,
   Body,
