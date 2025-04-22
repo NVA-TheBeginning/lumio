@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ 'main' ]
+    paths:
+    - 'apps/plagiarism-service/**'
+    - '.github/workflows/ci-rust.yaml'
+  pull_request:
+    paths:
+    - 'apps/plagiarism-service/**'
+    - '.github/workflows/ci-rust.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
+  CI: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: apps/plagiarism-service
+
+jobs:
+  lint-rust:
+    name: Code quality Rust
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+
+    - name: Install Rust toolchain
+      uses: moonrepo/setup-rust@v1
+      with:
+        components: clippy,rustfmt
+        cache-base: main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check formatting
+      run: cargo fmt --all --check
+
+    - name: Run Clippy
+      run: cargo clippy --all-targets --all-features
