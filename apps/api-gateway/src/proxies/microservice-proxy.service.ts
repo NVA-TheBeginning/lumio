@@ -52,19 +52,19 @@ export class MicroserviceProxyService {
 
       switch (method) {
         case "GET":
-          response = await firstValueFrom(this.httpService.get<TResponse>(url, { params }));
+          response = await firstValueFrom(this.httpService.get<TResponse>(url, params ? { params } : {}));
           break;
         case "POST":
-          response = await firstValueFrom(this.httpService.post<TResponse>(url, data, { params }));
+          response = await firstValueFrom(this.httpService.post<TResponse>(url, data, params ? { params } : {}));
           break;
         case "PUT":
-          response = await firstValueFrom(this.httpService.put<TResponse>(url, data, { params }));
+          response = await firstValueFrom(this.httpService.put<TResponse>(url, data, params ? { params } : {}));
           break;
         case "DELETE":
-          response = await firstValueFrom(this.httpService.delete<TResponse>(url, { params }));
+          response = await firstValueFrom(this.httpService.delete<TResponse>(url, params ? { params } : {}));
           break;
         case "PATCH":
-          response = await firstValueFrom(this.httpService.patch<TResponse>(url, data, { params }));
+          response = await firstValueFrom(this.httpService.patch<TResponse>(url, data, params ? { params } : {}));
           break;
       }
 
