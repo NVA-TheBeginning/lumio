@@ -31,7 +31,6 @@ export class PromotionsService {
 
   async create(createPromotionDto: CreatePromotionDto) {
     const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
-    console.log(`----------- Students data : ${studentsData}`);
     const { students_csv, ...promotionData } = createPromotionDto;
 
     const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>(

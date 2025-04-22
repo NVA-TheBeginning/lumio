@@ -154,8 +154,6 @@ export class UsersService {
 
     const skipAmount = (currentPage - 1) * itemsPerPage;
 
-    console.log(`Fetching page ${currentPage} with ${itemsPerPage} users per page.`); // A little peek into what's happening
-
     return this.prisma.user.findMany({
       where: {
         id: {

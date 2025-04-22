@@ -105,16 +105,13 @@ export class PromotionsController {
     @Query("rowsPerPage") rowsPerPage?: string,
   ): Promise<Student[]> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
-    console.log(`Promotion:${promotion}`);
 
     const studentIds = promotion.studentPromotions.map((sp) => sp.userId);
 
-    console.log(`StudentsIds 2:${studentIds}`);
     if (studentIds.length === 0) {
       return [];
     }
 
-    console.log(`StudentsIds 3:${studentIds}`);
     const students = await this.proxy.forwardRequest<Student[]>(
       "auth",
       `/users?ids=${studentIds.join(",")}`,
@@ -122,7 +119,6 @@ export class PromotionsController {
       undefined,
       { page, rowsPerPage },
     );
-    console.log(`students:${students}`);
     return students;
   }
 
