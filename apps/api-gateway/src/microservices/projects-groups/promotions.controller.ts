@@ -28,7 +28,7 @@ interface UpdatePromotionDto extends Record<string, unknown> {
 }
 
 interface StudentPromotion {
-  studentId: number;
+  userId: number;
 }
 
 interface Promotion {
@@ -90,7 +90,7 @@ export class PromotionsController {
   async getPromotionStudents(@Param("id", ParseIntPipe) id: number): Promise<Student[]> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
 
-    const studentIds = promotion.studentPromotions.map((sp) => sp.studentId);
+    const studentIds = promotion.studentPromotions.map((sp) => sp.userId);
 
     if (studentIds.length === 0) {
       return [];
@@ -122,7 +122,7 @@ export class PromotionsController {
   async findAllWithStudents(): Promise<PromotionWithStudents[]> {
     const promotions = await this.proxy.forwardRequest<Promotion[]>("project", "/promotions", "GET");
 
-    const studentIds = [...new Set(promotions.flatMap((promo) => promo.studentPromotions.map((sp) => sp.studentId)))];
+    const studentIds = [...new Set(promotions.flatMap((promo) => promo.studentPromotions.map((sp) => sp.userId)))];
 
     if (studentIds.length === 0) {
       return promotions.map((promo) => ({
@@ -148,7 +148,7 @@ export class PromotionsController {
       createdAt: promo.createdAt,
       updatedAt: promo.updatedAt,
       students: promo.studentPromotions
-        .map((sp) => studentMap.get(sp.studentId))
+        .map((sp) => studentMap.get(sp.userId))
         .filter((student): student is Student => student !== undefined),
     }));
   }

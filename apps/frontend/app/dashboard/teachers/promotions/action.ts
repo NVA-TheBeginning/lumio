@@ -58,11 +58,9 @@ export async function getPromotion(id: number): Promise<Promotion | null> {
 
 export async function getPromotionMembers(promotionId: number): Promise<Member[]> {
   try {
-    const response = await fetch(`${API_URL}/promotions/${promotionId}/members`);
+    const response = await fetch(`${API_URL}/promotions/${promotionId}/students`);
     if (!response.ok) {
       return [];
-      // TODO: Uncomment the line below to throw an error when the backend will be ready
-      //throw new Error(`Failed to fetch members for promotion ${promotionId}`);
     }
     return await response.json();
   } catch (error) {
