@@ -17,10 +17,15 @@ export function usePromotions() {
   });
 }
 
-export function usePromotionMembers(promotionId: number | null) {
+export function usePromotionMembers(promotionId: number | null, page: number, size: number) {
   return useQuery({
-    queryKey: ["promotions", promotionId, "members"],
-    queryFn: () => (promotionId ? getPromotionMembers(promotionId) : Promise.resolve([])),
+    queryKey: ["promotions", promotionId, "members", page, size],
+    queryFn: async () => {
+      if (!promotionId) {
+        return { data: [], size: 0, page: 1, pageSize: size, totalPages: 1 };
+      }
+      return getPromotionMembers(promotionId, page, size);
+    },
     enabled: !!promotionId,
   });
 }

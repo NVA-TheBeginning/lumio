@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getUserFromCookie } from "@/lib/cookie";
-import { authPostData } from "@/lib/utils";
+import { authFetchData, authPostData } from "@/lib/utils";
 
 export interface Promotion {
   id: number;
@@ -21,6 +21,14 @@ export interface Member {
   promotionId: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MembersResponse {
+  data: Member[];
+  size: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
@@ -56,17 +64,11 @@ export async function getPromotion(id: number): Promise<Promotion | null> {
   }
 }
 
-export async function getPromotionMembers(promotionId: number): Promise<Member[]> {
-  try {
-    const response = await fetch(`${API_URL}/promotions/${promotionId}/students`);
-    if (!response.ok) {
-      return [];
-    }
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching members for promotion ${promotionId}:`, error);
-    return [];
-  }
+export async function getPromotionMembers(promotionId: number, page = 1, size = 50): Promise<MembersResponse> {
+  const response = await authFetchData<MembersResponse>(
+    `${API_URL}/promotions/${promotionId}/students?page=${page}&size=${size}`,
+  );
+  return response;
 }
 
 export async function createPromotion(data: {

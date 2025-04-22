@@ -178,6 +178,7 @@ export class UsersService {
         firstname: true,
         lastname: true,
         role: true,
+        createdAt: true,
       },
       skip: skipAmount,
       take: itemsPerPage,
