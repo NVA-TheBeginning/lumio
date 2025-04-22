@@ -3,7 +3,7 @@ import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.j
 import { CreatePromotionDto } from "./promotions.controller.js";
 
 interface StudentData {
-  name: string;
+  lastname: string;
   firstname: string;
   email: string;
 }
@@ -77,9 +77,9 @@ export class PromotionsService {
         throw new BadRequestException(`Invalid CSV format at line ${i + 1}. Not enough columns.`);
       }
 
-      const [name, firstname, email] = parts;
+      const [lastname, firstname, email] = parts;
 
-      students.push({ name, firstname, email });
+      students.push({ lastname, firstname, email });
     }
 
     return students;
