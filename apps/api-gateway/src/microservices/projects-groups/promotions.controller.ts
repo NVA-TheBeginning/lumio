@@ -102,7 +102,7 @@ export class PromotionsController {
   async getPromotionStudents(
     @Param("id", ParseIntPipe) id: number,
     @Query("page") page?: string,
-    @Query("rowsPerPage") rowsPerPage?: string,
+    @Query("size") size?: string,
   ): Promise<Student[]> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
 
@@ -117,7 +117,7 @@ export class PromotionsController {
       `/users?ids=${studentIds.join(",")}`,
       "GET",
       undefined,
-      { page, rowsPerPage },
+      { page, size },
     );
     return students;
   }

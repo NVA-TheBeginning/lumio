@@ -10,6 +10,16 @@ export interface UserResponse {
   role: string;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  size: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+const DEFAULT_ROWS_PER_PAGE = 10;
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -147,14 +157,16 @@ export class UsersService {
     });
   }
 
-  async findUsersByIds(ids: number[], page: string | undefined, rowsPerPage = "10"): Promise<UserResponse[]> {
-    const defaultRowsPerPage = 10; // @TODO: define a const for rowsPerPage
+  async findUsersByIds(
+    ids: number[],
+    page: string | undefined,
+    size: string = String(DEFAULT_ROWS_PER_PAGE),
+  ): Promise<PaginatedResponse<UserResponse>> {
     const currentPage = page ? parseInt(page, 10) || 1 : 1;
-    const itemsPerPage = parseInt(rowsPerPage, 10) || defaultRowsPerPage;
-
+    const itemsPerPage = parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE;
     const skipAmount = (currentPage - 1) * itemsPerPage;
 
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: {
         id: {
           in: ids,
@@ -170,5 +182,23 @@ export class UsersService {
       skip: skipAmount,
       take: itemsPerPage,
     });
+
+    const totalRows = await this.prisma.user.count({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+
+    const totalPages = Math.ceil(totalRows / itemsPerPage);
+
+    return {
+      data: users,
+      size: totalRows,
+      page: currentPage,
+      pageSize: itemsPerPage,
+      totalPages: totalPages,
+    };
   }
 }
