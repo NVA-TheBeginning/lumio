@@ -10,6 +10,7 @@ import { AuthController } from "./auth.controller.js";
 @Module({
   imports: [ConfigModule, PassportModule, JwtModule.register({}), MicroserviceProxyModule],
   controllers: [AuthController],
-  providers: [JwtStrategy, JwtRefreshStrategy],
+  providers: [JwtStrategy, JwtRefreshStrategy, MicroserviceProxyModule],
+  exports: [MicroserviceProxyModule],
 })
 export class AuthModule {}
