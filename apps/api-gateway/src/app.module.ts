@@ -6,6 +6,7 @@ import { ProjectsModule } from "@/microservices/projects-groups/projects.module.
 import configuration from "./config/configuration.js";
 import { UsersModule } from "./microservices/auth/users/users.module.js";
 import { FilesModule } from "./microservices/files/files.module.js";
+import {MicroserviceProxyModule} from "@/proxies/microservice-proxy.module.js";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { FilesModule } from "./microservices/files/files.module.js";
     UsersModule,
     ProjectsModule,
     FilesModule,
+    MicroserviceProxyModule,
   ],
   controllers: [HealthController],
 })
