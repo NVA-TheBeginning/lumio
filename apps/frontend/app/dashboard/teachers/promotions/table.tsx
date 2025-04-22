@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MoreHorizontal, Trash2, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { MoreHorizontal, Search, Trash2, UserPlus } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -36,6 +36,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
@@ -43,8 +53,8 @@ import { Member } from "./action";
 import { useAddMember, usePromotionMembers, useRemoveMember } from "./hooks";
 
 const memberFormSchema = z.object({
-  firstname: z.string().min(1, "Le prénom est requis"),
   lastname: z.string().min(1, "Le nom est requis"),
+  firstname: z.string().min(1, "Le prénom est requis"),
   email: z.string().email("L'adresse email n'est pas valide"),
 });
 
@@ -58,8 +68,42 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: members, isLoading, isError, error } = usePromotionMembers(promotionId);
+  const {
+    data: membersResponse,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = usePromotionMembers(promotionId, currentPage, pageSize);
+
+  const allMembers = membersResponse?.data || [];
+
+  const filteredMembers = useMemo(() => {
+    if (!searchQuery.trim()) return allMembers;
+
+    const lowerCaseQuery = searchQuery.toLowerCase().trim();
+    return allMembers.filter(
+      (member) =>
+        member.firstname.toLowerCase().includes(lowerCaseQuery) ||
+        member.lastname?.toLowerCase().includes(lowerCaseQuery) ||
+        member.email.toLowerCase().includes(lowerCaseQuery),
+    );
+  }, [allMembers, searchQuery]);
+
+  const paginatedMembers = useMemo(() => {
+    const startIndex = 0;
+    const endIndex = filteredMembers.length;
+    return filteredMembers.slice(startIndex, endIndex);
+  }, [filteredMembers]);
+
+  const totalFilteredCount = filteredMembers.length;
+  const totalCount = membersResponse?.size || 0;
+  const totalPages = membersResponse?.totalPages || 1;
+  const hasMore = currentPage < totalPages;
 
   const removeMutation = useRemoveMember();
   const addMutation = useAddMember();
@@ -72,6 +116,17 @@ export function MembersTable({ promotionId }: MembersTableProps) {
       email: "",
     },
   });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(Number(value));
+    setCurrentPage(1);
+  };
 
   const handleDelete = async () => {
     if (!(memberToDelete && promotionId)) return;
@@ -88,7 +143,6 @@ export function MembersTable({ promotionId }: MembersTableProps) {
         },
         onError: () => {
           toast.error("Une erreur est survenue lors de la suppression");
-          console.error("Error deleting member:", error);
         },
       },
     );
@@ -115,6 +169,11 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     );
   };
 
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
   if (!promotionId) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
@@ -139,7 +198,10 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Membres ({members?.length || 0})</h3>
+        <h3 className="text-lg font-medium">
+          Membres ({searchQuery ? `${totalFilteredCount} sur ${totalCount}` : totalCount})
+          {isFetching && <span className="ml-2 text-sm text-muted-foreground">(Actualisation...)</span>}
+        </h3>
         <Dialog
           open={addMemberDialogOpen}
           onOpenChange={(open) => {
@@ -215,6 +277,32 @@ export function MembersTable({ promotionId }: MembersTableProps) {
         </Dialog>
       </div>
 
+      <div className="flex items-center justify-between mb-4 gap-4">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un membre..."
+            className="pl-8"
+            onChange={handleSearchChange}
+            value={searchQuery}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Éléments par page:</span>
+          <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+            <SelectTrigger className="w-[80px]">
+              <SelectValue placeholder={pageSize.toString()} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -227,19 +315,21 @@ export function MembersTable({ promotionId }: MembersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {!members || members.length === 0 ? (
+            {!paginatedMembers || paginatedMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  Aucun membre trouvé dans cette promotion
+                  {searchQuery
+                    ? "Aucun membre ne correspond à votre recherche"
+                    : "Aucun membre trouvé dans cette promotion"}
                 </TableCell>
               </TableRow>
             ) : (
-              members.map((member) => (
+              paginatedMembers.map((member) => (
                 <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.lastname}</TableCell>
+                  <TableCell className="font-medium">{member.lastname || "-"}</TableCell>
                   <TableCell>{member.firstname}</TableCell>
                   <TableCell>{member.email}</TableCell>
-                  <TableCell>{formatDate(member.createdAt)}</TableCell>
+                  <TableCell>{member.createdAt ? formatDate(member.createdAt) : "-"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -271,13 +361,89 @@ export function MembersTable({ promotionId }: MembersTableProps) {
         </Table>
       </div>
 
+      {totalPages > 1 && !searchQuery && (
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  aria-disabled={currentPage === 1}
+                />
+              </PaginationItem>
+
+              {(() => {
+                const visiblePages = Math.min(5, totalPages);
+                const pages: (number | null)[] = [];
+
+                if (currentPage > 3 && totalPages > visiblePages) {
+                  pages.push(1, null);
+                }
+
+                let start = Math.max(1, currentPage - Math.floor((visiblePages - 1) / 2));
+                const end = Math.min(totalPages, start + visiblePages - 1);
+
+                if (end === totalPages) {
+                  start = Math.max(1, end - visiblePages + 1);
+                }
+
+                for (let i = start; i <= end; i++) {
+                  pages.push(i);
+                }
+
+                if (end < totalPages - 1) {
+                  pages.push(null, totalPages);
+                } else if (end === totalPages - 1) {
+                  pages.push(totalPages);
+                }
+
+                return pages.map((pageNum, _) =>
+                  pageNum === null ? (
+                    <PaginationItem key={`ellipsis-${pageNum}-${Math.random()}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        isActive={pageNum === currentPage}
+                        onClick={() => handlePageChange(pageNum)}
+                        className="cursor-pointer"
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ),
+                );
+              })()}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={!hasMore ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  aria-disabled={!hasMore}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Affichage de {paginatedMembers.length} sur {totalCount} membres
+            </span>
+            {isFetching && !isLoading && <span className="text-sm text-muted-foreground">(Chargement...)</span>}
+          </div>
+        </div>
+      )}
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action ne peut pas être annulée. Cela supprimera définitivement le membre
-              {memberToDelete ? ` "${memberToDelete.firstname} ${memberToDelete.lastname}"` : ""} de cette promotion.
+              {memberToDelete ? ` "${memberToDelete.firstname} ${memberToDelete.lastname || ""}"` : ""} de cette
+              promotion.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -303,6 +469,10 @@ function MembersTableSkeleton() {
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-10 w-40" />
       </div>
+      <div className="flex items-center justify-between mb-4 gap-4">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-10 w-40" />
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -315,9 +485,8 @@ function MembersTableSkeleton() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: Using index as key for skeleton rows
-              <TableRow key={i}>
+            {Array.from({ length: 5 }).map((_) => (
+              <TableRow key={Math.random()}>
                 <TableCell>
                   <Skeleton className="h-4 w-[80px]" />
                 </TableCell>
@@ -337,6 +506,9 @@ function MembersTableSkeleton() {
             ))}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex justify-center">
+        <Skeleton className="h-10 w-64" />
       </div>
     </div>
   );
