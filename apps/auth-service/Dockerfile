@@ -36,4 +36,6 @@ EXPOSE $PORT
 HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://127.0.0.1:$PORT/health || exit 1
 
-CMD ["bun", "auth-service/dist/main.js"]
+WORKDIR /apps/auth-service
+CMD ["bun", "run", "start:prod"]
+

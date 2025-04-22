@@ -29,4 +29,5 @@ EXPOSE $PORT
 HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://127.0.0.1:$PORT/health || exit 1
 
-CMD ["bun", "api-gateway/dist/main.js"]
+WORKDIR /apps/api-gateway
+CMD ["bun", "run", "start:prod"]
