@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { ApiCreatedResponse } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
@@ -75,8 +87,8 @@ export class PromotionsController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll() {
-    return this.proxy.forwardRequest("project", "/promotions", "GET");
+  async findAll(@Query("creatorId") creatorId?: string) {
+    return this.proxy.forwardRequest("project", "/promotions", "GET", undefined, { creatorId });
   }
 
   @Get(":id")
@@ -87,7 +99,11 @@ export class PromotionsController {
 
   @Get(":id/students")
   @HttpCode(HttpStatus.OK)
-  async getPromotionStudents(@Param("id", ParseIntPipe) id: number): Promise<Student[]> {
+  async getPromotionStudents(
+    @Param("id", ParseIntPipe) id: number,
+    @Query("page") page?: string,
+    @Query("rowsPerPage") rowsPerPage?: string,
+  ): Promise<Student[]> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
 
     const studentIds = promotion.studentPromotions.map((sp) => sp.userId);
@@ -96,10 +112,18 @@ export class PromotionsController {
       return [];
     }
 
-    return await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
+    const students = await this.proxy.forwardRequest<Student[]>(
+      "auth",
+      `/users?ids=${studentIds.join(",")}`,
+      "GET",
+      undefined,
+      { page, rowsPerPage },
+    );
+    return students;
   }
 
   @Patch(":id")
+
   @HttpCode(HttpStatus.OK)
   async update(@Param("id", ParseIntPipe) id: number, @Body() updatePromotionDto: UpdatePromotionDto) {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "PATCH", updatePromotionDto);

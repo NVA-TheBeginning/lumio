@@ -147,7 +147,13 @@ export class UsersService {
     });
   }
 
-  async findUsersByIds(ids: number[]): Promise<UserResponse[]> {
+  async findUsersByIds(ids: number[], page: string | undefined, rowsPerPage = "10"): Promise<UserResponse[]> {
+    const defaultRowsPerPage = 10; // @TODO: define a const for rowsPerPage
+    const currentPage = page ? parseInt(page, 10) || 1 : 1;
+    const itemsPerPage = parseInt(rowsPerPage, 10) || defaultRowsPerPage;
+
+    const skipAmount = (currentPage - 1) * itemsPerPage;
+
     return this.prisma.user.findMany({
       where: {
         id: {
@@ -161,6 +167,8 @@ export class UsersService {
         lastname: true,
         role: true,
       },
+      skip: skipAmount,
+      take: itemsPerPage,
     });
   }
 }
