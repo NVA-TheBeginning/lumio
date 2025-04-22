@@ -36,15 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import PaginationControls from "@/components/ui/pagination-controls";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -103,7 +95,6 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   const totalFilteredCount = filteredMembers.length;
   const totalCount = membersResponse?.size || 0;
   const totalPages = membersResponse?.totalPages || 1;
-  const hasMore = currentPage < totalPages;
 
   const removeMutation = useRemoveMember();
   const addMutation = useAddMember();
@@ -361,80 +352,13 @@ export function MembersTable({ promotionId }: MembersTableProps) {
         </Table>
       </div>
 
-      {totalPages > 1 && !searchQuery && (
-        <div className="flex flex-col items-center gap-2 mt-4">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  aria-disabled={currentPage === 1}
-                />
-              </PaginationItem>
-
-              {(() => {
-                const visiblePages = Math.min(5, totalPages);
-                const pages: (number | null)[] = [];
-
-                if (currentPage > 3 && totalPages > visiblePages) {
-                  pages.push(1, null);
-                }
-
-                let start = Math.max(1, currentPage - Math.floor((visiblePages - 1) / 2));
-                const end = Math.min(totalPages, start + visiblePages - 1);
-
-                if (end === totalPages) {
-                  start = Math.max(1, end - visiblePages + 1);
-                }
-
-                for (let i = start; i <= end; i++) {
-                  pages.push(i);
-                }
-
-                if (end < totalPages - 1) {
-                  pages.push(null, totalPages);
-                } else if (end === totalPages - 1) {
-                  pages.push(totalPages);
-                }
-
-                return pages.map((pageNum, _) =>
-                  pageNum === null ? (
-                    <PaginationItem key={`ellipsis-${pageNum}-${Math.random()}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        isActive={pageNum === currentPage}
-                        onClick={() => handlePageChange(pageNum)}
-                        className="cursor-pointer"
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ),
-                );
-              })()}
-
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className={!hasMore ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  aria-disabled={!hasMore}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Affichage de {paginatedMembers.length} sur {totalCount} membres
-            </span>
-            {isFetching && !isLoading && <span className="text-sm text-muted-foreground">(Chargement...)</span>}
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        handlePageChange={handlePageChange}
+        isFetching={isFetching}
+        isLoading={isLoading}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
