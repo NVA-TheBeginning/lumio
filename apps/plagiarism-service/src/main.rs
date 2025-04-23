@@ -11,41 +11,38 @@ use std::error::Error;
 use std::net::Ipv4Addr;
 
 mod api;
+mod s3;
 
 #[actix_web::main]
 async fn main() -> Result<(), impl Error> {
+    dotenvy::dotenv().ok();
     HttpServer::new(move || {
-    let spec = Spec {
-      info: Info {
-        title: "A well documented API".to_string(),
-        description: Some(
-          "This is an API documented using Apistos,\na wonderful new tool to document your actix API !".to_string(),
-        ),
-        ..Default::default()
-      },
-      servers: vec![Server {
-        url: "/api/v3".to_string(),
-        ..Default::default()
-      }],
-      ..Default::default()
-    };
+        let spec = Spec {
+            info: Info {
+                title: "Plagiarism service".to_string(),
+                ..Default::default()
+            },
+            servers: vec![Server {
+                url: "/api/v3".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
 
-    App::new()
-      .document(spec)
-      .wrap(Logger::default())
-      .service(
-        scope("/pagiarism").service(
-          scope("/checks")
-            .service(resource("").route(post().to(checks_projects)))
-        ),
-      )
-      .build_with(
-        "/openapi.json",
-        BuildConfig::default()
-          .with(SwaggerUIConfig::new(&"/ui")),
-      )
-  })
-  .bind((Ipv4Addr::UNSPECIFIED, 3008))?
-  .run()
-  .await
+        App::new()
+            .document(spec)
+            .wrap(Logger::default())
+            .service(
+                scope("/pagiarism").service(
+                    scope("/checks").service(resource("").route(post().to(checks_projects))),
+                ),
+            )
+            .build_with(
+                "/openapi.json",
+                BuildConfig::default().with(SwaggerUIConfig::new(&"/ui")),
+            )
+    })
+    .bind((Ipv4Addr::UNSPECIFIED, 3008))?
+    .run()
+    .await
 }
