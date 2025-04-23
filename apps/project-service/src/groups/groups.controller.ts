@@ -98,13 +98,13 @@ export class GroupsController {
   @ApiOperation({ summary: "Update group settings" })
   @ApiParam({ name: "projectId", type: Number })
   @ApiParam({ name: "promotionId", type: Number })
-  @ApiBody({ type: GroupSettingsDto }) // <- use GroupSettingsDto here
+  @ApiBody({ type: GroupSettingsDto })
   @ApiOkResponse({ description: "Settings updated" })
-  @HttpCode(HttpStatus.OK) // optional: return 200 instead of 204/201
+  @HttpCode(HttpStatus.OK)
   async updateSettings(
     @Param("projectId", ParseIntPipe) projectId: number,
     @Param("promotionId", ParseIntPipe) promotionId: number,
-    @Body() dto: GroupSettingsDto, // <- and type the parameter accordingly
+    @Body() dto: GroupSettingsDto,
   ) {
     return this.groupsService.updateSettings(projectId, promotionId, dto);
   }
