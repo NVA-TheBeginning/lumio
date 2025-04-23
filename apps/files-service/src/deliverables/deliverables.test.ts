@@ -6,7 +6,7 @@ import { AppModule } from "@/app.module.js";
 import { CreateDeliverableDto } from "@/deliverables/dto/deliverables.dto.js";
 import { PrismaService } from "@/prisma.service";
 
-const createDeliverableDto = (
+export const createDeliverableDto = (
   deliverableName = `Test Deliverable ${Date.now()}`,
   projectId = 1,
   promotionId = 1,
