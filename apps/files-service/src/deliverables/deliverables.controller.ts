@@ -49,7 +49,7 @@ export class DeliverablesController {
 
   @Delete("deliverables/:projectId/:promotionId")
   @ApiOperation({ summary: "Delete a deliverable" })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: "The deliverable has been successfully deleted." })
+  @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   async remove(@Param() params: DeliverableIdParams): Promise<void> {
     return this.deliverablesService.remove(Number(params.projectId), Number(params.promotionId));

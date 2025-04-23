@@ -21,9 +21,9 @@ export class DeliverablesService {
     });
   }
 
-  async findAllByProjectPromo(projectId: number, promoId?: number): Promise<Deliverables[]> {
+  async findAllByProjectPromo(projectId: number, promotionId?: number): Promise<Deliverables[]> {
     return this.prisma.deliverables.findMany({
-      where: { projectId, promotionId: promoId },
+      where: { projectId, promotionId },
       orderBy: { deadline: "asc" },
     });
   }
