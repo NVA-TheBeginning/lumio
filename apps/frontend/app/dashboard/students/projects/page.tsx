@@ -1,4 +1,4 @@
-export default async function ProjetcsPage() {
+export default async function ProjectsPage() {
   return (
     <div className="space-y-6">
       <div>
