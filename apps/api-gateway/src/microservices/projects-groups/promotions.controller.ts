@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Injectable,
   Param,
   ParseIntPipe,
   Patch,
@@ -72,11 +73,15 @@ interface PromotionWithStudents {
 }
 
 @Controller("promotions")
+@Injectable()
 export class PromotionsController {
   constructor(
     private readonly proxy: MicroserviceProxyService,
     private readonly promotionsService: PromotionsService,
-  ) {}
+  ) {
+    console.log("[PromotionController] proxy is", !!proxy);
+    console.log("[PromotionController] promotionsService is", !!promotionsService);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

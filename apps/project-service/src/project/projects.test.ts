@@ -29,174 +29,153 @@ describe("Projects", () => {
       { name: `Test Promotion 2 ${Date.now()}`, description: "Second test promotion", creatorId: 1 },
     ];
 
-    await Promise.all(
-      promotionsData.map(async (promotionData) => {
-        const promotion = await prisma.promotion.create({
-          data: promotionData,
-        });
-        promotionIds.push(promotion.id);
-      }),
+    // Create promotions in parallel
+    const createdPromotions = await Promise.all(
+      promotionsData.map((promo) => prisma.promotion.create({ data: promo })),
     );
+    createdPromotions.forEach((promo) => promotionIds.push(promo.id));
   });
 
-  const createGroupSettings = (promotionIds: number[]): GroupSettingDto[] => {
-    return promotionIds.map((promotionId) => ({
-      promotionId,
+  const createGroupSettings = (ids: number[]): GroupSettingDto[] =>
+    ids.map((id) => ({
+      promotionId: id,
       minMembers: 2,
       maxMembers: 5,
       mode: GroupMode.FREE,
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     }));
-  };
 
   const createProjectDto = (): CreateProjectDto => ({
     name: projectName,
     description: "A test project",
     creatorId: 1,
-    promotionIds: promotionIds,
+    promotionIds,
     groupSettings: createGroupSettings(promotionIds),
   });
 
   test("/projects (POST) - should create a new project with group settings", async () => {
-    const projectDto = createProjectDto();
-    const response = await app.inject({
-      method: "POST",
-      url: "/projects",
-      payload: projectDto,
-    });
-
-    expect(response.statusCode).toEqual(201);
-
-    const body = JSON.parse(response.body);
+    const dto = createProjectDto();
+    const res = await app.inject({ method: "POST", url: "/projects", payload: dto });
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
     expect(body).toHaveProperty("id");
-    expect(body).toHaveProperty("name", projectDto.name);
-    expect(body).toHaveProperty("description", projectDto.description);
+    expect(body.name).toBe(dto.name);
+    expect(body.description).toBe(dto.description);
     projectId = body.id;
 
-    const projectPromotions = await prisma.projectPromotion.findMany({
-      where: {
-        projectId: projectId,
-      },
+    const projectPromotions = await prisma.projectPromotion.findMany({ where: { projectId } });
+    expect(projectPromotions).toHaveLength(promotionIds.length);
+    expect(projectPromotions[0].status).toBe(ProjectStatus.DRAFT);
+
+    const settings = await prisma.groupSettings.findMany({ where: { projectId } });
+    expect(settings).toHaveLength(promotionIds.length);
+    settings.forEach((s) => {
+      expect(s.minMembers).toBe(2);
+      expect(s.maxMembers).toBe(5);
+      expect(s.mode).toBe(GroupMode.FREE);
+      expect(new Date(s.deadline).getTime()).toBeGreaterThan(Date.now());
     });
-
-    expect(projectPromotions.length).toEqual(promotionIds.length);
-    expect(projectPromotions[0].status).toEqual(ProjectStatus.DRAFT);
-
-    const groupSettings = await prisma.groupSettings.findMany({
-      where: {
-        projectId: projectId,
-      },
-    });
-
-    expect(groupSettings.length).toEqual(promotionIds.length);
-    for (const setting of groupSettings) {
-      expect(setting.minMembers).toEqual(2);
-      expect(setting.maxMembers).toEqual(5);
-      expect(setting.mode).toEqual(GroupMode.FREE);
-      expect(setting.deadline).toBeDefined();
-    }
   });
 
-  test("/projects (POST) - should fail with invalid promotion ids", async () => {
-    const invalidProjectDto = {
-      ...createProjectDto(),
-      promotionIds: [999999],
-      groupSettings: createGroupSettings([999999]),
-    };
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/projects",
-      payload: invalidProjectDto,
-    });
-
-    expect(response.statusCode).toEqual(400);
-    const body = JSON.parse(response.body);
+  test("/projects (POST) - invalid promotion ids", async () => {
+    const invalidDto = { ...createProjectDto(), promotionIds: [999999], groupSettings: createGroupSettings([999999]) };
+    const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
     expect(body.message).toContain("One or more promotions do not exist");
   });
 
-  test("/projects (POST) - should fail with invalid group settings (minMembers > maxMembers)", async () => {
-    const invalidGroupSettingsDto = {
+  test("/projects (POST) - invalid groupSettings (min>max)", async () => {
+    const invalidDto = {
       ...createProjectDto(),
-      groupSettings: promotionIds.map((promotionId) => ({
-        promotionId,
+      groupSettings: promotionIds.map((id) => ({
+        promotionId: id,
         minMembers: 10,
         maxMembers: 5,
         mode: GroupMode.FREE,
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       })),
     };
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/projects",
-      payload: invalidGroupSettingsDto,
-    });
-
-    expect(response.statusCode).toEqual(400);
-    const body = JSON.parse(response.body);
+    const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
     expect(body.message).toContain("minMembers cannot be greater than maxMembers");
   });
 
-  test("/projects (POST) - should fail with invalid group settings (deadline in the past)", async () => {
-    const invalidGroupSettingsDto = {
+  test("/projects (POST) - invalid groupSettings (past deadline)", async () => {
+    const invalidDto = {
       ...createProjectDto(),
-      groupSettings: promotionIds.map((promotionId) => ({
-        promotionId,
+      groupSettings: promotionIds.map((id) => ({
+        promotionId: id,
         minMembers: 2,
         maxMembers: 5,
         mode: GroupMode.FREE,
         deadline: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       })),
     };
-    const response = await app.inject({
-      method: "POST",
-      url: "/projects",
-      payload: invalidGroupSettingsDto,
-    });
-
-    expect(response.statusCode).toEqual(400);
-    const body = JSON.parse(response.body);
+    const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
     expect(body.message).toContain("Deadline must be in the future");
+  });
+
+  test("/projects (GET) - should return list including created project", async () => {
+    const res = await app.inject({ method: "GET", url: "/projects" });
+    expect(res.statusCode).toBe(200);
+    const list = JSON.parse(res.body) as Array<{ id: number }>;
+    expect(Array.isArray(list)).toBe(true);
+    expect(list.some((p) => p.id === projectId)).toBe(true);
+  });
+
+  test("/projects/:id (GET) - should return the project", async () => {
+    const res = await app.inject({ method: "GET", url: `/projects/${projectId}` });
+    expect(res.statusCode).toBe(200);
+    const proj = JSON.parse(res.body);
+    expect(proj.id).toBe(projectId);
+    expect(proj.name).toBe(projectName);
+  });
+
+  test("/projects/:id (GET) - not found", async () => {
+    const res = await app.inject({ method: "GET", url: "/projects/999999" });
+    expect(res.statusCode).toBe(404);
+  });
+
+  test("/projects/:id (PATCH) - should update the project", async () => {
+    const updated = { name: `${projectName} Updated`, description: "Updated description" };
+    const res = await app.inject({ method: "PATCH", url: `/projects/${projectId}`, payload: updated });
+    expect(res.statusCode).toBe(200);
+    const proj = JSON.parse(res.body);
+    expect(proj.name).toBe(updated.name);
+    expect(proj.description).toBe(updated.description);
+  });
+
+  test("/projects/:id (PATCH) - not found", async () => {
+    const res = await app.inject({ method: "PATCH", url: "/projects/999999", payload: { name: "X" } });
+    expect(res.statusCode).toBe(404);
+  });
+
+  test("/projects/:id (DELETE) - should soft-delete the project", async () => {
+    const res = await app.inject({ method: "DELETE", url: `/projects/${projectId}` });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.deleted).toBe(true);
+
+    const getRes = await app.inject({ method: "GET", url: `/projects/${projectId}` });
+    expect(getRes.statusCode).toBe(404);
+  });
+
+  test("/projects/:id (DELETE) - not found", async () => {
+    const res = await app.inject({ method: "DELETE", url: "/projects/999999" });
+    expect(res.statusCode).toBe(404);
   });
 
   afterAll(async () => {
     if (projectId) {
-      await prisma.groupSettings.deleteMany({
-        where: {
-          projectId: projectId,
-        },
-      });
-
-      await prisma.projectPromotion.deleteMany({
-        where: {
-          projectId: projectId,
-        },
-      });
-
-      await prisma.project.delete({
-        where: {
-          id: projectId,
-        },
-      });
+      await prisma.groupSettings.deleteMany({ where: { projectId } });
+      await prisma.projectPromotion.deleteMany({ where: { projectId } });
+      await prisma.project.delete({ where: { id: projectId } });
     }
-
-    await prisma.promotion.deleteMany({
-      where: {
-        id: {
-          in: promotionIds,
-        },
-      },
-    });
-
-    await prisma.promotion.deleteMany({
-      where: {
-        id: {
-          in: promotionIds,
-        },
-      },
-    });
-
+    await prisma.promotion.deleteMany({ where: { id: { in: promotionIds } } });
     await app.close();
   });
 });
