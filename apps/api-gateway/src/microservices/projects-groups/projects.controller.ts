@@ -17,6 +17,7 @@ import {
   ApiTags,
   ApiResponse,
   ApiParam,
+  ApiProperty,
 } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -39,55 +40,55 @@ export enum GroupMode {
 }
 
 export class GroupSettingDto {
-  @ApiResponse({ description: 'Promotion ID to configure groups for', type: Number,  })
+  @ApiProperty({ description: 'Promotion ID to configure groups for', type: Number, example: 1 })
   @IsNotEmpty()
   @IsNumber()
   promotionId!: number;
 
-  @ApiResponse({ description: 'Minimum members per group', type: Number })
+  @ApiProperty({ description: 'Minimum members per group', type: Number, example: 2 })
   @IsNotEmpty()
   @IsNumber()
   minMembers!: number;
 
-  @ApiResponse({ description: 'Maximum members per group', type: Number })
+  @ApiProperty({ description: 'Maximum members per group', type: Number, example: 5 })
   @IsNotEmpty()
   @IsNumber()
   maxMembers!: number;
 
-  @ApiResponse({ description: 'Mode of grouping', enum: GroupMode })
+  @ApiProperty({ description: 'Mode of grouping', enum: GroupMode, example: GroupMode.FREE })
   @IsNotEmpty()
   @IsEnum(GroupMode)
   mode!: GroupMode;
 
-  @ApiResponse({ description: 'Deadline for group formation (ISO date string)', type: String, format: 'date-time' })
+  @ApiProperty({ description: 'Deadline for group formation (ISO date-time string)', type: String, format: 'date-time', example: '2025-12-31T23:59:59Z' })
   @IsNotEmpty()
   @IsDateString()
   deadline!: string;
 }
 
 export class CreateProjectDto {
-  @ApiResponse({ description: 'Project name', type: String })
+  @ApiProperty({ description: 'Project name', type: String, example: 'Mon projet' })
   @IsNotEmpty()
   @IsString()
   name!: string;
 
-  @ApiResponse({ description: 'Detailed project description', type: String })
+  @ApiProperty({ description: 'Detailed project description', type: String, example: 'Description détaillée' })
   @IsNotEmpty()
   @IsString()
   description!: string;
 
-  @ApiResponse({ description: 'User ID who creates the project', type: Number })
+  @ApiProperty({ description: 'User ID who creates the project', type: Number, example: 1 })
   @IsNotEmpty()
   @IsNumber()
   creatorId!: number;
 
-  @ApiResponse({ description: 'Array of promotion IDs', type: [Number] })
+  @ApiProperty({ description: 'Array of promotion IDs', type: [Number], example: [1, 2] })
   @IsArray()
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   promotionIds!: number[];
 
-  @ApiResponse({ description: 'Group settings for each promotion', type: [GroupSettingDto] })
+  @ApiProperty({ description: 'Group settings for each promotion', type: [GroupSettingDto] })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
@@ -107,6 +108,15 @@ export class ProjectsController {
   @ApiCreatedResponse({ description: 'The project has been successfully created', type: Object })
   async create(@Body() createProjectDto: CreateProjectDto) {
     return this.proxy.forwardRequest('project', '/projects', 'POST', createProjectDto);
+  }
+
+  @Get('creator/:creatorId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all projects by creator ID' })
+  @ApiParam({ name: 'creatorId', description: 'Creator user ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Array of projects for the specified creator', type: [Object] })
+  async findByCreator(@Param('creatorId', ParseIntPipe) creatorId: number) {
+    return this.proxy.forwardRequest('project', `/projects/creator/${creatorId}`, 'GET');
   }
 
   @Get()
