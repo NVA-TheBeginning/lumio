@@ -9,30 +9,30 @@ pub struct S3Config {
     pub bucket_name: String,
     pub region: Region,
     pub credentials: Credentials,
+    pub endpoint: String,
 }
 
 impl S3Config {
     pub fn from_env() -> Result<Self, String> {
         dotenv().ok();
 
-        let bucket_name = env::var("S3_BUCKET_NAME")
-            .map_err(|e| format!("S3_BUCKET_NAME environment variable error: {}", e))?;
-
-        let region_str =
-            env::var("REGION").map_err(|e| format!("REGION environment variable error: {}", e))?;
-
+        let endpoint =
+            env::var("MINIO_ENDPOINT").map_err(|e| format!("MINIO_ENDPOINT not set: {}", e))?;
+        let bucket_name =
+            env::var("S3_BUCKET_NAME").map_err(|e| format!("S3_BUCKET_NAME not set: {}", e))?;
+        let region_str = env::var("REGION").map_err(|e| format!("S3_REGION not set: {}", e))?;
         let region = region_str
             .parse::<Region>()
             .map_err(|e| format!("Failed to parse REGION: {}", e))?;
 
-        let access_key = env::var("ACCESS_KEY_ID")
-            .map_err(|e| format!("ACCESS_KEY_ID environment variable error: {}", e))?;
+        let access_key_id =
+            env::var("ACCESS_KEY_ID").map_err(|e| format!("ACCESS_KEY_ID not set: {}", e))?;
 
         let secret_access_key = env::var("SECRET_ACCESS_KEY")
-            .map_err(|e| format!("SECRET_ACCESS_KEY environment variable error: {}", e))?;
+            .map_err(|e| format!("SECRET_ACCESS_KEY not set: {}", e))?;
 
         let credentials = Credentials::new(
-            Some(&access_key),
+            Some(&access_key_id),
             Some(&secret_access_key),
             None,
             None,
@@ -41,28 +41,26 @@ impl S3Config {
         .map_err(|e| format!("Failed to create credentials: {}", e))?;
 
         Ok(Self {
-            bucket_name: bucket_name,
+            bucket_name,
             region,
             credentials,
+            endpoint,
         })
-    }
-
-    pub fn new(bucket_name: String, region: Region, credentials: Credentials) -> Self {
-        Self {
-            bucket_name: bucket_name,
-            region,
-            credentials,
-        }
     }
 }
 
-pub async fn get_file_from_s3(config: &S3Config, key: &str) -> Result<Vec<u8>, String> {
-    let bucket = Bucket::new(
-        &config.bucket_name,
-        config.region.clone(),
-        config.credentials.clone(),
-    )
-    .map_err(|e| format!("Failed to create S3 bucket client: {}", e))?;
+pub async fn get_file_from_s3(key: &str) -> Result<Vec<u8>, String> {
+    let config = S3Config::from_env()?;
+
+    let custom_region = Region::Custom {
+        region: config.region.to_string(),
+        endpoint: config.endpoint,
+    };
+
+    let bucket = Bucket::new(&config.bucket_name, custom_region, config.credentials)
+        .map_err(|e| format!("Bucket initialization failed: {}", e))?;
+
+    let bucket = bucket.with_path_style();
 
     let response = bucket.get_object(key).await.map_err(|e| {
         format!(
@@ -72,4 +70,33 @@ pub async fn get_file_from_s3(config: &S3Config, key: &str) -> Result<Vec<u8>, S
     })?;
 
     Ok(response.bytes().to_vec())
+}
+
+pub async fn list_files_in_directory(prefix: &str) -> Result<Vec<String>, String> {
+    let config = S3Config::from_env()?;
+
+    let custom_region = Region::Custom {
+        region: config.region.to_string(),
+        endpoint: config.endpoint,
+    };
+
+    let bucket = Bucket::new(&config.bucket_name, custom_region, config.credentials)
+        .map_err(|e| format!("Bucket initialization failed: {}", e))?;
+
+    let bucket = bucket.with_path_style();
+
+    println!("Listing files in directory: {:?}", bucket);
+
+    let results = bucket
+        .list(prefix.to_string(), None)
+        .await
+        .map_err(|e| format!("Failed to list objects with prefix '{}': {}", prefix, e))?;
+
+    let file_keys = results
+        .into_iter()
+        .flat_map(|result| result.contents)
+        .map(|object| object.key)
+        .collect();
+
+    Ok(file_keys)
 }
