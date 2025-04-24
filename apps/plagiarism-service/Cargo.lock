@@ -1953,9 +1953,9 @@ dependencies = [
  "apistos",
  "apistos-schemars",
  "dotenvy",
+ "rand 0.9.1",
  "rust-s3",
  "serde",
- "uuid",
  "zip",
 ]
 
