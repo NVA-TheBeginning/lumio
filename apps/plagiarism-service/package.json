@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "cargo build --release",
-    "start": "cargo run --release",
+    "build": "cargo build",
+    "start": "cargo run",
     "dev": "cargo watch -x run",
     "start:prod": "cargo run --release",
     "test": "cargo test"
