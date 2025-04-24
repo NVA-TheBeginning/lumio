@@ -46,6 +46,7 @@ jobs:
       with:
         components: clippy,rustfmt
         cache-base: main
+        target-dirs: apps/plagiarism-service
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
