@@ -1,5 +1,5 @@
-import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post} from "@nestjs/common";
-import {ApiOperation, ApiParam, ApiResponse, ApiTags} from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
 import { ProjectService } from "./projects.service";
@@ -18,12 +18,12 @@ export class ProjectController {
     return this.projectService.create(createProjectDto);
   }
 
-  @Get('creator/:creatorId')
+  @Get("creator/:creatorId")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Retrieve all projects created by a specific user' })
-  @ApiParam({ name: 'creatorId', description: 'Creator user ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Projects list for the given creator.' })
-  async findByCreator(@Param('creatorId', ParseIntPipe) creatorId: number) {
+  @ApiOperation({ summary: "Retrieve all projects created by a specific user" })
+  @ApiParam({ name: "creatorId", description: "Creator user ID", type: Number })
+  @ApiResponse({ status: 200, description: "Projects list for the given creator." })
+  async findByCreator(@Param("creatorId", ParseIntPipe) creatorId: number) {
     return this.projectService.findByCreator(creatorId);
   }
 

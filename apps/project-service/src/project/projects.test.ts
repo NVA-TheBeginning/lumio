@@ -1,13 +1,13 @@
 // tests/projects.e2e.spec.ts
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { GroupMode, ProjectStatus } from '@prisma-project/client';
-import { AppModule } from '@/app.module.js';
-import { PrismaService } from '@/prisma.service';
-import { CreateProjectDto, GroupSettingDto } from '@/project/dto/create-project.dto';
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
+import { Test } from "@nestjs/testing";
+import { GroupMode, ProjectStatus } from "@prisma-project/client";
+import { AppModule } from "@/app.module.js";
+import { PrismaService } from "@/prisma.service";
+import { CreateProjectDto, GroupSettingDto } from "@/project/dto/create-project.dto";
 
-describe('Projects', () => {
+describe("Projects", () => {
   let app: NestFastifyApplication;
   let prisma: PrismaService;
   const projectName = `Test Project ${Date.now()}`;
@@ -26,40 +26,40 @@ describe('Projects', () => {
     prisma = app.get(PrismaService);
 
     const promotionsData = [
-      { name: `Test Promotion 1 ${Date.now()}`, description: 'First test promotion', creatorId: 1 },
-      { name: `Test Promotion 2 ${Date.now()}`, description: 'Second test promotion', creatorId: 1 },
+      { name: `Test Promotion 1 ${Date.now()}`, description: "First test promotion", creatorId: 1 },
+      { name: `Test Promotion 2 ${Date.now()}`, description: "Second test promotion", creatorId: 1 },
     ];
 
     // Create promotions in parallel
     const createdPromotions = await Promise.all(
-        promotionsData.map((promo) => prisma.promotion.create({ data: promo }))
+      promotionsData.map((promo) => prisma.promotion.create({ data: promo })),
     );
     createdPromotions.forEach((promo) => promotionIds.push(promo.id));
   });
 
   const createGroupSettings = (ids: number[]): GroupSettingDto[] =>
-      ids.map((id) => ({
-        promotionId: id,
-        minMembers: 2,
-        maxMembers: 5,
-        mode: GroupMode.FREE,
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      }));
+    ids.map((id) => ({
+      promotionId: id,
+      minMembers: 2,
+      maxMembers: 5,
+      mode: GroupMode.FREE,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    }));
 
   const createProjectDto = (): CreateProjectDto => ({
     name: projectName,
-    description: 'A test project',
+    description: "A test project",
     creatorId: 1,
     promotionIds,
     groupSettings: createGroupSettings(promotionIds),
   });
 
-  test('/projects (POST) - should create a new project with group settings', async () => {
+  test("/projects (POST) - should create a new project with group settings", async () => {
     const dto = createProjectDto();
-    const res = await app.inject({ method: 'POST', url: '/projects', payload: dto });
+    const res = await app.inject({ method: "POST", url: "/projects", payload: dto });
     expect(res.statusCode).toBe(201);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('id');
+    expect(body).toHaveProperty("id");
     expect(body.name).toBe(dto.name);
     expect(body.description).toBe(dto.description);
     projectId = body.id;
@@ -78,15 +78,15 @@ describe('Projects', () => {
     });
   });
 
-  test('/projects (POST) - invalid promotion ids', async () => {
+  test("/projects (POST) - invalid promotion ids", async () => {
     const invalidDto = { ...createProjectDto(), promotionIds: [999999], groupSettings: createGroupSettings([999999]) };
-    const res = await app.inject({ method: 'POST', url: '/projects', payload: invalidDto });
+    const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
-    expect(body.message).toContain('One or more promotions do not exist');
+    expect(body.message).toContain("One or more promotions do not exist");
   });
 
-  test('/projects (POST) - invalid groupSettings (min>max)', async () => {
+  test("/projects (POST) - invalid groupSettings (min>max)", async () => {
     const invalidDto = {
       ...createProjectDto(),
       groupSettings: promotionIds.map((id) => ({
@@ -97,13 +97,13 @@ describe('Projects', () => {
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       })),
     };
-    const res = await app.inject({ method: 'POST', url: '/projects', payload: invalidDto });
+    const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
-    expect(body.message).toContain('minMembers cannot be greater than maxMembers');
+    expect(body.message).toContain("minMembers cannot be greater than maxMembers");
   });
 
-  test('/projects (POST) - invalid groupSettings (past deadline)', async () => {
+  test("/projects (POST) - invalid groupSettings (past deadline)", async () => {
     const invalidDto = {
       ...createProjectDto(),
       groupSettings: promotionIds.map((id) => ({
@@ -114,75 +114,75 @@ describe('Projects', () => {
         deadline: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       })),
     };
-    const res = await app.inject({ method: 'POST', url: '/projects', payload: invalidDto });
+    const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
-    expect(body.message).toContain('Deadline must be in the future');
+    expect(body.message).toContain("Deadline must be in the future");
   });
 
-  test('/projects (GET) - should return list including created project', async () => {
-    const res = await app.inject({ method: 'GET', url: '/projects' });
+  test("/projects (GET) - should return list including created project", async () => {
+    const res = await app.inject({ method: "GET", url: "/projects" });
     expect(res.statusCode).toBe(200);
     const list = JSON.parse(res.body) as Array<{ id: number }>;
     expect(Array.isArray(list)).toBe(true);
     expect(list.some((p) => p.id === projectId)).toBe(true);
   });
 
-  test('/projects/:id (GET) - should return the project', async () => {
-    const res = await app.inject({ method: 'GET', url: `/projects/${projectId}` });
+  test("/projects/:id (GET) - should return the project", async () => {
+    const res = await app.inject({ method: "GET", url: `/projects/${projectId}` });
     expect(res.statusCode).toBe(200);
     const proj = JSON.parse(res.body);
     expect(proj.id).toBe(projectId);
     expect(proj.name).toBe(projectName);
   });
 
-  test('/projects/creator/:creatorId (GET) - should return projects for creator', async () => {
-    const res = await app.inject({ method: 'GET', url: '/projects/creator/1' });
+  test("/projects/creator/:creatorId (GET) - should return projects for creator", async () => {
+    const res = await app.inject({ method: "GET", url: "/projects/creator/1" });
     expect(res.statusCode).toBe(200);
     const list = JSON.parse(res.body) as Array<{ id: number }>;
     expect(Array.isArray(list)).toBe(true);
     expect(list.some((p) => p.id === projectId)).toBe(true);
   });
 
-  test('/projects/creator/:creatorId (GET) - should return empty array for non-existing creator', async () => {
-    const res = await app.inject({ method: 'GET', url: '/projects/creator/999999' });
+  test("/projects/creator/:creatorId (GET) - should return empty array for non-existing creator", async () => {
+    const res = await app.inject({ method: "GET", url: "/projects/creator/999999" });
     expect(res.statusCode).toBe(200);
     const list = JSON.parse(res.body) as Array<unknown>;
     expect(Array.isArray(list)).toBe(true);
     expect(list).toHaveLength(0);
   });
 
-  test('/projects/:id (GET) - not found', async () => {
-    const res = await app.inject({ method: 'GET', url: '/projects/999999' });
+  test("/projects/:id (GET) - not found", async () => {
+    const res = await app.inject({ method: "GET", url: "/projects/999999" });
     expect(res.statusCode).toBe(404);
   });
 
-  test('/projects/:id (PATCH) - should update the project', async () => {
-    const updated = { name: `${projectName} Updated`, description: 'Updated description' };
-    const res = await app.inject({ method: 'PATCH', url: `/projects/${projectId}`, payload: updated });
+  test("/projects/:id (PATCH) - should update the project", async () => {
+    const updated = { name: `${projectName} Updated`, description: "Updated description" };
+    const res = await app.inject({ method: "PATCH", url: `/projects/${projectId}`, payload: updated });
     expect(res.statusCode).toBe(200);
     const proj = JSON.parse(res.body);
     expect(proj.name).toBe(updated.name);
     expect(proj.description).toBe(updated.description);
   });
 
-  test('/projects/:id (PATCH) - not found', async () => {
-    const res = await app.inject({ method: 'PATCH', url: '/projects/999999', payload: { name: 'X' } });
+  test("/projects/:id (PATCH) - not found", async () => {
+    const res = await app.inject({ method: "PATCH", url: "/projects/999999", payload: { name: "X" } });
     expect(res.statusCode).toBe(404);
   });
 
-  test('/projects/:id (DELETE) - should soft-delete the project', async () => {
-    const res = await app.inject({ method: 'DELETE', url: `/projects/${projectId}` });
+  test("/projects/:id (DELETE) - should soft-delete the project", async () => {
+    const res = await app.inject({ method: "DELETE", url: `/projects/${projectId}` });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
     expect(body.deleted).toBe(true);
 
-    const getRes = await app.inject({ method: 'GET', url: `/projects/${projectId}` });
+    const getRes = await app.inject({ method: "GET", url: `/projects/${projectId}` });
     expect(getRes.statusCode).toBe(404);
   });
 
-  test('/projects/:id (DELETE) - not found', async () => {
-    const res = await app.inject({ method: 'DELETE', url: '/projects/999999' });
+  test("/projects/:id (DELETE) - not found", async () => {
+    const res = await app.inject({ method: "DELETE", url: "/projects/999999" });
     expect(res.statusCode).toBe(404);
   });
 
