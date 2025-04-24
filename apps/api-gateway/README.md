@@ -16,6 +16,15 @@ After cloning the repository, install the necessary dependencies by running:
 bun install
 ```
 
+To start the `plagiarism-service`, run the following command:
+
+> Install `just` if you haven't already:
+> https://github.com/casey/just
+
+```sh
+just install-tools
+```
+
 You can start your local database by running:
 
 ```sh

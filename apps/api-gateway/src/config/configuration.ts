@@ -14,6 +14,5 @@ export default () => ({
     evaluation: process.env.EVALUATION_SERVICE_URL || "http://localhost:3006",
     notification: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:3007",
     plagiarism: process.env.PLAGIARISM_SERVICE_URL || "http://localhost:3008",
-    group: process.env.GROUP_SERVICE_URL || "http://localhost:3009",
   },
 });
