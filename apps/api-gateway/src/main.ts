@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyMultipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";

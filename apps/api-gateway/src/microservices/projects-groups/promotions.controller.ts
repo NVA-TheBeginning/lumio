@@ -5,14 +5,13 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Injectable,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Query,
 } from "@nestjs/common";
-import { ApiCreatedResponse } from "@nestjs/swagger";
+import {ApiCreatedResponse, ApiTags} from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { PromotionsService } from "./promotions.service.js";
@@ -72,8 +71,8 @@ interface PromotionWithStudents {
   students: Student[];
 }
 
+@ApiTags("promotions")
 @Controller("promotions")
-@Injectable()
 export class PromotionsController {
   constructor(
     private readonly proxy: MicroserviceProxyService,
