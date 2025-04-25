@@ -11,7 +11,7 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import {ApiCreatedResponse, ApiTags} from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiTags } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { PromotionsService } from "./promotions.service.js";
