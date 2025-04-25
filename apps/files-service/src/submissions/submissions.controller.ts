@@ -1,5 +1,15 @@
-import { Body, Controller, Get, HttpStatus, Param, Post, Put } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { type File, FileInterceptor } from "@nest-lab/fastify-multer";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpStatus,
+  Param,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from "@nestjs/common";
+import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SubmissionsService } from "./submissions.service";
 
 @ApiTags("submissions")
@@ -8,31 +18,39 @@ export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Post("deliverables/:idDeliverable/submit")
-  @ApiOperation({ summary: "Submit a deliverable" })
+  @ApiOperation({ summary: "Submit a deliverable with a ZIP file" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully submitted." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async submit(@Param("idDeliverable") idDeliverable: string): Promise<void> {
-    return this.submissionsService.submit(Number(idDeliverable));
-  }
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("file", { preservePath: true }))
+  @ApiBody({
+    required: true,
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+          description: "The ZIP file to upload",
+        },
+        groupId: {
+          type: "string",
+          description: "The ID of the group submitting the deliverable",
+        },
+      },
+      required: ["file", "groupId"],
+    },
+  })
+  async submit(
+    @Param("idDeliverable") idDeliverable: string,
+    @Body("groupId") groupId: string,
+    @UploadedFile() file: File,
+  ): Promise<string> {
+    if (!file?.buffer) {
+      throw new BadRequestException("No file uploaded");
+    }
 
-  @Get("deliverables/:idDeliverable/submissions")
-  @ApiOperation({ summary: "Get all submissions for a deliverable" })
-  @ApiResponse({ status: HttpStatus.OK, description: "Returns all submissions for the deliverable." })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAll(@Param("idDeliverable") idDeliverable: string): Promise<Deliverables[]> {
-    return this.submissionsService.findAllByDeliverable(Number(idDeliverable));
-  }
-
-  @Put("submissions/:idSubmission")
-  @ApiOperation({ summary: "Update a submission" })
-  @ApiResponse({ status: HttpStatus.OK, description: "The submission has been successfully updated." })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
-  async update(
-    @Param("idSubmission") idSubmission: string,
-    @Body() updateSubmissionDto: UpdateDeliverableDto,
-  ): Promise<Deliverables> {
-    return this.submissionsService.update(idSubmission, updateSubmissionDto);
+    return this.submissionsService.submit(Number(idDeliverable), groupId, file.buffer);
   }
 }

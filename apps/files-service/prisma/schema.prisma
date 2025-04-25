@@ -42,11 +42,12 @@ enum DeliverableType {
 }
 
 model DeliverablesRules {
-  id          Int      @id @default(autoincrement())
-  projectId   Int
-  promotionId Int
-  ruleType    RuleType
-  ruleDetails String
+  id            Int      @id @default(autoincrement())
+  deliverableId Int
+  projectId     Int
+  promotionId   Int
+  ruleType      RuleType
+  ruleDetails   String
 
   @@map("DELIVERABLES_RULES")
   @@schema("files_schema")

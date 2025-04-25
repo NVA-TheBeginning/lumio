@@ -82,9 +82,9 @@ export class S3Service {
   async uploadZipSubmission(
     input: Buffer,
     groupId: string,
-    projectId: string,
-    promotionId: string,
-    stepId: string,
+    projectId: number,
+    promotionId: number,
+    stepId: number,
   ): Promise<string> {
     const key = `project-${projectId}/promo-${promotionId}/step-${stepId}/${groupId}-${Date.now()}.zip`;
     await this.uploadFile(input, key);

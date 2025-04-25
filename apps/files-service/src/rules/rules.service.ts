@@ -24,6 +24,7 @@ export class DeliverableRulesService {
     return this.prisma.deliverablesRules.create({
       data: {
         ...createRuleDto,
+        deliverableId: deliverable.id,
         projectId: Number(createRuleDto.projectId),
         promotionId: Number(createRuleDto.promotionId),
       },
