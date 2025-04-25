@@ -19,7 +19,7 @@ export class SubmissionsController {
 
   @Post("deliverables/:idDeliverable/submit")
   @ApiOperation({ summary: "Submit a deliverable with a ZIP file" })
-  @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully submitted." })
+  @ApiResponse({ status: HttpStatus.CREATED, description: "The deliverable has been successfully submitted." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   @ApiConsumes("multipart/form-data")
