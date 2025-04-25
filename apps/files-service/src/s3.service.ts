@@ -69,4 +69,25 @@ export class S3Service {
   generateFileKey(originalFilename: string): string {
     return `${randomUUIDv7()}-${path.basename(originalFilename)}`;
   }
+
+  /**
+   * Upload a zip student submission to S3
+   * @param file The file buffer to upload
+   * @param groupId The group ID
+   * @param projectId The project ID
+   * @param promotionId The promotion ID
+   * @param stepId The step ID
+   * @returns The S3 key of the uploaded file
+   */
+  async uploadZipSubmission(
+    input: Buffer,
+    groupId: string,
+    projectId: string,
+    promotionId: string,
+    stepId: string,
+  ): Promise<string> {
+    const key = `project-${projectId}/promo-${promotionId}/step-${stepId}/${groupId}-${Date.now()}.zip`;
+    await this.uploadFile(input, key);
+    return key;
+  }
 }

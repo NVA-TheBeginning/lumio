@@ -18,6 +18,7 @@ datasource db {
 }
 
 model Deliverables {
+  id                    Int             @unique @default(autoincrement())
   projectId             Int
   promotionId           Int
   name                  String
