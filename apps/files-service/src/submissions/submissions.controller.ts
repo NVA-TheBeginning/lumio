@@ -3,6 +3,8 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
+  Get,
   HttpStatus,
   Param,
   Post,
@@ -10,6 +12,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { Submissions } from "@prisma-files/client";
 import { SubmissionsService } from "./submissions.service";
 
 @ApiTags("submissions")
@@ -46,11 +49,30 @@ export class SubmissionsController {
     @Param("idDeliverable") idDeliverable: string,
     @Body("groupId") groupId: string,
     @UploadedFile() file: File,
-  ): Promise<string> {
+  ): Promise<Submissions> {
     if (!file?.buffer) {
       throw new BadRequestException("No file uploaded");
     }
 
     return this.submissionsService.submit(Number(idDeliverable), groupId, file.buffer);
+  }
+
+  @Get("deliverables/:idDeliverable/submissions")
+  @ApiOperation({ summary: "Get all submissions for a deliverable" })
+  @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
+  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: string): Promise<Submissions[]> {
+    return this.submissionsService.findAllByDeliverable(Number(idDeliverable));
+  }
+
+  @Delete("deliverables/:idDeliverable/submissions/:idSubmission")
+  @ApiOperation({ summary: "Delete a submission" })
+  @ApiResponse({ status: HttpStatus.OK, description: "Submission deleted successfully." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
+  async deleteSubmission(
+    @Param("idDeliverable") idDeliverable: string,
+    @Param("idSubmission") idSubmission: string,
+  ): Promise<void> {
+    return this.submissionsService.deleteSubmission(Number(idDeliverable), Number(idSubmission));
   }
 }

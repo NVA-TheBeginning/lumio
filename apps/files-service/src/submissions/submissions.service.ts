@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Submissions } from "@prisma-files/client";
 import { PrismaService } from "@/prisma.service";
 import { S3Service } from "@/s3.service";
 
@@ -9,12 +10,7 @@ export class SubmissionsService {
     private s3Service: S3Service,
   ) {}
 
-  /**
-   * Submit a deliverable
-   * @param idDeliverable The deliverable ID
-   * @returns void
-   */
-  async submit(idDeliverable: number, groupId: string, file: Buffer): Promise<string> {
+  async submit(idDeliverable: number, groupId: string, file: Buffer): Promise<Submissions> {
     const deliverable = await this.prisma.deliverables.findUnique({
       where: { id: idDeliverable },
     });
@@ -39,7 +35,7 @@ export class SubmissionsService {
       idDeliverable,
     );
 
-    await this.prisma.submissions.create({
+    const created = await this.prisma.submissions.create({
       data: {
         deliverableId: idDeliverable,
         status: "PENDING",
@@ -49,26 +45,46 @@ export class SubmissionsService {
       },
     });
 
-    return key;
+    return created;
   }
 
-  // /**
-  //  * Find all submissions for a deliverable
-  //  * @param idDeliverable The deliverable ID
-  //  * @returns Array of submissions
-  //  */
-  // async findAllByDeliverable(idDeliverable: number): Promise<Submission[]> {
-  //   const deliverable = await this.prisma.deliverables.findUnique({
-  //     where: { id: idDeliverable },
-  //   });
+  async findAllByDeliverable(idDeliverable: number): Promise<Submissions[]> {
+    const deliverable = await this.prisma.deliverables.findUnique({
+      where: { id: idDeliverable },
+    });
 
-  //   if (!deliverable) {
-  //     throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
-  //   }
+    if (!deliverable) {
+      throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
+    }
 
-  //   return this.prisma.submissions.findMany({
-  //     where: { deliverableId: idDeliverable },
-  //     orderBy: { submissionDate: "desc" },
-  //   });
-  // }
+    return this.prisma.submissions.findMany({
+      where: { deliverableId: idDeliverable },
+      orderBy: { submissionDate: "desc" },
+    });
+  }
+
+  async deleteSubmission(idDeliverable: number, idSubmission: number): Promise<void> {
+    const deliverable = await this.prisma.deliverables.findUnique({
+      where: { id: idDeliverable },
+    });
+
+    if (!deliverable) {
+      throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
+    }
+
+    const submission = await this.prisma.submissions.findUnique({
+      where: { id: idSubmission },
+    });
+
+    if (!submission) {
+      throw new NotFoundException(`Submission with ID ${idSubmission} not found`);
+    }
+
+    if (submission?.fileUrl) {
+      await this.s3Service.deleteFile(submission.fileUrl);
+    }
+    await this.prisma.submissions.delete({
+      where: { id: idSubmission },
+    });
+  }
 }

@@ -49,7 +49,8 @@ export class S3Service {
    */
   async getFile(key: string): Promise<Buffer> {
     const s3file = this.s3Client.file(key);
-    return Buffer.from(await s3file.arrayBuffer());
+    const fileBuffer = Buffer.from(await s3file.arrayBuffer());
+    return fileBuffer;
   }
 
   /**
