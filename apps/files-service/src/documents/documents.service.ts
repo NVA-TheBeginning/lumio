@@ -81,8 +81,6 @@ export class DocumentService {
       throw new BadRequestException("File not found");
     }
 
-    console.debug("File size from S3:", file);
-
     return {
       file,
       key: doc.fileKey,
