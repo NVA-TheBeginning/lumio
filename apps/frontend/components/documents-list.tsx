@@ -51,14 +51,34 @@ export default function DocumentListGrid({ documents, isLoading, onDocumentDelet
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
 
   const downloadMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      const blob = await downloadDocument(id);
+    mutationFn: async ({ id }: { id: number }) => {
+      const documentData = await downloadDocument(id);
+      const fileName = documentData.key;
+
+      let uint8Array: Uint8Array;
+      if (
+        typeof documentData.file === "object" &&
+        documentData.file !== null &&
+        "data" in documentData.file &&
+        Array.isArray(documentData.file.data)
+      ) {
+        const dataArray = documentData.file.data;
+        uint8Array = new Uint8Array(dataArray);
+      } else {
+        console.error("Unexpected data type for documentData.file:", typeof documentData.file);
+        return;
+      }
+
+      const blob = new Blob([uint8Array], {
+        type: documentData.mimeType,
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = name;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
+
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     },
@@ -119,8 +139,8 @@ export default function DocumentListGrid({ documents, isLoading, onDocumentDelet
     }
   };
 
-  const handleDownload = (id: number, name: string) => {
-    downloadMutation.mutate({ id, name });
+  const handleDownload = (id: number) => {
+    downloadMutation.mutate({ id });
   };
 
   const handleDelete = async () => {
@@ -180,7 +200,7 @@ export default function DocumentListGrid({ documents, isLoading, onDocumentDelet
                 variant="ghost"
                 size="sm"
                 className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                onClick={() => handleDownload(document.id, document.name)}
+                onClick={() => handleDownload(document.id)}
                 disabled={downloadMutation.isPending}
               >
                 <DownloadIcon className="h-4 w-4 mr-2" />

@@ -23,7 +23,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { DocumentService } from "@/documents/documents.service";
+import { DocumentService, GetDocumentResponse } from "@/documents/documents.service";
 
 @ApiTags("Documents")
 @Controller("documents")
@@ -89,7 +89,7 @@ export class DocumentController {
   })
   @ApiBadRequestResponse({ description: "Invalid document ID" })
   @ApiNotFoundResponse({ description: "Document not found" })
-  async getDocument(@Param("id", ParseIntPipe) id: number) {
+  async getDocument(@Param("id", ParseIntPipe) id: number): Promise<GetDocumentResponse> {
     const document = await this.documentService.getDocumentById(id);
 
     if (!document) {

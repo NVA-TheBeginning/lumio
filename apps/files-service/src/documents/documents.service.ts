@@ -3,6 +3,14 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { S3Service } from "@/s3.service";
 
+export interface GetDocumentResponse {
+  file: Buffer;
+  key: string;
+  mimeType: string;
+  ownerId: number;
+  sizeInBytes: number;
+}
+
 @Injectable()
 export class DocumentService {
   constructor(
@@ -51,12 +59,35 @@ export class DocumentService {
     });
   }
 
-  async getDocumentById(id: number) {
-    return this.prisma.documents.findUnique({
+  async getDocumentById(id: number): Promise<GetDocumentResponse> {
+    const doc = await this.prisma.documents.findUnique({
       where: {
         id: Number(id),
       },
+      select: {
+        fileKey: true,
+        mimeType: true,
+        ownerId: true,
+        sizeInBytes: true,
+      },
     });
+
+    if (!doc?.fileKey) {
+      throw new BadRequestException("Document not found or not authorized");
+    }
+    const file = await this.s3Service.getFile(doc.fileKey);
+
+    if (!file) {
+      throw new BadRequestException("File not found");
+    }
+
+    return {
+      file,
+      key: doc.fileKey,
+      mimeType: doc.mimeType,
+      ownerId: doc.ownerId,
+      sizeInBytes: doc.sizeInBytes,
+    };
   }
 
   async deleteDocument(id: number) {

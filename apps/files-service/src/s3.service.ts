@@ -69,4 +69,59 @@ export class S3Service {
   generateFileKey(originalFilename: string): string {
     return `${randomUUIDv7()}-${path.basename(originalFilename)}`;
   }
+
+  /**
+   * Upload a zip student submission to S3
+   * @param file The file buffer to upload
+   * @param groupId The group ID
+   * @param projectId The project ID
+   * @param promotionId The promotion ID
+   * @param stepId The step ID
+   * @returns The S3 key of the uploaded file
+   */
+  async uploadZipSubmission(
+    input: Buffer,
+    groupId: string,
+    projectId: number,
+    promotionId: number,
+    stepId: number,
+  ): Promise<string> {
+    const key = `project-${projectId}/promo-${promotionId}/step-${stepId}/${groupId}-${Date.now()}.zip`;
+    await this.uploadFile(input, key);
+    return key;
+  }
+
+  /**
+   * Retrieve all zip files within a specific project/promo/step folder in S3
+   * @param projectId The project ID
+   * @param promotionId The promotion ID
+   * @param stepId The step ID
+   * @returns An array of Buffers containing the zip file contents
+   */
+  async getAllSubmissions(projectId: number, promotionId: number, stepId: number): Promise<Buffer[]> {
+    const folderPath = `project-${projectId}/promo-${promotionId}/step-${stepId}/`;
+
+    const zipFiles: Buffer[] = [];
+    try {
+      const objects = await this.s3Client.list({ prefix: folderPath });
+
+      if (!objects?.contents) {
+        return [];
+      }
+
+      const zipObjectKeys = objects.contents.map((obj) => obj.key).filter((key) => key.endsWith(".zip"));
+
+      await Promise.all(
+        zipObjectKeys.map(async (key) => {
+          const file = await this.getFile(key);
+          zipFiles.push(file);
+        }),
+      );
+
+      return zipFiles;
+    } catch (error) {
+      console.error("Failed to retrieve zip files:", error);
+      return [];
+    }
+  }
 }
