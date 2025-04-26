@@ -1,4 +1,3 @@
-// src/groups/groups.service.ts
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service.js";
 import { CreateGroupDto, GroupSettingsDto, UpdateGroupDto } from "./dto/group.dto";

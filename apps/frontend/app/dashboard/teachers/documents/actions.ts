@@ -51,7 +51,14 @@ export async function uploadDocument(file: File, name: string): Promise<Document
   }
 }
 
-export async function downloadDocument(id: number): Promise<Blob> {
+interface DownloadDocumentResponse {
+  file: Buffer;
+  key: string;
+  mimeType: string;
+  ownerId: number;
+}
+
+export async function downloadDocument(id: number): Promise<DownloadDocumentResponse> {
   const { accessToken } = await getTokens();
   if (!accessToken) {
     throw new Error("Access token is missing");
@@ -68,7 +75,7 @@ export async function downloadDocument(id: number): Promise<Blob> {
     throw new Error("Failed to download document");
   }
 
-  return await response.blob();
+  return (await response.json()) as Promise<DownloadDocumentResponse>;
 }
 
 export async function deleteDocument(id: number): Promise<void> {

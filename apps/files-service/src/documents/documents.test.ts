@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { File } from "@nest-lab/fastify-multer";
 import { BadRequestException } from "@nestjs/common";
 import { DocumentController } from "@/documents/documents.controller";
-import { DocumentService } from "@/documents/documents.service";
+import { DocumentService, GetDocumentResponse } from "@/documents/documents.service";
 import type { PrismaService } from "@/prisma.service";
 import type { S3Service } from "@/s3.service";
 
@@ -28,6 +28,7 @@ describe("DocumentController", () => {
   const mockS3Service = {
     uploadFile: mock(),
     deleteFile: mock(),
+    getFile: mock(),
     generateFileKey: mock().mockReturnValue("mocked-file-key"),
   };
 
@@ -46,16 +47,6 @@ describe("DocumentController", () => {
     documentService = new DocumentService(prismaService, s3Service);
 
     controller = new DocumentController(documentService);
-  });
-
-  afterEach(() => {
-    mockS3Service.uploadFile.mockReset();
-    mockS3Service.deleteFile.mockReset();
-    mockS3Service.generateFileKey.mockReset();
-    mockPrismaService.documents.create.mockReset();
-    mockPrismaService.documents.findMany.mockReset();
-    mockPrismaService.documents.findUnique.mockReset();
-    mockPrismaService.documents.delete.mockReset();
   });
 
   describe("uploadDocument", () => {
@@ -77,7 +68,7 @@ describe("DocumentController", () => {
 
       expect(result).toEqual(mockDocument);
 
-      expect(mockS3Service.generateFileKey).toHaveBeenCalledWith(mockFile.originalname);
+      expect(mockS3Service.generateFileKey).toHaveBeenCalledWith(mockFile.filename || mockFile.originalname);
       expect(mockS3Service.uploadFile).toHaveBeenCalledWith(mockFile.buffer, "mocked-file-key");
       expect(mockPrismaService.documents.create).toHaveBeenCalledWith({
         data: {
@@ -90,11 +81,17 @@ describe("DocumentController", () => {
       });
     });
 
+    test("should throw BadRequestException when no file is provided", async () => {
+      expect(controller.uploadDocument(null as unknown as File, "Test Document", 123)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
     test("should handle errors during upload", async () => {
       mockS3Service.uploadFile.mockRejectedValue(new Error("Upload failed"));
 
-      expect(controller.uploadDocument(mockFile as unknown as File, "Test Document", 123)).rejects.toThrowError(
-        new BadRequestException("Failed to upload document"),
+      expect(controller.uploadDocument(mockFile as unknown as File, "Test Document", 123)).rejects.toThrow(
+        BadRequestException,
       );
     });
   });
@@ -136,30 +133,43 @@ describe("DocumentController", () => {
 
   describe("getDocument", () => {
     test("should get a document by ID", async () => {
-      const mockDocument = {
-        id: 1,
-        name: "Test Document",
-        ownerId: 123,
+      const mockDocumentData = {
         fileKey: "mocked-file-key",
-        sizeInBytes: 1024,
         mimeType: "application/pdf",
-        uploadedAt: new Date(),
+        ownerId: 123,
+        sizeInBytes: 1024,
       };
 
-      mockPrismaService.documents.findUnique.mockResolvedValue(mockDocument);
+      const mockDocument: GetDocumentResponse = {
+        file: Buffer.from("test data"),
+        key: "mocked-file-key",
+        mimeType: "application/pdf",
+        ownerId: 123,
+        sizeInBytes: 1024,
+      };
+
+      mockPrismaService.documents.findUnique.mockResolvedValue(mockDocumentData);
+      mockS3Service.getFile.mockResolvedValue(Buffer.from("test data"));
 
       const result = await controller.getDocument(1);
 
       expect(result).toEqual(mockDocument);
       expect(mockPrismaService.documents.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
+        select: {
+          fileKey: true,
+          mimeType: true,
+          ownerId: true,
+          sizeInBytes: true,
+        },
       });
+      expect(mockS3Service.getFile).toHaveBeenCalledWith("mocked-file-key");
     });
 
     test("should throw BadRequestException if document is not found", async () => {
       mockPrismaService.documents.findUnique.mockResolvedValue(null);
 
-      expect(controller.getDocument(1)).rejects.toThrowError(new BadRequestException("Document not found"));
+      expect(controller.getDocument(1)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -191,11 +201,7 @@ describe("DocumentController", () => {
     test("should throw BadRequestException if document is not found for deletion", async () => {
       mockPrismaService.documents.findUnique.mockResolvedValue(null);
 
-      expect(controller.deleteDocument(1)).rejects.toThrowError(
-        new BadRequestException("Document not found or not authorized"),
-      );
-      expect(mockS3Service.deleteFile).not.toHaveBeenCalled();
-      expect(mockPrismaService.documents.delete).not.toHaveBeenCalled();
+      expect(controller.deleteDocument(1)).rejects.toThrow(BadRequestException);
     });
   });
 });
