@@ -77,7 +77,6 @@ model Submissions {
 }
 
 enum SubmissionStatus {
-  PENDING
   PASSED
   FAILED
   LATE

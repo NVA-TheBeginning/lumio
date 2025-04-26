@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Submissions } from "@prisma-files/client";
-import { SubmissionsService } from "./submissions.service";
+import { SubmissionFileResponse, SubmissionsService } from "./submissions.service";
 
 @ApiTags("submissions")
 @Controller()
@@ -61,8 +61,19 @@ export class SubmissionsController {
   @ApiOperation({ summary: "Get all submissions for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: string): Promise<Submissions[]> {
-    return this.submissionsService.findAllByDeliverable(Number(idDeliverable));
+  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: string): Promise<SubmissionFileResponse[]> {
+    return this.submissionsService.findAllSubmissions(Number(idDeliverable));
+  }
+
+  @Get("deliverables/:idDeliverable/submissions/:idSubmission")
+  @ApiOperation({ summary: "Get a specific submission" })
+  @ApiResponse({ status: HttpStatus.OK, description: "Submission details." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
+  async findOne(
+    @Param("idDeliverable") idDeliverable: string,
+    @Param("idSubmission") idSubmission: string,
+  ): Promise<SubmissionFileResponse> {
+    return this.submissionsService.findSubmissionById(Number(idDeliverable), Number(idSubmission));
   }
 
   @Delete("deliverables/:idDeliverable/submissions/:idSubmission")

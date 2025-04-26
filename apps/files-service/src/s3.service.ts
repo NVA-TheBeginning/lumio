@@ -91,4 +91,38 @@ export class S3Service {
     await this.uploadFile(input, key);
     return key;
   }
+
+  /**
+   * Retrieve all zip files within a specific project/promo/step folder in S3
+   * @param projectId The project ID
+   * @param promotionId The promotion ID
+   * @param stepId The step ID
+   * @returns An array of Buffers containing the zip file contents
+   */
+  async getAllSubmissions(projectId: number, promotionId: number, stepId: number): Promise<Buffer[]> {
+    const folderPath = `project-${projectId}/promo-${promotionId}/step-${stepId}/`;
+
+    const zipFiles: Buffer[] = [];
+    try {
+      const objects = await this.s3Client.list({ prefix: folderPath });
+
+      if (!objects?.contents) {
+        return [];
+      }
+
+      const zipObjectKeys = objects.contents.map((obj) => obj.key).filter((key) => key.endsWith(".zip"));
+
+      await Promise.all(
+        zipObjectKeys.map(async (key) => {
+          const file = await this.getFile(key);
+          zipFiles.push(file);
+        }),
+      );
+
+      return zipFiles;
+    } catch (error) {
+      console.error("Failed to retrieve zip files:", error);
+      return [];
+    }
+  }
 }
