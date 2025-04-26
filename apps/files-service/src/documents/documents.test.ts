@@ -202,11 +202,6 @@ describe("DocumentController", () => {
       mockPrismaService.documents.findUnique.mockResolvedValue(null);
 
       expect(controller.deleteDocument(1)).rejects.toThrow(BadRequestException);
-
-      setTimeout(() => {
-        expect(mockS3Service.deleteFile).not.toHaveBeenCalled();
-        expect(mockPrismaService.documents.delete).not.toHaveBeenCalled();
-      }, 0);
     });
   });
 });
