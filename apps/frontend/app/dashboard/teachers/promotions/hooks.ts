@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  addMember,
+  addMembers,
   createPromotion,
   deletePromotion,
   getPromotionMembers,
@@ -73,8 +73,8 @@ export const useAddMember = () => {
       member,
     }: {
       promotionId: number;
-      member: { lastname: string; firstname: string; email: string };
-    }) => addMember(promotionId, member),
+      member: { lastname: string; firstname: string; email: string }[];
+    }) => addMembers(promotionId, member),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["promotions", variables.promotionId, "members"],

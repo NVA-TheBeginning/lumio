@@ -17,6 +17,13 @@ export class PromotionsController {
     return new PromotionEntity(promo);
   }
 
+  @Post(":idPromotion/student")
+  async addStudentsToPromotion(@Param("idPromotion", ParseIntPipe) promoId: number, @Body() studentIds: number[]) {
+    console.log("Adding students to promotion", promoId, studentIds);
+    const promo = await this.promotionsService.addStudents(promoId, studentIds);
+    return new PromotionEntity(promo);
+  }
+
   @Get()
   @ApiOkResponse({ type: PromotionEntity, isArray: true })
   async findAll(@Query("creatorId") creatorId?: string) {

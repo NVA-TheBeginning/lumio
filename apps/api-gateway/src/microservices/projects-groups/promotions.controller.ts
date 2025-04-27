@@ -33,6 +33,12 @@ export class CreatePromotionDto {
   creatorId!: number;
 }
 
+interface StudentData {
+  lastname: string;
+  firstname: string;
+  email: string;
+}
+
 interface UpdatePromotionDto extends Record<string, unknown> {
   name?: string;
   description?: string;
@@ -85,6 +91,12 @@ export class PromotionsController {
     return await this.promotionsService.create(createPromotionDto);
   }
 
+  @Post(":idPromotion/student")
+  @HttpCode(HttpStatus.CREATED)
+  async addStudentsToPromotion(@Param("idPromotion", ParseIntPipe) promoId: number, @Body() students: StudentData[]) {
+    return await this.promotionsService.addStudentsToPromotion(students, promoId);
+  }
+
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(@Query("creatorId") creatorId?: string) {
@@ -123,7 +135,6 @@ export class PromotionsController {
   }
 
   @Patch(":id")
-
   @HttpCode(HttpStatus.OK)
   async update(@Param("id", ParseIntPipe) id: number, @Body() updatePromotionDto: UpdatePromotionDto) {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "PATCH", updatePromotionDto);

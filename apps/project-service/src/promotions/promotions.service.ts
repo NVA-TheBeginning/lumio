@@ -38,6 +38,39 @@ export class PromotionsService {
     });
   }
 
+  async addStudents(promotionId: number, studentIds: number[]) {
+    if (!(studentIds && Array.isArray(studentIds))) {
+      throw new BadRequestException("studentIds must be provided and must be an array");
+    }
+
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id: promotionId },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException(`Promotion with id ${promotionId} not found`);
+    }
+
+    return this.prisma.$transaction(async (prisma) => {
+      const studentPromotions = await Promise.all(
+        studentIds.map(async (userId: number) => {
+          return prisma.studentPromotion.create({
+            data: {
+              promotionId,
+              userId,
+            },
+          });
+        }),
+      );
+
+      return {
+        ...promotion,
+        studentPromotions,
+        students: studentIds,
+      };
+    });
+  }
+
   findAll(creatorId?: number) {
     if (creatorId) {
       return this.prisma.promotion.findMany({
