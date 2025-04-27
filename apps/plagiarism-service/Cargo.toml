@@ -12,6 +12,8 @@ rust-s3 = "0.35.1"
 dotenvy = "0.15.7"
 zip = "2.6.1"
 rand = "0.9.1"
+serde_json = "1.0.140"
+sha1 = "0.10.6"
 
 
 [workspace.lints.clippy]

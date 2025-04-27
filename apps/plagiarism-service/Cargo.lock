@@ -1956,6 +1956,8 @@ dependencies = [
  "rand 0.9.1",
  "rust-s3",
  "serde",
+ "serde_json",
+ "sha1",
  "zip",
 ]
 
