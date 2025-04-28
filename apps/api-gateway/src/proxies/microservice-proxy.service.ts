@@ -12,9 +12,7 @@ interface MicroserviceErrorResponse {
 
 @Injectable()
 export class MicroserviceProxyService {
-  constructor(private readonly configService: ConfigService) {
-    console.log("[Proxy] MicroserviceProxyService instantiated");
-  }
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Transmet une requête HTTP au microservice cible en utilisant Axios.

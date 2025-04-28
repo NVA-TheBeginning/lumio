@@ -77,10 +77,7 @@ export class PromotionsController {
   constructor(
     private readonly proxy: MicroserviceProxyService,
     private readonly promotionsService: PromotionsService,
-  ) {
-    console.log("[PromotionController] proxy is", !!proxy);
-    console.log("[PromotionController] promotionsService is", !!promotionsService);
-  }
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
