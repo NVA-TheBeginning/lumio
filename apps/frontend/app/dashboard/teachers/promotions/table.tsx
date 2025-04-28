@@ -145,7 +145,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     addMutation.mutate(
       {
         promotionId,
-        member: data,
+        member: [data],
       },
       {
         onSuccess: () => {

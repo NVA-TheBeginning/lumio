@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { CreatePromotionDto } from "./dto/create-promotion.dto";
 import { UpdatePromotionDto } from "./dto/update-promotion.dto";
 import { PromotionEntity } from "./entities/promotion.entity";
@@ -17,6 +17,12 @@ export class PromotionsController {
     return new PromotionEntity(promo);
   }
 
+  @Post(":idPromotion/student")
+  async addStudentsToPromotion(@Param("idPromotion", ParseIntPipe) promoId: number, @Body() studentIds: number[]) {
+    const promo = await this.promotionsService.addStudents(promoId, studentIds);
+    return new PromotionEntity(promo);
+  }
+
   @Get()
   @ApiOkResponse({ type: PromotionEntity, isArray: true })
   async findAll(@Query("creatorId") creatorId?: string) {
@@ -30,6 +36,15 @@ export class PromotionsController {
   async findOne(@Param("id", ParseIntPipe) id: number) {
     const promo = await this.promotionsService.findOne(id);
     return new PromotionEntity(promo);
+  }
+
+  @Get("student/:studentId")
+  @ApiOkResponse({ type: PromotionEntity, isArray: true })
+  @ApiOperation({ summary: "Get all promotions for a given student" })
+  @ApiParam({ name: "studentId", type: Number, description: "ID of the student" })
+  async findByStudent(@Param("studentId", ParseIntPipe) studentId: number) {
+    const promos = await this.promotionsService.findByStudent(studentId);
+    return promos.map((p) => new PromotionEntity(p));
   }
 
   @Patch(":id")

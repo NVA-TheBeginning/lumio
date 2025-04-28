@@ -21,6 +21,7 @@ export async function middleware(request: NextRequest) {
     try {
       await refreshTokens(refreshToken);
     } catch (error) {
+      console.error("Error refreshing tokens:", error);
       cookiesStore.delete("user");
       return NextResponse.redirect(new URL("/login", request.url));
     }
