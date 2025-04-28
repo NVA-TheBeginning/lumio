@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
+import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { ProjectsController } from "./projects.controller.js";
 import { CreateProjectDto } from "./projects.controller.js";
@@ -8,6 +9,7 @@ import { GroupMode } from "./projects.controller.js";
 describe("ProjectsController", () => {
   let controller: ProjectsController;
   let proxy: MicroserviceProxyService;
+  let service: ProjectsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,11 +21,18 @@ describe("ProjectsController", () => {
             forwardRequest: jest.fn(),
           },
         },
+        {
+          provide: ProjectsService,
+          useValue: {
+            findProjectsForStudent: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     controller = module.get<ProjectsController>(ProjectsController);
     proxy = module.get<MicroserviceProxyService>(MicroserviceProxyService);
+    service = module.get<ProjectsService>(ProjectsService);
   });
 
   test("create calls proxy.forwardRequest with POST", async () => {
@@ -80,38 +89,42 @@ describe("ProjectsController", () => {
   });
 });
 
-describe("ProjectsController (gateway)", () => {
+describe("ProjectsController – detailed endpoint", () => {
   let controller: ProjectsController;
-  let proxy: MicroserviceProxyService;
+  let service: ProjectsService;
 
   beforeEach(() => {
-    proxy = { forwardRequest: mock(async () => ({})) } as unknown as MicroserviceProxyService;
-    controller = new ProjectsController(proxy);
+    service = {
+      findProjectsForStudent: mock(async (): Promise<Record<number, ProjectWithGroupStatus[]>> => ({})),
+    } as unknown as ProjectsService;
+
+    controller = new ProjectsController({} as MicroserviceProxyService, service);
   });
 
-  it("findByPromotions calls proxy with correct args", async () => {
-    const mockResult = { "1": [{ id: 5, name: "A" }], "2": [{ id: 6, name: "B" }] };
+  it("findByStudentDetailed calls service and returns a proper map", async () => {
+    const mockMap: Record<number, ProjectWithGroupStatus[]> = {
+      1: [
+        {
+          project: {
+            id: 5,
+            name: "",
+            description: "",
+            creatorId: 0,
+            createdAt: "",
+            updatedAt: "",
+          },
+          groupStatus: "no_groups",
+        },
+      ],
+    };
+
     // @ts-ignore
-    (proxy.forwardRequest as Mock<typeof mockResult>).mockResolvedValueOnce(mockResult);
+    (service.findProjectsForStudent as Mock<Promise<Record<number, ProjectWithGroupStatus[]>>>).mockResolvedValueOnce(
+      mockMap,
+    );
 
-    const result = await controller.findByPromotions("1,2");
-
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/by-promotions", "GET", undefined, {
-      promotionIds: "1,2",
-    });
-    expect(result).toEqual(mockResult);
-  });
-
-  it("findByPromotions returns empty object when no IDs", async () => {
-    const mockEmpty = {};
-    // @ts-ignore
-    (proxy.forwardRequest as Mock<typeof mockEmpty>).mockResolvedValueOnce(mockEmpty);
-
-    const result = await controller.findByPromotions("");
-
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/by-promotions", "GET", undefined, {
-      promotionIds: "",
-    });
-    expect(result).toEqual(mockEmpty);
+    const res = await controller.findByStudentDetailed(1);
+    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1);
+    expect(res).toEqual(mockMap);
   });
 });

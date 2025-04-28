@@ -33,6 +33,7 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
+import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export enum GroupMode {
@@ -106,7 +107,10 @@ export class CreateProjectDto {
 @ApiTags("projects")
 @Controller("projects")
 export class ProjectsController {
-  constructor(private readonly proxy: MicroserviceProxyService) {}
+  constructor(
+    private readonly proxy: MicroserviceProxyService,
+    private readonly projectsService: ProjectsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -184,5 +188,16 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async remove(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("project", `/projects/${id}`, "DELETE");
+  }
+
+  @Get("student/:studentId/detailed")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get student's projects with group status by promotion" })
+  @ApiParam({ name: "studentId", type: Number, description: "Student user ID" })
+  @ApiResponse({ status: 200, description: "Projects with group status", type: Object })
+  async findByStudentDetailed(
+    @Param("studentId", ParseIntPipe) studentId: number,
+  ): Promise<Record<number, ProjectWithGroupStatus[]>> {
+    return this.projectsService.findProjectsForStudent(studentId);
   }
 }
