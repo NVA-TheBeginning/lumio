@@ -29,9 +29,9 @@ interface ProjectPromotionDto {
 export class PromotionsService {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
+  // This method is used to create a new promotion with a list of students.
   async create(createPromotionDto: CreatePromotionDto) {
     const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
-    const { students_csv, ...promotionData } = createPromotionDto;
 
     const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>(
       "auth",
@@ -83,5 +83,19 @@ export class PromotionsService {
     }
 
     return students;
+  }
+
+  // This method is used to add students to an existing promotion.
+  async addStudentsToPromotion(students: StudentData[], promoId: number) {
+    const { students: createdStudents } = await this.proxy.forwardRequest<CreateStudentsResponse>(
+      "auth",
+      "/users/students",
+      "POST",
+      students,
+    );
+
+    const studentIds = createdStudents.map((s) => s.studentId);
+
+    return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "POST", studentIds);
   }
 }

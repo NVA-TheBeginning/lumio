@@ -91,6 +91,17 @@ describe("Promotions", () => {
     expect(body).toHaveProperty("name", promotionName);
   });
 
+  test("/promotions/:id/student (POST) - should add students to a promotion", async () => {
+    const studentIds = [3, 4];
+    const response = await app.inject({
+      method: "POST",
+      url: `/promotions/${promotionId}/student`,
+      payload: studentIds,
+    });
+
+    expect(response.statusCode).toEqual(201);
+  });
+
   test("/promotions/student/:studentId (GET) - should return promotions for student", async () => {
     const response = await app.inject({
       method: "GET",

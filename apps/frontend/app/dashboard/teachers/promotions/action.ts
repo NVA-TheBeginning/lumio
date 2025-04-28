@@ -104,8 +104,12 @@ export async function deletePromotion(id: number): Promise<void> {
 }
 
 export async function removeMember(promotionId: number, memberId: number): Promise<void> {
-  const response = await fetch(`${API_URL}/promotions/${promotionId}/student/${memberId}`, {
+  const response = await fetch(`${API_URL}/promotions/${promotionId}/student`, {
     method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ studentIds: [memberId] }),
   });
 
   if (!response.ok) {
@@ -115,10 +119,10 @@ export async function removeMember(promotionId: number, memberId: number): Promi
   revalidatePath(`/dashboard/promotions/${promotionId}`);
 }
 
-export async function addMember(
+export async function addMembers(
   promotionId: number,
-  member: { lastname: string; firstname: string; email: string },
+  students: { lastname: string; firstname: string; email: string }[],
 ): Promise<void> {
-  await authPostData(`${API_URL}/promotions/${promotionId}/members`, member);
+  await authPostData(`${API_URL}/promotions/${promotionId}/student`, students);
   revalidatePath(`/dashboard/promotions/${promotionId}`);
 }
