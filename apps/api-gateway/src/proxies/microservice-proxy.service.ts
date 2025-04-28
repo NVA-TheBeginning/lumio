@@ -1,8 +1,6 @@
-import { HttpService } from "@nestjs/axios";
-import { HttpException, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { AxiosError } from "axios";
-import { firstValueFrom } from "rxjs";
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
@@ -12,24 +10,18 @@ interface MicroserviceErrorResponse {
   error?: string;
 }
 
-/**
- * Service pour rediriger les requêtes vers les microservices appropriés.
- */
 @Injectable()
 export class MicroserviceProxyService {
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
-   * Transmet une requête au microservice spécifié.
-   * @param microservice Nom du microservice cible.
-   * @param endpoint Endpoint du microservice.
-   * @param method Méthode HTTP de la requête.
-   * @param data Données à envoyer (le cas échéant).
-   * @param params Paramètres de requête (le cas échéant).
-   * @returns Réponse du microservice.
+   * Transmet une requête HTTP au microservice cible en utilisant Axios.
+   * @param microservice Nom clé du microservice dans la configuration.
+   * @param endpoint Chemin relatif de l’endpoint (ex. "/auth/login").
+   * @param method Méthode HTTP à utiliser.
+   * @param data Payload JSON (pour POST/PUT/PATCH).
+   * @param params Query params (pour GET/DELETE/PATCH).
+   * @returns Le body de la réponse typé TResponse.
    */
   async forwardRequest<TResponse>(
     microservice: string,
@@ -38,45 +30,22 @@ export class MicroserviceProxyService {
     data?: object,
     params?: object,
   ): Promise<TResponse> {
-    console.log(`Forwarding request to ${microservice} at ${endpoint} with method ${method}`);
-    const microserviceUrl = this.configService.get<string>(`microservices.${microservice}`);
-
-    if (!microserviceUrl) {
-      throw new Error(`URL du microservice ${microservice} non configurée.`);
+    const baseUrl = this.configService.get<string>(`microservices.${microservice}`);
+    if (!baseUrl) {
+      throw new Error(`URL du microservice "${microservice}" non configurée.`);
     }
 
-    const url = `${microserviceUrl}${endpoint}`;
+    const url = `${baseUrl}${endpoint}`;
+    const config: AxiosRequestConfig = { url, method, data, params };
 
     try {
-      let response: { data: TResponse };
-
-      switch (method) {
-        case "GET":
-          response = await firstValueFrom(this.httpService.get<TResponse>(url, params ? { params } : {}));
-          break;
-        case "POST":
-          response = await firstValueFrom(this.httpService.post<TResponse>(url, data, params ? { params } : {}));
-          break;
-        case "PUT":
-          response = await firstValueFrom(this.httpService.put<TResponse>(url, data, params ? { params } : {}));
-          break;
-        case "DELETE":
-          response = await firstValueFrom(this.httpService.delete<TResponse>(url, params ? { params } : {}));
-          break;
-        case "PATCH":
-          response = await firstValueFrom(this.httpService.patch<TResponse>(url, data, params ? { params } : {}));
-          break;
-      }
-
+      const response = await axios.request<TResponse>(config);
       return response.data;
-    } catch (error: unknown) {
-      const err = error as AxiosError;
-
-      const data = err.response?.data as MicroserviceErrorResponse;
-
-      const status = err?.response?.status ?? 500;
-      const message = data?.message || data?.error || "Erreur microservice inconnue";
-
+    } catch (err) {
+      const error = err as AxiosError<MicroserviceErrorResponse>;
+      const status = error.response?.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error.response?.data?.message || error.response?.data?.error || error.message || "Erreur microservice inconnue";
       throw new HttpException(`[${microservice}] ${message}`, status);
     }
   }
