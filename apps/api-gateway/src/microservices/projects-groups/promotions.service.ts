@@ -96,6 +96,6 @@ export class PromotionsService {
 
     const studentIds = createdStudents.map((s) => s.studentId);
 
-    return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "POST", { studentIds });
+    return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "POST", studentIds);
   }
 }
