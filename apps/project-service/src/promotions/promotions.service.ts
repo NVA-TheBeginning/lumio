@@ -87,6 +87,20 @@ export class PromotionsService {
     return item;
   }
 
+  async findByStudent(studentId: number) {
+    return this.prisma.promotion.findMany({
+      where: {
+        studentPromotions: {
+          some: { userId: studentId },
+        },
+      },
+      include: {
+        studentPromotions: { select: { userId: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   async update(id: number, updatePromotionDto: UpdatePromotionDto) {
     await this.findOne(id);
     return this.prisma.promotion.update({

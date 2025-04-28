@@ -11,7 +11,7 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { ApiCreatedResponse } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { PromotionsService } from "./promotions.service.js";
@@ -71,6 +71,7 @@ interface PromotionWithStudents {
   students: Student[];
 }
 
+@ApiTags("promotions")
 @Controller("promotions")
 export class PromotionsController {
   constructor(
@@ -95,6 +96,14 @@ export class PromotionsController {
   @HttpCode(HttpStatus.OK)
   async findOne(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "GET");
+  }
+
+  @Get("student/:studentId")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get all promotions for a given student" })
+  @ApiParam({ name: "studentId", description: "Student user ID", type: Number })
+  async findByStudent(@Param("studentId", ParseIntPipe) studentId: number) {
+    return this.proxy.forwardRequest<Promotion[]>("project", `/promotions/student/${studentId}`, "GET");
   }
 
   @Get(":id/students")
