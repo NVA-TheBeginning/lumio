@@ -1,4 +1,3 @@
-// tests/microservice-proxy.service.spec.ts
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";

@@ -1,4 +1,3 @@
-// tests/projects.e2e.spec.ts
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
@@ -30,7 +29,6 @@ describe("Projects", () => {
       { name: `Test Promotion 2 ${Date.now()}`, description: "Second test promotion", creatorId: 1 },
     ];
 
-    // Create promotions in parallel
     const createdPromotions = await Promise.all(
       promotionsData.map((promo) => prisma.promotion.create({ data: promo })),
     );
