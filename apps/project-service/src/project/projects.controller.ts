@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
@@ -57,5 +69,26 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: "Project not found." })
   async remove(@Param("id", ParseIntPipe) id: number) {
     return this.projectService.remove(id);
+  }
+
+  @Get("by-promotions")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Retrieve projects grouped by promotion IDs" })
+  @ApiResponse({
+    status: 200,
+    description: "Map of promotionId to array of projects.",
+    schema: {
+      example: {
+        "1": [{ id: 5, name: "Proj A" /* … */ }],
+        "2": [{ id: 6, name: "Proj B" /* … */ }],
+      },
+    },
+  })
+  async findByPromotions(@Query("promotionIds") promotionIds: string) {
+    const ids = promotionIds
+      .split(",")
+      .map((s) => parseInt(s, 10))
+      .filter((n) => !Number.isNaN(n));
+    return this.projectService.findByPromotions(ids);
   }
 }

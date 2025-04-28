@@ -39,10 +39,8 @@ describe("Promotions", () => {
     });
 
     expect(response.statusCode).toEqual(201);
-
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("id");
-
     expect(body).toHaveProperty("name", promoDto.name);
     expect(body).toHaveProperty("description", promoDto.description);
 
@@ -54,7 +52,6 @@ describe("Promotions", () => {
       name: promotionName,
       description: "Test promotion description",
       creatorId: 1,
-      // Missing studentIds
     };
 
     const response = await app.inject({
@@ -75,7 +72,6 @@ describe("Promotions", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-
     const body = JSON.parse(response.body);
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
@@ -90,10 +86,33 @@ describe("Promotions", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty("id", promotionId);
     expect(body).toHaveProperty("name", promotionName);
+  });
+
+  test("/promotions/student/:studentId (GET) - should return promotions for student", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/promotions/student/1",
+    });
+
+    expect(response.statusCode).toEqual(200);
+    const body = JSON.parse(response.body);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.some((p: { id: number }) => p.id === promotionId)).toBe(true);
+  });
+
+  test("/promotions/student/:studentId (GET) - should return empty array for non-enrolled student", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/promotions/student/999999",
+    });
+
+    expect(response.statusCode).toEqual(200);
+    const body = JSON.parse(response.body);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(0);
   });
 
   test("/promotions/:id (DELETE) - should delete a promotion", async () => {
@@ -108,9 +127,7 @@ describe("Promotions", () => {
   });
 
   afterAll(async () => {
-    await prisma.studentPromotion.deleteMany({
-      where: { promotionId },
-    });
+    await prisma.studentPromotion.deleteMany({ where: { promotionId } });
     await app.close();
   });
 });

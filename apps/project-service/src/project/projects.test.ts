@@ -184,6 +184,31 @@ describe("Projects", () => {
     expect(res.statusCode).toBe(404);
   });
 
+  test("/projects/by-promotions (GET) - should group projects by promotions", async () => {
+    const query = promotionIds.join(",");
+    const res = await app.inject({
+      method: "GET",
+      url: `/projects/by-promotions?promotionIds=${query}`,
+    });
+    expect(res.statusCode).toBe(200);
+
+    const body = JSON.parse(res.body) as Record<string, Array<{ id: number }>>;
+    for (const pid of promotionIds) {
+      expect(Array.isArray(body[pid])).toBe(true);
+      expect(body[pid].some((p) => p.id === projectId)).toBe(true);
+    }
+  });
+
+  test("/projects/by-promotions (GET) - empty array when no promotions passed", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/projects/by-promotions?promotionIds=",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body) as Record<string, unknown[]>;
+    expect(Object.keys(body).length).toBe(0);
+  });
+
   afterAll(async () => {
     if (projectId) {
       await prisma.groupSettings.deleteMany({ where: { projectId } });

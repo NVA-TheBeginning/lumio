@@ -1,10 +1,23 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiCreatedResponse,
   ApiOperation,
   ApiParam,
   ApiProperty,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
@@ -129,6 +142,26 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async findOne(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("project", `/projects/${id}`, "GET");
+  }
+
+  @Get("by-promotions")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get projects grouped by promotions" })
+  @ApiQuery({
+    name: "promotionIds",
+    description: "Comma-separated list of promotion IDs",
+    required: true,
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Map of promotionId to array of projects",
+    schema: {
+      example: { "1": [{ id: 5, name: "Proj A" }], "2": [{ id: 6, name: "Proj B" }] },
+    },
+  })
+  findByPromotions(@Query("promotionIds") promotionIds: string) {
+    return this.proxy.forwardRequest("project", "/projects/by-promotions", "GET", undefined, { promotionIds });
   }
 
   @Patch(":id")

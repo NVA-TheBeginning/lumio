@@ -78,6 +78,25 @@ export class ProjectService {
     return project;
   }
 
+  async findByPromotions(promotionIds: number[]) {
+    const links = await this.prisma.projectPromotion.findMany({
+      where: { promotionId: { in: promotionIds } },
+      include: { project: true },
+    });
+
+    const result: Record<number, unknown[]> = {};
+    for (const pid of promotionIds) {
+      result[pid] = [];
+    }
+    for (const link of links) {
+      if (!result[link.promotionId]) {
+        result[link.promotionId] = [];
+      }
+      result[link.promotionId].push(link.project);
+    }
+    return result;
+  }
+
   async update(id: number, updateDto: UpdateProjectDto) {
     const existing = await this.prisma.project.findUnique({
       where: { id, deletedAt: null },

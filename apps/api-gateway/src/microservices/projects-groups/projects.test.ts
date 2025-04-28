@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest, test } from "bun:test";
+import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { ProjectsController } from "./projects.controller.js";
@@ -77,5 +77,41 @@ describe("ProjectsController", () => {
     const result = await controller.remove(5);
     expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/5", "DELETE");
     expect(result).toEqual({ deleted: true });
+  });
+});
+
+describe("ProjectsController (gateway)", () => {
+  let controller: ProjectsController;
+  let proxy: MicroserviceProxyService;
+
+  beforeEach(() => {
+    proxy = { forwardRequest: mock(async () => ({})) } as unknown as MicroserviceProxyService;
+    controller = new ProjectsController(proxy);
+  });
+
+  it("findByPromotions calls proxy with correct args", async () => {
+    const mockResult = { "1": [{ id: 5, name: "A" }], "2": [{ id: 6, name: "B" }] };
+    // @ts-ignore
+    (proxy.forwardRequest as Mock<typeof mockResult>).mockResolvedValueOnce(mockResult);
+
+    const result = await controller.findByPromotions("1,2");
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/by-promotions", "GET", undefined, {
+      promotionIds: "1,2",
+    });
+    expect(result).toEqual(mockResult);
+  });
+
+  it("findByPromotions returns empty object when no IDs", async () => {
+    const mockEmpty = {};
+    // @ts-ignore
+    (proxy.forwardRequest as Mock<typeof mockEmpty>).mockResolvedValueOnce(mockEmpty);
+
+    const result = await controller.findByPromotions("");
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/by-promotions", "GET", undefined, {
+      promotionIds: "",
+    });
+    expect(result).toEqual(mockEmpty);
   });
 });
