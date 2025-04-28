@@ -9,7 +9,6 @@ import { GroupMode } from "./projects.controller.js";
 describe("ProjectsController", () => {
   let controller: ProjectsController;
   let proxy: MicroserviceProxyService;
-  let service: ProjectsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,7 +31,6 @@ describe("ProjectsController", () => {
 
     controller = module.get<ProjectsController>(ProjectsController);
     proxy = module.get<MicroserviceProxyService>(MicroserviceProxyService);
-    service = module.get<ProjectsService>(ProjectsService);
   });
 
   test("create calls proxy.forwardRequest with POST", async () => {

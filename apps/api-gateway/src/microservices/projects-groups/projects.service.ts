@@ -40,6 +40,7 @@ export class ProjectsService {
       `/promotions/student/${studentId}`,
       "GET",
     );
+
     const promotionIds = promotions.map((p) => p.id);
     if (promotionIds.length === 0) return {};
 
@@ -51,35 +52,49 @@ export class ProjectsService {
       { promotionIds: promotionIds.join(",") },
     );
 
-    const entries = await Promise.all(
-      promotionIds.map(async (pid) => {
-        const projects = byPromos[pid] ?? [];
-        const enriched = await Promise.all(
-          projects.map(async (proj) => {
-            const groups = await this.proxy.forwardRequest<Group[]>(
-              "group",
-              `/projects/${proj.id}/promotions/${pid}/groups`,
-              "GET",
-            );
-            let status: GroupStatus;
-            let ownGroup: Group | undefined;
-            if (!groups || groups.length === 0) {
-              status = "no_groups";
-            } else {
-              const found = groups.find((g) => g.members.some((m) => m.studentId === studentId));
-              if (found) {
-                status = "in_group";
-                ownGroup = found;
-              } else {
-                status = "not_in_group";
-              }
-            }
-            return { project: proj, groupStatus: status, group: ownGroup };
-          }),
+    const resultsByPromotion: Map<number, ProjectWithGroupStatus[]> = new Map();
+
+    promotionIds.forEach((pid) => {
+      resultsByPromotion.set(pid, []);
+    });
+
+    const projectPromotionPairs: Array<{ project: Project; promotionId: number }> = [];
+
+    promotionIds.forEach((pid) => {
+      const projects = byPromos[pid] ?? [];
+      projects.forEach((project) => {
+        projectPromotionPairs.push({ project, promotionId: pid });
+      });
+    });
+
+    await Promise.all(
+      projectPromotionPairs.map(async ({ project, promotionId }) => {
+        const groups = await this.proxy.forwardRequest<Group[]>(
+          "group",
+          `/projects/${project.id}/promotions/${promotionId}/groups`,
+          "GET",
         );
-        return [pid, enriched] as const;
+
+        let groupStatus: GroupStatus;
+        let ownGroup: Group | undefined;
+
+        if (!groups || groups.length === 0) {
+          groupStatus = "no_groups";
+        } else {
+          ownGroup = groups.find((g) => g.members.some((m) => m.studentId === studentId));
+          groupStatus = ownGroup ? "in_group" : "not_in_group";
+        }
+
+        const enrichedProject: ProjectWithGroupStatus = {
+          project,
+          groupStatus,
+          group: ownGroup,
+        };
+
+        resultsByPromotion.get(promotionId)?.push(enrichedProject);
       }),
     );
-    return Object.fromEntries(entries) as Record<number, ProjectWithGroupStatus[]>;
+
+    return Object.fromEntries(resultsByPromotion.entries()) as Record<number, ProjectWithGroupStatus[]>;
   }
 }
