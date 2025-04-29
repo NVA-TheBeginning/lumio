@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
-import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects/projects.service.js";
+import { ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { ProjectsController } from "./projects.controller.js";
 import { CreateProjectDto } from "./projects.controller.js";
@@ -87,7 +87,7 @@ describe("ProjectsController", () => {
   });
 });
 
-describe("ProjectsController", () => {
+describe("ProjectsController.findByStudentDetailed", () => {
   let controller: ProjectsController;
   let service: ProjectsService;
 
@@ -96,19 +96,23 @@ describe("ProjectsController", () => {
     controller = new ProjectsController({} as MicroserviceProxyService, service);
   });
 
-  it("parses query and calls service", async () => {
-    const mockMap = { "1": [] };
+  it("parses query params and calls service", async () => {
+    const mockMap = {
+      "1": {
+        data: [{ project: { id: 5 } }],
+        pagination: { totalRecords: 1, currentPage: 2, totalPages: 1, nextPage: null, prevPage: 1 },
+      },
+    };
     // @ts-ignore
-    (service.findProjectsForStudent as Mock<Promise<Record<number, ProjectWithGroupStatus[]>>>).mockResolvedValueOnce(
-      mockMap,
-    );
+    (service.findProjectsForStudent as Mock<() => unknown>).mockResolvedValueOnce(mockMap);
 
-    const res = await controller.findByStudentDetailed(1, "2", "3");
-    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 2, 3);
-    expect(res).toEqual(mockMap);
+    const result = await controller.findByStudentDetailed(1, "2", "5");
+    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 2, 5);
+    // @ts-ignore
+    expect(result).toEqual(mockMap);
   });
 
-  it("throws on invalid page/size", async () => {
+  it("throws on non-numeric page/size", async () => {
     expect(controller.findByStudentDetailed(1, "a", "b")).rejects.toThrow("page and size must be numbers");
   });
 });

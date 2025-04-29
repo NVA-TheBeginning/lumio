@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { Paginated, PaginationMeta } from "@/common/interfaces/pagination.interface.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export interface Project {
@@ -24,19 +25,13 @@ export interface ProjectWithGroupStatus {
   group?: Group;
 }
 
+export type ProjectsByPromotion = Record<number, Paginated<ProjectWithGroupStatus>>;
+
 @Injectable()
 export class ProjectsService {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
-  /**
-   * Récupère pour un étudiant donné tous ses projets classés par promotion,
-   * avec le statut de groupe et pagination per promotion.
-   */
-  async findProjectsForStudent(
-    studentId: number,
-    page = 1,
-    size = 10,
-  ): Promise<Record<number, ProjectWithGroupStatus[]>> {
+  async findProjectsForStudent(studentId: number, page = 1, size = 10): Promise<ProjectsByPromotion> {
     if (!studentId) throw new BadRequestException("studentId is required");
     if (page < 1 || size < 1) throw new BadRequestException("page and size must be positive integers");
 
@@ -56,11 +51,15 @@ export class ProjectsService {
       { promotionIds: promotionIds.join(",") },
     );
 
-    const allResults = await Promise.all(
+    const result: ProjectsByPromotion = {};
+
+    await Promise.all(
       promotionIds.map(async (pid) => {
-        const projects = byPromos[pid] ?? [];
+        const allProjects = byPromos[pid] ?? [];
+        const totalRecords = allProjects.length;
+        const totalPages = Math.ceil(totalRecords / size);
         const start = (page - 1) * size;
-        const pageProjects = projects.slice(start, start + size);
+        const pageProjects = allProjects.slice(start, start + size);
 
         const enriched = await Promise.all(
           pageProjects.map(async (proj) => {
@@ -71,29 +70,29 @@ export class ProjectsService {
             );
             let status: GroupStatus;
             let ownGroup: Group | undefined;
-            if (!groups || groups.length === 0) {
+            if (!groups.length) {
               status = "no_groups";
             } else {
               const found = groups.find((g) => g.members.some((m) => m.studentId === studentId));
-              if (found) {
-                status = "in_group";
-                ownGroup = found;
-              } else {
-                status = "not_in_group";
-              }
+              status = found ? "in_group" : "not_in_group";
+              ownGroup = found;
             }
             return { project: proj, groupStatus: status, group: ownGroup };
           }),
         );
 
-        return { pid, enriched };
+        const meta: PaginationMeta = {
+          totalRecords,
+          currentPage: page,
+          totalPages,
+          nextPage: page < totalPages ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null,
+        };
+
+        result[pid] = { data: enriched, pagination: meta };
       }),
     );
 
-    const result: Record<number, ProjectWithGroupStatus[]> = {};
-    for (const { pid, enriched } of allResults) {
-      result[pid] = enriched;
-    }
     return result;
   }
 }

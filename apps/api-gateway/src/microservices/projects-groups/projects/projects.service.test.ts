@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it, Mock, mock } from "bun:test";
-import { Project, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
+import { Paginated } from "@/common/interfaces/pagination.interface.js";
+import {
+  Group,
+  Project,
+  ProjectsService,
+  ProjectWithGroupStatus,
+} from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
-describe("ProjectsService", () => {
+describe("ProjectsService.findProjectsForStudent", () => {
   let service: ProjectsService;
   let proxy: MicroserviceProxyService;
 
@@ -11,30 +17,49 @@ describe("ProjectsService", () => {
     service = new ProjectsService(proxy);
   });
 
-  it("applies pagination and returns empty map on no promotions", async () => {
+  it("returns empty map when no promotions", async () => {
     // @ts-ignore
-    (proxy.forwardRequest as Mock<Promise<Array<{ id: number }>>>).mockResolvedValueOnce([]);
-    const res = await service.findProjectsForStudent(1, 2, 5);
-    expect(res).toEqual({});
+    (proxy.forwardRequest as Mock<() => unknown>).mockResolvedValueOnce([]);
+    const result = await service.findProjectsForStudent(1);
+    expect(result).toEqual({});
   });
 
-  it("applies pagination and group status", async () => {
+  it("paginates and sets groupStatus correctly", async () => {
+    const studentId = 2;
     const promos = [{ id: 10 }];
     const projects: Project[] = [
       { id: 100, name: "A", description: "", creatorId: 0, createdAt: new Date(), updatedAt: new Date() },
       { id: 101, name: "B", description: "", creatorId: 0, createdAt: new Date(), updatedAt: new Date() },
+      { id: 102, name: "C", description: "", creatorId: 0, createdAt: new Date(), updatedAt: new Date() },
     ];
-    const groups = [{ id: 200, name: "G1", members: [{ studentId: 2 }] }];
-
-    // @ts-ignore
-    (proxy.forwardRequest as Mock<Promise<Array<{ id: number }>>>)
+    const groupsFor100 = [{ id: 200, name: "G1", members: [{ studentId }] }];
+    const groupsFor101: Group[] = [{ id: 201, name: "G2", members: [{ studentId: 999 }] }];
+    (proxy.forwardRequest as Mock<() => unknown>)
+      // @ts-ignore
       .mockResolvedValueOnce(promos)
+      // @ts-ignore
       .mockResolvedValueOnce({ "10": projects })
-      .mockResolvedValueOnce(groups);
+      // @ts-ignore
+      .mockResolvedValueOnce(groupsFor100)
+      // @ts-ignore
+      .mockResolvedValueOnce(groupsFor101)
+      // @ts-ignore
+      .mockResolvedValueOnce(groupsFor101);
 
-    const res = await service.findProjectsForStudent(2, 1, 1);
-    expect(res[10]).toHaveLength(1);
-    expect(res[10][0].project.id).toBe(100);
-    expect(res[10][0].groupStatus).toBe("in_group");
+    const result = await service.findProjectsForStudent(studentId, 1, 2);
+
+    const page = result[10] as unknown as Paginated<{ project: Project; groupStatus: string }>[];
+    expect(Object.keys(result)).toContain("10");
+    const paginated = result[10] as Paginated<ProjectWithGroupStatus>;
+    expect(paginated.data.length).toBe(2);
+    expect(paginated.pagination).toMatchObject({
+      totalRecords: 3,
+      currentPage: 1,
+      totalPages: 2,
+      nextPage: 2,
+      prevPage: null,
+    });
+    expect(paginated.data[0].groupStatus).toBe("in_group");
+    expect(paginated.data[1].groupStatus).toBe("not_in_group");
   });
 });

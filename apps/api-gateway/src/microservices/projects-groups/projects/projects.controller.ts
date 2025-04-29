@@ -34,7 +34,7 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
-import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects/projects.service.js";
+import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export enum GroupMode {
@@ -193,16 +193,47 @@ export class ProjectsController {
 
   @Get("student/:studentId/detailed")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get student's projects with group status by promotion and pagination" })
+  @ApiOperation({
+    summary: "Get student's projects with group status, grouped by promotion, with pagination",
+  })
   @ApiParam({ name: "studentId", type: Number, description: "Student user ID" })
   @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
   @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
-  @ApiResponse({ status: 200, description: "Projects with group status", type: Object })
+  @ApiResponse({
+    status: 200,
+    description: "Map of promotionId → paginated projects",
+    schema: {
+      example: {
+        "10": {
+          data: [
+            {
+              project: { id: 100, name: "Foo" /*…*/ },
+              groupStatus: "in_group",
+              group: {
+                id: 200,
+                name: "G1",
+                members: [
+                  /*…*/
+                ],
+              },
+            },
+          ],
+          pagination: {
+            totalRecords: 25,
+            currentPage: 1,
+            totalPages: 3,
+            nextPage: 2,
+            prevPage: null,
+          },
+        },
+      },
+    },
+  })
   async findByStudentDetailed(
     @Param("studentId", ParseIntPipe) studentId: number,
     @Query("page") page?: string,
     @Query("size") size?: string,
-  ): Promise<Record<number, ProjectWithGroupStatus[]>> {
+  ): Promise<ProjectsByPromotion> {
     const p = page ? parseInt(page, 10) : 1;
     const s = size ? parseInt(size, 10) : 10;
     if (Number.isNaN(p) || Number.isNaN(s)) {
