@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
-import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
+import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { ProjectsController } from "./projects.controller.js";
 import { CreateProjectDto } from "./projects.controller.js";
@@ -87,42 +87,28 @@ describe("ProjectsController", () => {
   });
 });
 
-describe("ProjectsController – detailed endpoint", () => {
+describe("ProjectsController", () => {
   let controller: ProjectsController;
   let service: ProjectsService;
 
   beforeEach(() => {
-    service = {
-      findProjectsForStudent: mock(async (): Promise<Record<number, ProjectWithGroupStatus[]>> => ({})),
-    } as unknown as ProjectsService;
-
+    service = { findProjectsForStudent: mock(async () => ({})) } as unknown as ProjectsService;
     controller = new ProjectsController({} as MicroserviceProxyService, service);
   });
 
-  it("findByStudentDetailed calls service and returns a proper map", async () => {
-    const mockMap: Record<number, ProjectWithGroupStatus[]> = {
-      1: [
-        {
-          project: {
-            id: 5,
-            name: "",
-            description: "",
-            creatorId: 0,
-            createdAt: "",
-            updatedAt: "",
-          },
-          groupStatus: "no_groups",
-        },
-      ],
-    };
-
+  it("parses query and calls service", async () => {
+    const mockMap = { "1": [] };
     // @ts-ignore
     (service.findProjectsForStudent as Mock<Promise<Record<number, ProjectWithGroupStatus[]>>>).mockResolvedValueOnce(
       mockMap,
     );
 
-    const res = await controller.findByStudentDetailed(1);
-    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1);
+    const res = await controller.findByStudentDetailed(1, "2", "3");
+    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 2, 3);
     expect(res).toEqual(mockMap);
+  });
+
+  it("throws on invalid page/size", async () => {
+    expect(controller.findByStudentDetailed(1, "a", "b")).rejects.toThrow("page and size must be numbers");
   });
 });

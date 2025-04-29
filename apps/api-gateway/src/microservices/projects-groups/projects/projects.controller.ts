@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -33,7 +34,7 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
-import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
+import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export enum GroupMode {
@@ -192,12 +193,21 @@ export class ProjectsController {
 
   @Get("student/:studentId/detailed")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get student's projects with group status by promotion" })
+  @ApiOperation({ summary: "Get student's projects with group status by promotion and pagination" })
   @ApiParam({ name: "studentId", type: Number, description: "Student user ID" })
+  @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
+  @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
   @ApiResponse({ status: 200, description: "Projects with group status", type: Object })
   async findByStudentDetailed(
     @Param("studentId", ParseIntPipe) studentId: number,
+    @Query("page") page?: string,
+    @Query("size") size?: string,
   ): Promise<Record<number, ProjectWithGroupStatus[]>> {
-    return this.projectsService.findProjectsForStudent(studentId);
+    const p = page ? parseInt(page, 10) : 1;
+    const s = size ? parseInt(size, 10) : 10;
+    if (Number.isNaN(p) || Number.isNaN(s)) {
+      throw new BadRequestException("page and size must be numbers");
+    }
+    return this.projectsService.findProjectsForStudent(studentId, p, s);
   }
 }
