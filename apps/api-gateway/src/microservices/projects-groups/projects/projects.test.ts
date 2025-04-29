@@ -5,6 +5,8 @@ import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.j
 import { ProjectsController } from "./projects.controller.js";
 import { CreateProjectDto } from "./projects.controller.js";
 import { GroupMode } from "./projects.controller.js";
+import {PaginationQueryDto} from "@/common/dto/pagination-query.dto.js";
+import {Paginated} from "@/common/interfaces/pagination.interface.js";
 
 describe("ProjectsController", () => {
   let controller: ProjectsController;
@@ -87,7 +89,7 @@ describe("ProjectsController", () => {
   });
 });
 
-describe("ProjectsController.findByStudentDetailed", () => {
+describe('ProjectsController.findByStudentDetailed', () => {
   let controller: ProjectsController;
   let service: ProjectsService;
 
@@ -96,23 +98,37 @@ describe("ProjectsController.findByStudentDetailed", () => {
     controller = new ProjectsController({} as MicroserviceProxyService, service);
   });
 
-  it("parses query params and calls service", async () => {
-    const mockMap = {
-      "1": {
-        data: [{ project: { id: 5 } }],
-        pagination: { totalRecords: 1, currentPage: 2, totalPages: 1, nextPage: null, prevPage: 1 },
-      },
+  it('calls service with correct numeric pagination', async () => {
+    const mockMap: Record<string, Paginated<unknown>> = {
+      '1': {
+        data: [ { project: { id: 5 } as any, groupStatus: 'no_groups' as any } ],
+        pagination: { totalRecords: 1, currentPage: 2, totalPages: 1, nextPage: null, prevPage: 1 }
+      }
     };
+    const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
     // @ts-ignore
-    (service.findProjectsForStudent as Mock<() => unknown>).mockResolvedValueOnce(mockMap);
+    svc.mockResolvedValueOnce(mockMap);
 
-    const result = await controller.findByStudentDetailed(1, "2", "5");
+    const pagination = new PaginationQueryDto();
+    pagination.page = 2;
+    pagination.size = 5;
+
+    const result = await controller.findByStudentDetailed(1, pagination);
     expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 2, 5);
-    // @ts-ignore
     expect(result).toEqual(mockMap);
   });
 
-  it("throws on non-numeric page/size", async () => {
-    expect(controller.findByStudentDetailed(1, "a", "b")).rejects.toThrow("page and size must be numbers");
+  it('uses default pagination when none provided', async () => {
+    const defaultMap: Record<string, Paginated<unknown>> = {
+      '1': { data: [], pagination: { totalRecords: 0, currentPage: 1, totalPages: 0, nextPage: null, prevPage: null } }
+    };
+    const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
+    svc.mockResolvedValueOnce(defaultMap);
+
+    const pagination = new PaginationQueryDto(); // defaults page=1, size=10
+    const result = await controller.findByStudentDetailed(1, pagination);
+    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 1, 10);
+    expect(result).toEqual(defaultMap);
   });
 });
+

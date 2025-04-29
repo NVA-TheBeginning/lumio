@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,7 +9,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
+  Query, UsePipes, ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -36,6 +35,7 @@ import {
 } from "class-validator";
 import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import {PaginationQueryDto} from "@/common/dto/pagination-query.dto.js";
 
 export enum GroupMode {
   AUTO = "AUTO",
@@ -229,16 +229,15 @@ export class ProjectsController {
       },
     },
   })
+  @UsePipes(new ValidationPipe({ transform: true }))
   async findByStudentDetailed(
-    @Param("studentId", ParseIntPipe) studentId: number,
-    @Query("page") page?: string,
-    @Query("size") size?: string,
+      @Param('studentId', ParseIntPipe) studentId: number,
+      @Query() pagination: PaginationQueryDto,
   ): Promise<ProjectsByPromotion> {
-    const p = page ? parseInt(page, 10) : 1;
-    const s = size ? parseInt(size, 10) : 10;
-    if (Number.isNaN(p) || Number.isNaN(s)) {
-      throw new BadRequestException("page and size must be numbers");
-    }
-    return this.projectsService.findProjectsForStudent(studentId, p, s);
+    return this.projectsService.findProjectsForStudent(
+        studentId,
+        pagination.page,
+        pagination.size,
+    );
   }
 }

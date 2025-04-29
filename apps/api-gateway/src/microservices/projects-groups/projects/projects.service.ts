@@ -33,7 +33,6 @@ export class ProjectsService {
 
   async findProjectsForStudent(studentId: number, page = 1, size = 10): Promise<ProjectsByPromotion> {
     if (!studentId) throw new BadRequestException("studentId is required");
-    if (page < 1 || size < 1) throw new BadRequestException("page and size must be positive integers");
 
     const promotions = await this.proxy.forwardRequest<Array<{ id: number }>>(
       "project",
