@@ -32,7 +32,7 @@ export class GroupsController {
     @Param("promotionId", ParseIntPipe) promotionId: number,
     @Body() dto: CreateGroupDto,
   ) {
-    return this.proxy.forwardRequest("group", `/projects/${projectId}/promotions/${promotionId}/groups`, "POST", dto);
+    return this.proxy.forwardRequest("project", `/projects/${projectId}/promotions/${promotionId}/groups`, "POST", dto);
   }
 
   @Get("projects/:projectId/promotions/:promotionId/groups")
@@ -45,7 +45,7 @@ export class GroupsController {
     @Param("projectId", ParseIntPipe) projectId: number,
     @Param("promotionId", ParseIntPipe) promotionId: number,
   ) {
-    return this.proxy.forwardRequest("group", `/projects/${projectId}/promotions/${promotionId}/groups`, "GET");
+    return this.proxy.forwardRequest("project", `/projects/${projectId}/promotions/${promotionId}/groups`, "GET");
   }
 
   @Put("groups/:id")
@@ -55,7 +55,7 @@ export class GroupsController {
   @ApiBody({ type: UpdateGroupDto })
   @ApiOkResponse({ description: "Group updated successfully" })
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateGroupDto) {
-    return this.proxy.forwardRequest("group", `/groups/${id}`, "PUT", dto);
+    return this.proxy.forwardRequest("project", `/groups/${id}`, "PUT", dto);
   }
 
   @Delete("groups/:id")
@@ -64,7 +64,7 @@ export class GroupsController {
   @ApiParam({ name: "id", type: Number })
   @ApiOkResponse({ description: "Group deleted successfully" })
   remove(@Param("id", ParseIntPipe) id: number) {
-    return this.proxy.forwardRequest("group", `/groups/${id}`, "DELETE");
+    return this.proxy.forwardRequest("project", `/groups/${id}`, "DELETE");
   }
 
   @Post("groups/:id/students")
@@ -74,7 +74,7 @@ export class GroupsController {
   @ApiBody({ type: AddMembersDto })
   @ApiOkResponse({ description: "Students added to group" })
   addMembers(@Param("id", ParseIntPipe) id: number, @Body() dto: AddMembersDto) {
-    return this.proxy.forwardRequest("group", `/groups/${id}/students`, "POST", dto);
+    return this.proxy.forwardRequest("project", `/groups/${id}/students`, "POST", dto);
   }
 
   @Delete("groups/:id/students/:userId")
@@ -84,7 +84,7 @@ export class GroupsController {
   @ApiParam({ name: "userId", type: Number })
   @ApiOkResponse({ description: "Student removed from group" })
   removeMember(@Param("id", ParseIntPipe) id: number, @Param("userId", ParseIntPipe) userId: number) {
-    return this.proxy.forwardRequest("group", `/groups/${id}/students/${userId}`, "DELETE");
+    return this.proxy.forwardRequest("project", `/groups/${id}/students/${userId}`, "DELETE");
   }
 
   @Get("projects/:projectId/promotions/:promotionId/group-settings")
@@ -97,7 +97,11 @@ export class GroupsController {
     @Param("projectId", ParseIntPipe) projectId: number,
     @Param("promotionId", ParseIntPipe) promotionId: number,
   ) {
-    return this.proxy.forwardRequest("group", `/projects/${projectId}/promotions/${promotionId}/group-settings`, "GET");
+    return this.proxy.forwardRequest(
+      "project",
+      `/projects/${projectId}/promotions/${promotionId}/group-settings`,
+      "GET",
+    );
   }
 
   @Patch("projects/:projectId/promotions/:promotionId/group-settings")
@@ -113,7 +117,7 @@ export class GroupsController {
     @Body() dto: GroupSettingsDto,
   ) {
     return this.proxy.forwardRequest(
-      "group",
+      "project",
       `/projects/${projectId}/promotions/${promotionId}/group-settings`,
       "PATCH",
       dto,

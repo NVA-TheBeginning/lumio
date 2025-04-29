@@ -100,10 +100,10 @@ export default function ProjectList() {
 
       const matchesSearch =
         filters.search === "" ||
-        project.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         project.description.toLowerCase().includes(filters.search.toLowerCase());
 
-      const projectDate = new Date(project.date);
+      const projectDate = new Date(project.createdAt);
       const matchesDate = filters.dateRange === "all" || (dateLimit && projectDate >= dateLimit);
 
       const matchesStatus = filters.status.length === 0 || filters.status.includes(project.status);
@@ -115,11 +115,11 @@ export default function ProjectList() {
   const sortedProjects = useMemo(() => {
     return [...filteredProjects].sort((a, b) => {
       if (sortBy === "date") {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       } else if (sortBy === "title") {
-        return sortOrder === "asc" ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title);
+        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       } else if (sortBy === "status") {
         return sortOrder === "asc" ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status);
       }
@@ -271,7 +271,7 @@ export default function ProjectList() {
               <PopoverContent className="w-80" align="end">
                 <div className="grid gap-4">
                   <div className="space-y-2">
-                    <h4 className="font-medium">Promotions</h4>
+                    {promotions.length > 1 && <h4 className="font-medium">Promotions ({promotions.length})</h4>}
                     {isLoadingProjects ? (
                       <div className="space-y-2">
                         <Skeleton className="h-6 w-full" />
@@ -280,18 +280,19 @@ export default function ProjectList() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
-                        {promotions.map((promotion) => (
-                          <div key={promotion} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`promotion-${promotion}`}
-                              checked={filters.promotions.includes(promotion)}
-                              onCheckedChange={() => handlePromotionToggle(promotion)}
-                            />
-                            <Label htmlFor={`promotion-${promotion}`} className="text-sm">
-                              {promotion}
-                            </Label>
-                          </div>
-                        ))}
+                        {promotions.length > 1 &&
+                          promotions.map((promotion) => (
+                            <div key={promotion} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`promotion-${promotion}`}
+                                checked={filters.promotions.includes(promotion)}
+                                onCheckedChange={() => handlePromotionToggle(promotion)}
+                              />
+                              <Label htmlFor={`promotion-${promotion}`} className="text-sm">
+                                {promotion}
+                              </Label>
+                            </div>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -377,7 +378,7 @@ export default function ProjectList() {
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-gray-500">Filtres actifs:</span>
-            {filters.promotions.map((promotion) => (
+            {filters.promotions?.map((promotion) => (
               <Badge key={promotion} variant="outline" className="flex items-center gap-1">
                 {promotion}
                 <X className="h-3 w-3 cursor-pointer" onClick={() => handlePromotionToggle(promotion)} />
@@ -432,14 +433,14 @@ export default function ProjectList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedProjects.map((project) => (
+          {paginatedProjects?.map((project) => (
             <Card key={project.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl line-clamp-2">{project.title}</CardTitle>
+                  <CardTitle className="text-xl line-clamp-2">{project.name}</CardTitle>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <CardDescription className="text-sm">{formatDate(project.date)}</CardDescription>
+                  <CardDescription className="text-sm">{formatDate(project.createdAt)}</CardDescription>
                   <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
                 </div>
               </CardHeader>
@@ -447,11 +448,12 @@ export default function ProjectList() {
                 <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {project.promotions.map((promotion) => (
-                    <Badge key={promotion} variant="secondary" className="text-xs">
-                      {promotion}
-                    </Badge>
-                  ))}
+                  {project.promotions.length > 0 &&
+                    project.promotions.map((promotion) => (
+                      <Badge key={promotion} variant="secondary" className="text-xs">
+                        {promotion}
+                      </Badge>
+                    ))}
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 border-t pt-4">

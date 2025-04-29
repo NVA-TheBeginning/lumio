@@ -70,7 +70,7 @@ export class ProjectsService {
     await Promise.all(
       projectPromotionPairs.map(async ({ project, promotionId }) => {
         const groups = await this.proxy.forwardRequest<Group[]>(
-          "group",
+          "project",
           `/projects/${project.id}/promotions/${promotionId}/groups`,
           "GET",
         );

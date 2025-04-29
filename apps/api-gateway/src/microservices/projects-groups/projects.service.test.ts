@@ -40,7 +40,7 @@ describe("ProjectsService", () => {
     expect(proxy.forwardRequest).toHaveBeenNthCalledWith(2, "project", "/projects/by-promotions", "GET", undefined, {
       promotionIds: "10",
     });
-    expect(proxy.forwardRequest).toHaveBeenNthCalledWith(3, "group", "/projects/100/promotions/10/groups", "GET");
+    expect(proxy.forwardRequest).toHaveBeenNthCalledWith(3, "project", "/projects/100/promotions/10/groups", "GET");
 
     const expected: Record<number, ProjectWithGroupStatus[]> = {
       10: [
