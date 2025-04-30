@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
-import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
+import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
+import { Paginated } from "@/common/interfaces/pagination.interface.js";
+import { ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { CreateProjectDto, GroupMode, ProjectsController } from "./projects.controller.js";
 
@@ -85,42 +87,48 @@ describe("ProjectsController", () => {
   });
 });
 
-describe("ProjectsController – detailed endpoint", () => {
+describe("ProjectsController.findByStudentDetailed", () => {
   let controller: ProjectsController;
   let service: ProjectsService;
 
   beforeEach(() => {
-    service = {
-      findProjectsForStudent: mock(async (): Promise<Record<number, ProjectWithGroupStatus[]>> => ({})),
-    } as unknown as ProjectsService;
-
+    service = { findProjectsForStudent: mock(async () => ({})) } as unknown as ProjectsService;
     controller = new ProjectsController({} as MicroserviceProxyService, service);
   });
 
-  it("findByStudentDetailed calls service and returns a proper map", async () => {
-    const mockMap: Record<number, ProjectWithGroupStatus[]> = {
-      1: [
-        {
-          project: {
-            id: 5,
-            name: "",
-            description: "",
-            creatorId: 0,
-            createdAt: "",
-            updatedAt: "",
-          },
-          groupStatus: "no_groups",
-        },
-      ],
+  it("calls service with correct numeric pagination", async () => {
+    const mockMap: Record<number, Paginated<unknown>> = {
+      1: {
+        data: [{ project: { id: 5 }, groupStatus: "no_groups" }],
+        pagination: { totalRecords: 1, currentPage: 2, totalPages: 1, nextPage: null, prevPage: 1 },
+      },
     };
-
+    const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
     // @ts-ignore
-    (service.findProjectsForStudent as Mock<Promise<Record<number, ProjectWithGroupStatus[]>>>).mockResolvedValueOnce(
-      mockMap,
-    );
+    svc.mockResolvedValueOnce(mockMap as Paginated<unknown>);
 
-    const res = await controller.findByStudentDetailed(1);
-    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1);
-    expect(res).toEqual(mockMap);
+    const pagination = new PaginationQueryDto();
+    pagination.page = 2;
+    pagination.size = 5;
+
+    const result = await controller.findByStudentDetailed(1, pagination);
+    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 2, 5);
+    // @ts-ignore
+    expect(result).toEqual(mockMap);
+  });
+
+  it("uses default pagination when none provided", async () => {
+    const defaultMap: Record<number, Paginated<unknown>> = {
+      1: { data: [], pagination: { totalRecords: 0, currentPage: 1, totalPages: 0, nextPage: null, prevPage: null } },
+    };
+    const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
+    // @ts-ignore
+    svc.mockResolvedValueOnce(defaultMap);
+
+    const pagination = new PaginationQueryDto();
+    const result = await controller.findByStudentDetailed(1, pagination);
+    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 1, 10);
+    // @ts-ignore
+    expect(result).toEqual(defaultMap);
   });
 });

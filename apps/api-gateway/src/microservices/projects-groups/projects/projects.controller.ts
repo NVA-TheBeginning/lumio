@@ -10,6 +10,8 @@ import {
   Patch,
   Post,
   Query,
+  UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -33,7 +35,8 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
-import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
+import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
+import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export enum GroupMode {
@@ -192,12 +195,47 @@ export class ProjectsController {
 
   @Get("student/:studentId/detailed")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get student's projects with group status by promotion" })
+  @ApiOperation({
+    summary: "Get student's projects with group status, grouped by promotion, with pagination",
+  })
   @ApiParam({ name: "studentId", type: Number, description: "Student user ID" })
-  @ApiResponse({ status: 200, description: "Projects with group status", type: Object })
+  @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
+  @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: "Map of promotionId → paginated projects",
+    schema: {
+      example: {
+        "10": {
+          data: [
+            {
+              project: { id: 100, name: "Foo" /*…*/ },
+              groupStatus: "in_group",
+              group: {
+                id: 200,
+                name: "G1",
+                members: [
+                  /*…*/
+                ],
+              },
+            },
+          ],
+          pagination: {
+            totalRecords: 25,
+            currentPage: 1,
+            totalPages: 3,
+            nextPage: 2,
+            prevPage: null,
+          },
+        },
+      },
+    },
+  })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async findByStudentDetailed(
     @Param("studentId", ParseIntPipe) studentId: number,
-  ): Promise<Record<number, ProjectWithGroupStatus[]>> {
-    return this.projectsService.findProjectsForStudent(studentId);
+    @Query() pagination: PaginationQueryDto,
+  ): Promise<ProjectsByPromotion> {
+    return this.projectsService.findProjectsForStudent(studentId, pagination.page, pagination.size);
   }
 }

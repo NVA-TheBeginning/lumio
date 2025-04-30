@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, jest, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { AddMembersDto, CreateGroupDto, GroupMode, GroupSettingsDto, UpdateGroupDto } from "./dto/group.dto.js";
+import { AddMembersDto, CreateGroupDto, GroupMode, GroupSettingsDto, UpdateGroupDto } from "../dto/group.dto.js";
 import { GroupsController } from "./groups.controller.js";
 
 describe("GroupsController", () => {

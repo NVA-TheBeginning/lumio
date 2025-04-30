@@ -4,12 +4,12 @@ import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { JwtStrategy } from "@/jwt/jwt.strategy.js";
 import { JwtRefreshStrategy } from "@/jwt/jwt-refresh.strategy.js";
-import { GroupsController } from "@/microservices/projects-groups/groups.controller.js";
-import { ProjectsService } from "@/microservices/projects-groups/projects.service.js";
+import { GroupsController } from "@/microservices/projects-groups/groups/groups.controller.js";
+import { ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyModule } from "@/proxies/microservice-proxy.module.js";
+import { PromotionsController } from "../promotions/promotions.controller.js";
+import { PromotionsService } from "../promotions/promotions.service.js";
 import { ProjectsController } from "./projects.controller.js";
-import { PromotionsController } from "./promotions.controller.js";
-import { PromotionsService } from "./promotions.service.js";
 
 @Module({
   imports: [ConfigModule, PassportModule, JwtModule.register({}), MicroserviceProxyModule],
