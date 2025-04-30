@@ -63,7 +63,7 @@ export class ProjectsService {
         const enriched = await Promise.all(
           pageProjects.map(async (proj) => {
             const groups = await this.proxy.forwardRequest<Group[]>(
-              "group",
+              "project",
               `/projects/${proj.id}/promotions/${pid}/groups`,
               "GET",
             );
