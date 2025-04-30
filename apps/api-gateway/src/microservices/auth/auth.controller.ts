@@ -64,9 +64,8 @@ export class AuthController {
   @Post("refresh")
   @ApiOperation({ summary: "Generate new access/refresh token from validated user" })
   @HttpCode(HttpStatus.OK)
-  refresh(@Req() req: FastifyRequest & { refreshToken: string }): Promise<unknown> {
-    const { refreshToken } = req;
-    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", { refreshToken });
+  refresh(@Body() refreshTokenDto: { refreshToken: string }): Promise<unknown> {
+    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", refreshTokenDto);
   }
 
   @Post("oauth/google")

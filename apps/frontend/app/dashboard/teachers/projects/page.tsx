@@ -460,7 +460,11 @@ export default function ProjectList() {
                 <Button variant="outline" size="sm">
                   Modifier
                 </Button>
-                <Button variant="default" size="sm">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/teachers/projects/${project.id}`)}
+                >
                   Voir détails
                 </Button>
               </CardFooter>
