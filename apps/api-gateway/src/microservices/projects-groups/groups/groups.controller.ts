@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { AddMembersDto, CreateGroupDto, GroupSettingsDto, UpdateGroupDto } from "./dto/group.dto.js";
+import { AddMembersDto, CreateGroupDto, GroupSettingsDto, UpdateGroupDto } from "../dto/group.dto.js";
 
 @ApiTags("groups")
 @Controller()
