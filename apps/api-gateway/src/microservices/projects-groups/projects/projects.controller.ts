@@ -233,9 +233,16 @@ export class ProjectsController {
   })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async findByStudentDetailed(
-    @Param("studentId", ParseIntPipe) studentId: number,
-    @Query() pagination: PaginationQueryDto,
+      @Param('studentId', ParseIntPipe) studentId: number,
+      @Query('page') page?: string,
+      @Query('size') size?: string,
   ): Promise<ProjectsByPromotion> {
-    return this.projectsService.findProjectsForStudent(studentId, pagination.page, pagination.size);
+    return this.proxy.forwardRequest(
+        'project',
+        `/projects/student/${studentId}/detailed`,
+        'GET',
+        undefined,
+        { page, size },
+    );
   }
 }

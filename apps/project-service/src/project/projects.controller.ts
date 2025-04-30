@@ -11,10 +11,10 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags} from "@nestjs/swagger";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
-import { ProjectService } from "./projects.service";
+import {ProjectsByPromotion, ProjectService} from "./projects.service";
 
 @ApiTags("projects")
 @Controller("projects")
@@ -90,5 +90,27 @@ export class ProjectController {
       .map((s) => parseInt(s, 10))
       .filter((n) => !Number.isNaN(n));
     return this.projectService.findByPromotions(ids);
+  }
+
+  @Get('student/:studentId/detailed')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get student’s paginated projects with group status, by promotion',
+  })
+  @ApiParam({ name: 'studentId', type: Number, description: 'Student user ID' })
+  @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
+  @ApiQuery({ name: 'size', type: Number, required: false, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Map promotionId → paginated ProjectWithGroupStatus',
+  })
+  async findByStudentDetailed(
+      @Param('studentId', ParseIntPipe) studentId: number,
+      @Query('page') page?: string,
+      @Query('size') size?: string,
+  ): Promise<ProjectsByPromotion> {
+    const p = page ? parseInt(page, 10) : 1;
+    const s = size ? parseInt(size, 10) : 10;
+    return this.projectService.findProjectsForStudent(studentId, p, s);
   }
 }

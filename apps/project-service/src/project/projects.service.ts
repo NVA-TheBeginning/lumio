@@ -3,6 +3,32 @@ import { Prisma, ProjectStatus } from "@prisma-project/client";
 import { PrismaService } from "@/prisma.service";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
+import {Paginated, PaginationMeta} from "@/interfaces/pagination.interface";
+
+export type GroupStatus = 'no_groups' | 'not_in_group' | 'in_group';
+
+export interface Project {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Group {
+  id: number;
+  name?: string;
+  members: Array<{ studentId: number }>;
+}
+
+export interface ProjectWithGroupStatus {
+  project: Project;
+  groupStatus: GroupStatus;
+  group?: Group;
+}
+
+export type ProjectsByPromotion = Record<number, Paginated<ProjectWithGroupStatus>>;
 
 @Injectable()
 export class ProjectService {
@@ -94,6 +120,94 @@ export class ProjectService {
       }
       result[link.promotionId].push(link.project);
     }
+    return result;
+  }
+
+  async findProjectsForStudent(
+      studentId: number,
+      page = 1,
+      size = 10
+  ): Promise<ProjectsByPromotion> {
+    if (studentId == null) throw new BadRequestException('studentId is required');
+
+    const studentPromos = await this.prisma.studentPromotion.findMany({
+      where: { userId: studentId },
+      select: { promotionId: true },
+    });
+    const promotionIds = studentPromos.map((sp) => sp.promotionId);
+    if (promotionIds.length === 0) return {};
+
+    const links = await this.prisma.projectPromotion.findMany({
+      where: { promotionId: { in: promotionIds } },
+      include: { project: true },
+    });
+    const byPromos: Record<number, Project[]> = {};
+    for (const pid of promotionIds) byPromos[pid] = [];
+    for (const link of links) {
+      const p = link.project;
+      byPromos[link.promotionId].push({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        creatorId: p.creatorId,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      });
+    }
+
+    const result: ProjectsByPromotion = {};
+    for (const pid of promotionIds) {
+      const allProjects = byPromos[pid];
+      const totalRecords = allProjects.length;
+      const totalPages = Math.ceil(totalRecords / size);
+      const start = (page - 1) * size;
+      const pageProjects = allProjects.slice(start, start + size);
+
+      const enriched: ProjectWithGroupStatus[] = [];
+      for (const proj of pageProjects) {
+        const groups = await this.prisma.groupSettings.findMany({
+          where: { projectId: proj.id, promotionId: pid },
+          include: {
+            projectPromotion: {
+              include: {
+                groups: { include: { members: true } },
+              },
+            },
+          },
+        }).then((settings) =>
+            settings.flatMap((gs) => gs.projectPromotion.groups)
+        );
+
+        let status: GroupStatus = 'no_groups';
+        let ownGroup: Group | undefined;
+
+        if (groups.length) {
+          const found = groups.find((g) =>
+              g.members.some((m) => m.studentId === studentId)
+          );
+          status = found ? 'in_group' : 'not_in_group';
+          if (found) {
+            ownGroup = {
+              id: found.id,
+              name: found.name,
+              members: found.members.map((m) => ({ studentId: m.studentId })),
+            };
+          }
+        }
+
+        enriched.push({ project: proj, groupStatus: status, group: ownGroup });
+      }
+
+      const meta: PaginationMeta = {
+        totalRecords,
+        currentPage: page,
+        totalPages,
+        nextPage: page < totalPages ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null,
+      };
+      result[pid] = { data: enriched, pagination: meta };
+    }
+
     return result;
   }
 
