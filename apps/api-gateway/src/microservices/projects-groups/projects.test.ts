@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:te
 import { Test, TestingModule } from "@nestjs/testing";
 import { ProjectsService, ProjectWithGroupStatus } from "@/microservices/projects-groups/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { ProjectsController } from "./projects.controller.js";
-import { CreateProjectDto } from "./projects.controller.js";
-import { GroupMode } from "./projects.controller.js";
+import { CreateProjectDto, GroupMode, ProjectsController } from "./projects.controller.js";
 
 describe("ProjectsController", () => {
   let controller: ProjectsController;
