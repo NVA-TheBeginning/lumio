@@ -1,198 +1,110 @@
 import { beforeEach, describe, expect, it, Mock, mock } from "bun:test";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import { PromotionWithStudentsDto, StudentDto } from "../dto/promotions.dto.js";
 import { PromotionsController } from "./promotions.controller.js";
 import { PromotionsService } from "./promotions.service.js";
 
-interface PromotionEntity {
-  id: number;
-  name: string;
-  description: string;
-  creatorId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  studentPromotions: Array<{ userId: number }>;
-}
-
-interface Student {
-  id: number;
-  email: string;
-  firstname: string;
-  lastname: string;
-  role: string;
-}
-
 describe("PromotionsController", () => {
-  let promotionsController: PromotionsController;
-  let microserviceProxyService: MicroserviceProxyService;
-  let promotionsService: PromotionsService;
-
-  const mockPromotion: PromotionEntity = {
-    id: 1,
-    name: "Test Promotion",
-    description: "This is a test promotion",
-    creatorId: 123,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    studentPromotions: [],
-  };
-
-  const mockStudent: Student = {
-    id: 1,
-    email: "test@example.com",
-    firstname: "Test",
-    lastname: "User",
-    role: "student",
-  };
+  let controller: PromotionsController;
+  let proxy: MicroserviceProxyService;
+  let service: PromotionsService;
 
   beforeEach(() => {
-    microserviceProxyService = {
-      forwardRequest: mock(async () => mockPromotion),
-    } as unknown as MicroserviceProxyService;
-
-    promotionsService = {
-      create: mock(async () => mockPromotion),
+    proxy = { forwardRequest: mock(async () => []) } as unknown as MicroserviceProxyService;
+    service = {
+      create: mock(async () => ({})),
+      findAllWithStudents: mock(async () => []),
     } as unknown as PromotionsService;
-
-    promotionsController = new PromotionsController(microserviceProxyService, promotionsService);
+    controller = new PromotionsController(proxy, service);
   });
 
   it("should be defined", () => {
-    expect(promotionsController).toBeDefined();
+    expect(controller).toBeDefined();
   });
 
   describe("getPromotionStudents", () => {
-    it("should return an empty array if no studentIds are found", async () => {
-      // @ts-ignore
-      (microserviceProxyService.forwardRequest as Mock<PromotionEntity>).mockResolvedValueOnce({
-        ...mockPromotion,
+    it("returns empty array when no students in promotion", async () => {
+      const promo = {
+        id: 1,
+        name: "",
+        description: "",
+        creatorId: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         studentPromotions: [],
-      });
+      };
+      (proxy.forwardRequest as Mock<() => Promise<typeof promo>>).mockResolvedValueOnce(promo);
 
-      const result = await promotionsController.getPromotionStudents(1);
+      const result = await controller.getPromotionStudents(1, undefined, undefined);
+      expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/promotions/1", "GET");
       expect(result).toEqual([]);
     });
 
-    it("should fetch students and return them", async () => {
-      // @ts-ignore
-      (microserviceProxyService.forwardRequest as Mock<PromotionEntity>)
-        .mockResolvedValueOnce({
-          ...mockPromotion,
-          studentPromotions: [{ userId: 1 }],
-        })
-        .mockResolvedValueOnce([mockStudent]);
+    it("fetches students when promotion has studentPromotions", async () => {
+      const student: StudentDto = { id: 1, email: "a@b.c", firstname: "A", lastname: "B", role: "student" };
+      const promo = {
+        id: 1,
+        name: "",
+        description: "",
+        creatorId: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        studentPromotions: [{ userId: 1 }],
+      };
+      (proxy.forwardRequest as Mock<() => Promise<unknown>>)
+        .mockResolvedValueOnce(promo)
+        .mockResolvedValueOnce([student]);
 
-      const result = await promotionsController.getPromotionStudents(1);
-      expect(microserviceProxyService.forwardRequest).toHaveBeenCalledWith("auth", "/users?ids=1", "GET", undefined, {
-        page: undefined,
-        size: undefined,
+      const result = await controller.getPromotionStudents(1, 2, 5);
+      expect(proxy.forwardRequest).toHaveBeenNthCalledWith(1, "project", "/promotions/1", "GET");
+      expect(proxy.forwardRequest).toHaveBeenNthCalledWith(2, "auth", "/users?ids=1", "GET", undefined, {
+        page: 2,
+        size: 5,
       });
-      expect(result).toEqual([mockStudent]);
+      expect(result).toEqual([student]);
     });
   });
 
   describe("findAllWithStudents", () => {
-    it("should return promotions with associated students", async () => {
-      // @ts-ignore
-      (microserviceProxyService.forwardRequest as Mock<PromotionEntity[]>)
-        .mockResolvedValueOnce([{ ...mockPromotion, studentPromotions: [{ userId: 1 }] }])
-        .mockResolvedValueOnce([mockStudent]);
+    it("returns promotions with their students", async () => {
+      const dto: PromotionWithStudentsDto = {
+        id: 1,
+        name: "P",
+        description: "D",
+        creatorId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        students: [{ id: 1, email: "a@b.c", firstname: "A", lastname: "B", role: "student" }],
+      };
+      (service.findAllWithStudents as Mock<() => Promise<PromotionWithStudentsDto[]>>).mockResolvedValueOnce([dto]);
 
-      const result = await promotionsController.findAllWithStudents();
-
-      expect(microserviceProxyService.forwardRequest).toHaveBeenNthCalledWith(1, "project", "/promotions", "GET");
-      expect(microserviceProxyService.forwardRequest).toHaveBeenNthCalledWith(2, "auth", "/users?ids=1", "GET");
-      expect(result).toEqual([
-        {
-          id: 1,
-          name: "Test Promotion",
-          description: "This is a test promotion",
-          creatorId: 123,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-          students: [mockStudent],
-        },
-      ]);
+      const result = await controller.findAllWithStudents();
+      expect(service.findAllWithStudents).toHaveBeenCalled();
+      expect(result).toEqual([dto]);
     });
 
-    it("should return promotions with empty students array when no students are associated", async () => {
-      // @ts-ignore
-      (microserviceProxyService.forwardRequest as Mock<PromotionEntity[]>).mockResolvedValueOnce([
-        { ...mockPromotion, studentPromotions: [] },
-      ]);
+    it("returns empty array when no promotions", async () => {
+      (service.findAllWithStudents as Mock<() => Promise<PromotionWithStudentsDto[]>>).mockResolvedValueOnce([]);
 
-      const result = await promotionsController.findAllWithStudents();
-
-      expect(microserviceProxyService.forwardRequest).toHaveBeenCalledWith("project", "/promotions", "GET");
-      expect(result).toEqual([
-        {
-          id: 1,
-          name: "Test Promotion",
-          description: "This is a test promotion",
-          creatorId: 123,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-          students: [],
-        },
-      ]);
+      const result = await controller.findAllWithStudents();
+      expect(result).toEqual([]);
     });
   });
 
-  describe("findByStudent (gateway)", () => {
-    interface Promotion {
-      id: number;
-      name: string;
-      description: string;
-      creatorId: number;
-      createdAt: Date;
-      updatedAt: Date;
-      studentPromotions: Array<{ userId: number }>;
-    }
-
-    let controller: PromotionsController;
-    let proxy: MicroserviceProxyService;
-
-    beforeEach(() => {
-      proxy = { forwardRequest: mock(async () => [] as Promotion[]) } as unknown as MicroserviceProxyService;
-      controller = new PromotionsController(proxy, promotionsService);
-    });
-
-    it("findByStudent should return promotions for existing student", async () => {
-      const mockPromos: Promotion[] = [
-        {
-          id: 1,
-          name: "Promo A",
-          description: "Desc A",
-          creatorId: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          studentPromotions: [],
-        },
-        {
-          id: 2,
-          name: "Promo B",
-          description: "Desc B",
-          creatorId: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          studentPromotions: [],
-        },
-      ];
-      // @ts-ignore
-      (proxy.forwardRequest as Mock<PromotionEntity[]>).mockResolvedValueOnce(mockPromos);
+  describe("findByStudent", () => {
+    it("calls proxy for findByStudent", async () => {
+      const promos: Array<Partial<PromotionWithStudentsDto>> = [{ id: 1 }];
+      (proxy.forwardRequest as Mock<() => Promise<typeof promos>>).mockResolvedValueOnce(promos);
 
       const result = await controller.findByStudent(42);
-
       expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/promotions/student/42", "GET");
-      expect(result).toEqual(mockPromos);
+      expect(result).toEqual(promos);
     });
 
-    it("findByStudent should return empty array for student with no promotions", async () => {
-      // @ts-ignore
-      (proxy.forwardRequest as Mock<PromotionEntity[]>).mockResolvedValueOnce([]);
+    it("returns empty array when no promotions", async () => {
+      (proxy.forwardRequest as Mock<() => Promise<unknown[]>>).mockResolvedValueOnce([]);
 
       const result = await controller.findByStudent(999);
-
-      expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/promotions/student/999", "GET");
       expect(result).toEqual([]);
     });
   });

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { CreatePromotionDto } from "./promotions.controller.js";
+import { CreatePromotionDto, CreateStudentDto, PromotionWithStudentsDto } from "../dto/promotions.dto.js";
 
 interface StudentData {
   lastname: string;
@@ -25,20 +25,40 @@ interface ProjectPromotionDto {
   studentIds: number[];
 }
 
+interface Promotion {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  studentPromotions: Array<{ userId: number }>;
+}
+
+interface StudentDto {
+  id: number;
+  email: string;
+  firstname: string;
+  lastname: string;
+  role: string;
+}
+
+const regex = /[\r?\n]+/;
+
 @Injectable()
 export class PromotionsService {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
-  // This method is used to create a new promotion with a list of students.
-  async create(createPromotionDto: CreatePromotionDto) {
+  /**
+   * Crée une nouvelle promotion et les étudiants associés.
+   */
+  async create(createPromotionDto: CreatePromotionDto): Promise<unknown> {
     const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
 
-    const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>(
-      "auth",
-      "/users/students",
-      "POST",
-      studentsData,
-    );
+    const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>("auth", "/users/students", "POST", {
+      students: studentsData,
+    } as { students: StudentData[] });
+
     const studentIds = students.map((s) => s.studentId);
 
     const projectDto: ProjectPromotionDto = {
@@ -51,51 +71,78 @@ export class PromotionsService {
     return this.proxy.forwardRequest("project", "/promotions", "POST", projectDto);
   }
 
-  private parseStudentsCsv(csv: string): StudentData[] {
-    if (!csv?.trim()) {
-      return [];
-    }
-
-    const lines = csv
-      .trim()
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    if (lines.length === 0) {
-      return [];
-    }
-
-    const students: StudentData[] = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      const parts = line.split(",").map((part) => part.trim());
-
-      if (parts.length < 3) {
-        throw new BadRequestException(`Invalid CSV format at line ${i + 1}. Not enough columns.`);
-      }
-
-      const [lastname, firstname, email] = parts;
-
-      students.push({ lastname, firstname, email });
-    }
-
-    return students;
-  }
-
-  // This method is used to add students to an existing promotion.
-  async addStudentsToPromotion(students: StudentData[], promoId: number) {
-    const { students: createdStudents } = await this.proxy.forwardRequest<CreateStudentsResponse>(
+  /**
+   * Ajoute des étudiants à une promotion existante.
+   */
+  async addStudentsToPromotion(students: CreateStudentDto[], promoId: number): Promise<unknown> {
+    const { students: created } = await this.proxy.forwardRequest<CreateStudentsResponse>(
       "auth",
       "/users/students",
       "POST",
-      students,
+      { students } as { students: StudentData[] },
     );
 
-    const studentIds = createdStudents.map((s) => s.studentId);
+    const studentIds = created.map((s) => s.studentId);
 
-    return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "POST", studentIds);
+    return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "POST", { studentIds });
+  }
+
+  /**
+   * Transforme un CSV de lignes lastname,firstname,email en objets StudentData.
+   */
+  private parseStudentsCsv(csv: string): StudentData[] {
+    if (!csv?.trim()) return [];
+
+    const lines = csv
+      .split(regex) // supporter CRLF et LF
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    const students: StudentData[] = [];
+    lines.forEach((line, index) => {
+      const parts = line.split(",").map((p) => p.trim());
+      if (parts.length < 3) {
+        throw new BadRequestException(`Format CSV invalide ligne ${index + 1}: attendu lastname,firstname,email`);
+      }
+      const [lastname, firstname, email] = parts;
+      students.push({ lastname, firstname, email });
+    });
+    return students;
+  }
+  /**
+   * Récupère toutes les promotions avec leurs étudiants détaillés.
+   */
+  async findAllWithStudents(): Promise<PromotionWithStudentsDto[]> {
+    const promotions = await this.proxy.forwardRequest<Promotion[]>("project", "/promotions", "GET");
+
+    const studentIds = [...new Set(promotions.flatMap((promo) => promo.studentPromotions.map((sp) => sp.userId)))];
+
+    if (studentIds.length === 0) {
+      return promotions.map((promo) => ({
+        id: promo.id,
+        name: promo.name,
+        description: promo.description,
+        creatorId: promo.creatorId,
+        createdAt: promo.createdAt,
+        updatedAt: promo.updatedAt,
+        students: [],
+      }));
+    }
+
+    const students = await this.proxy.forwardRequest<StudentDto[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
+
+    const studentMap = new Map(students.map((s) => [s.id, s]));
+
+    return promotions.map((promo) => ({
+      id: promo.id,
+      name: promo.name,
+      description: promo.description,
+      creatorId: promo.creatorId,
+      createdAt: promo.createdAt,
+      updatedAt: promo.updatedAt,
+      students: promo.studentPromotions
+        .map((sp) => studentMap.get(sp.userId))
+        .filter((s): s is StudentDto => s !== undefined),
+    }));
   }
 }

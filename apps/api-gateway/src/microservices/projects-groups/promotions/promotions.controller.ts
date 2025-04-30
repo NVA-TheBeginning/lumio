@@ -11,39 +11,16 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { ApiCreatedResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { ApiBody, ApiCreatedResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import {
+  CreatePromotionDto,
+  CreateStudentDto,
+  PromotionWithStudentsDto,
+  StudentDto,
+  UpdatePromotionDto,
+} from "../dto/promotions.dto.js";
 import { PromotionsService } from "./promotions.service.js";
-
-export class CreatePromotionDto {
-  @IsString()
-  @IsNotEmpty()
-  name!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  description!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  students_csv!: string;
-
-  @IsNumber()
-  creatorId!: number;
-}
-
-interface StudentData {
-  lastname: string;
-  firstname: string;
-  email: string;
-}
-
-interface UpdatePromotionDto extends Record<string, unknown> {
-  name?: string;
-  description?: string;
-  students_csv?: string;
-}
 
 interface StudentPromotion {
   userId: number;
@@ -59,24 +36,6 @@ interface Promotion {
   studentPromotions: StudentPromotion[];
 }
 
-interface Student {
-  id: number;
-  email: string;
-  firstname: string;
-  lastname: string;
-  role: string;
-}
-
-interface PromotionWithStudents {
-  id: number;
-  name: string;
-  description: string;
-  creatorId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  students: Student[];
-}
-
 @ApiTags("promotions")
 @Controller("promotions")
 export class PromotionsController {
@@ -87,113 +46,107 @@ export class PromotionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({ type: CreatePromotionDto })
-  async create(@Body() createPromotionDto: CreatePromotionDto) {
-    return await this.promotionsService.create(createPromotionDto);
+  @ApiOperation({ summary: "Créer une nouvelle promotion" })
+  @ApiBody({ type: CreatePromotionDto })
+  @ApiCreatedResponse({ type: CreatePromotionDto, description: "Promotion créée" })
+  async create(@Body() createPromotionDto: CreatePromotionDto): Promise<unknown> {
+    return this.promotionsService.create(createPromotionDto);
   }
 
   @Post(":idPromotion/student")
   @HttpCode(HttpStatus.CREATED)
-  async addStudentsToPromotion(@Param("idPromotion", ParseIntPipe) promoId: number, @Body() students: StudentData[]) {
-    return await this.promotionsService.addStudentsToPromotion(students, promoId);
+  @ApiOperation({ summary: "Ajouter des étudiants à une promotion existante" })
+  @ApiParam({ name: "idPromotion", type: Number, description: "ID de la promotion" })
+  @ApiBody({ type: [CreateStudentDto] })
+  @ApiCreatedResponse({ description: "Étudiants ajoutés" })
+  async addStudentsToPromotion(
+    @Param("idPromotion", ParseIntPipe) promoId: number,
+    @Body() createStudentDtos: CreateStudentDto[],
+  ): Promise<unknown> {
+    return this.promotionsService.addStudentsToPromotion(createStudentDtos, promoId);
   }
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(@Query("creatorId") creatorId?: string) {
+  @ApiOperation({ summary: "Lister toutes les promotions (optionnellement par créateur)" })
+  @ApiQuery({ name: "creatorId", required: false, type: Number })
+  @ApiResponse({ status: 200, description: "Liste des promotions", type: [PromotionWithStudentsDto] })
+  async findAll(@Query("creatorId") creatorId?: string): Promise<unknown> {
     return this.proxy.forwardRequest("project", "/promotions", "GET", undefined, { creatorId });
-  }
-
-  @Get(":id")
-  @HttpCode(HttpStatus.OK)
-  async findOne(@Param("id", ParseIntPipe) id: number) {
-    return this.proxy.forwardRequest("project", `/promotions/${id}`, "GET");
   }
 
   @Get("student/:studentId")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get all promotions for a given student" })
-  @ApiParam({ name: "studentId", description: "Student user ID", type: Number })
-  async findByStudent(@Param("studentId", ParseIntPipe) studentId: number) {
-    return this.proxy.forwardRequest<Promotion[]>("project", `/promotions/student/${studentId}`, "GET");
+  @ApiOperation({ summary: "Récupérer les promotions pour un étudiant" })
+  @ApiParam({ name: "studentId", type: Number, description: "ID de l’étudiant" })
+  @ApiResponse({ status: 200, description: "Promotions associées", type: [PromotionWithStudentsDto] })
+  async findByStudent(@Param("studentId", ParseIntPipe) studentId: number): Promise<unknown> {
+    return this.proxy.forwardRequest<unknown[]>("project", `/promotions/student/${studentId}`, "GET");
   }
 
   @Get(":id/students")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Récupérer les étudiants d'une promotion" })
+  @ApiParam({ name: "id", type: Number, description: "ID de la promotion" })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "size", required: false, type: Number })
+  @ApiResponse({ status: 200, description: "Étudiants de la promotion", type: [StudentDto] })
   async getPromotionStudents(
     @Param("id", ParseIntPipe) id: number,
-    @Query("page") page?: string,
-    @Query("size") size?: string,
-  ): Promise<Student[]> {
+    @Query("page") page?: number,
+    @Query("size") size?: number,
+  ): Promise<StudentDto[]> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
 
     const studentIds = promotion.studentPromotions.map((sp) => sp.userId);
+    if (!studentIds.length) return [];
 
-    if (studentIds.length === 0) {
-      return [];
-    }
-
-    const students = await this.proxy.forwardRequest<Student[]>(
-      "auth",
-      `/users?ids=${studentIds.join(",")}`,
-      "GET",
-      undefined,
-      { page, size },
-    );
-    return students;
+    return this.proxy.forwardRequest<StudentDto[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET", undefined, {
+      page,
+      size,
+    });
   }
 
   @Patch(":id")
   @HttpCode(HttpStatus.OK)
-  async update(@Param("id", ParseIntPipe) id: number, @Body() updatePromotionDto: UpdatePromotionDto) {
+  @ApiOperation({ summary: "Mettre à jour une promotion" })
+  @ApiParam({ name: "id", type: Number, description: "ID de la promotion" })
+  @ApiBody({ type: UpdatePromotionDto })
+  @ApiResponse({ status: 200, description: "Promotion mise à jour" })
+  async update(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() updatePromotionDto: UpdatePromotionDto,
+  ): Promise<unknown> {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "PATCH", updatePromotionDto);
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
-  async remove(@Param("id", ParseIntPipe) id: number) {
+  @ApiOperation({ summary: "Supprimer une promotion" })
+  @ApiParam({ name: "id", type: Number, description: "ID de la promotion" })
+  @ApiResponse({ status: 200, description: "Promotion supprimée" })
+  async remove(@Param("id", ParseIntPipe) id: number): Promise<unknown> {
     return this.proxy.forwardRequest("project", `/promotions/${id}`, "DELETE");
   }
 
   @Delete(":id/student")
   @HttpCode(HttpStatus.OK)
-  async removeStudentsFromPromotion(@Param("id", ParseIntPipe) promoId: number, @Body() studentIds: number[]) {
+  @ApiOperation({ summary: "Retirer des étudiants d’une promotion" })
+  @ApiParam({ name: "id", type: Number, description: "ID de la promotion" })
+  @ApiBody({ type: [Number], description: "Liste des IDs étudiants" })
+  @ApiResponse({ status: 200, description: "Étudiants retirés" })
+  async removeStudentsFromPromotion(
+    @Param("id", ParseIntPipe) promoId: number,
+    @Body() studentIds: number[],
+  ): Promise<unknown> {
     return this.proxy.forwardRequest("project", `/promotions/${promoId}/student`, "DELETE", { studentIds });
   }
 
   @Get("with-students")
   @HttpCode(HttpStatus.OK)
-  async findAllWithStudents(): Promise<PromotionWithStudents[]> {
-    const promotions = await this.proxy.forwardRequest<Promotion[]>("project", "/promotions", "GET");
-
-    const studentIds = [...new Set(promotions.flatMap((promo) => promo.studentPromotions.map((sp) => sp.userId)))];
-
-    if (studentIds.length === 0) {
-      return promotions.map((promo) => ({
-        id: promo.id,
-        name: promo.name,
-        description: promo.description,
-        creatorId: promo.creatorId,
-        createdAt: promo.createdAt,
-        updatedAt: promo.updatedAt,
-        students: [],
-      }));
-    }
-
-    const students = await this.proxy.forwardRequest<Student[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET");
-
-    const studentMap = new Map(students.map((student) => [student.id, student]));
-
-    return promotions.map((promo) => ({
-      id: promo.id,
-      name: promo.name,
-      description: promo.description,
-      creatorId: promo.creatorId,
-      createdAt: promo.createdAt,
-      updatedAt: promo.updatedAt,
-      students: promo.studentPromotions
-        .map((sp) => studentMap.get(sp.userId))
-        .filter((student): student is Student => student !== undefined),
-    }));
+  @ApiOperation({ summary: "Lister toutes les promotions avec leurs étudiants" })
+  @ApiResponse({ status: 200, description: "Promotions avec étudiants", type: [PromotionWithStudentsDto] })
+  async findAllWithStudents(): Promise<PromotionWithStudentsDto[]> {
+    return this.promotionsService.findAllWithStudents();
   }
 }
