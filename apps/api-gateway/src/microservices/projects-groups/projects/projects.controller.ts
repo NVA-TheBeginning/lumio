@@ -9,7 +9,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query, UsePipes, ValidationPipe,
+  Query,
+  UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -33,9 +35,9 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
+import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
 import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import {PaginationQueryDto} from "@/common/dto/pagination-query.dto.js";
 
 export enum GroupMode {
   AUTO = "AUTO",
@@ -229,15 +231,11 @@ export class ProjectsController {
       },
     },
   })
-  @UsePipes(new ValidationPipe({ transform: true }))
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async findByStudentDetailed(
-      @Param('studentId', ParseIntPipe) studentId: number,
-      @Query() pagination: PaginationQueryDto,
+    @Param("studentId", ParseIntPipe) studentId: number,
+    @Query() pagination: PaginationQueryDto,
   ): Promise<ProjectsByPromotion> {
-    return this.projectsService.findProjectsForStudent(
-        studentId,
-        pagination.page,
-        pagination.size,
-    );
+    return this.projectsService.findProjectsForStudent(studentId, pagination.page, pagination.size);
   }
 }
