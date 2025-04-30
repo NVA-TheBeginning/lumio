@@ -6,45 +6,45 @@ import {
   ApiOperation,
   ApiParam,
   ApiProperty,
-  ApiTags
+  ApiTags,
 } from "@nestjs/swagger";
+import { IsEmail, IsOptional, IsString } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import {IsEmail, IsOptional, IsString} from "class-validator";
 
 export class CreateStudentDto {
   @IsString()
-  @ApiProperty({ description: 'User first name', type: String, example: 'John' })
+  @ApiProperty({ description: "User first name", type: String, example: "John" })
   firstname!: string;
 
   @IsString()
-  @ApiProperty({ description: 'User last name', type: String, example: 'Doe' })
+  @ApiProperty({ description: "User last name", type: String, example: "Doe" })
   lastname!: string;
 
   @IsEmail()
-  @ApiProperty({ description: 'User email', type: String, example: 'johndoe@gmail.com'})
+  @ApiProperty({ description: "User email", type: String, example: "johndoe@gmail.com" })
   email!: string;
 }
 
 export class UpdateStudentDto {
   @IsOptional()
   @IsString()
-  @ApiProperty({ description: 'User first name', type: String, required: false, example: 'John'  })
+  @ApiProperty({ description: "User first name", type: String, required: false, example: "John" })
   firstname?: string;
 
   @IsOptional()
   @IsString()
-  @ApiProperty({ description: 'User last name', type: String, required: false, example: 'Doe'  })
+  @ApiProperty({ description: "User last name", type: String, required: false, example: "Doe" })
   lastname?: string;
 
   @IsOptional()
   @IsEmail()
-  @ApiProperty({ description: 'User email', type: String, required: false, example: 'johndoe@gmail.com' })
+  @ApiProperty({ description: "User email", type: String, required: false, example: "johndoe@gmail.com" })
   email?: string;
 }
 
 export class UpdatePasswordDto {
   @IsString()
-  @ApiProperty({ description: 'New password', type: String, example: 'newpassword123' })
+  @ApiProperty({ description: "New password", type: String, example: "newpassword123" })
   newPassword!: string;
 }
 
@@ -67,7 +67,10 @@ export class UsersController {
   @ApiOperation({ summary: "Find a user by ID" })
   @ApiOkResponse({ description: "User found successfully" })
   @ApiParam({ name: "id", type: Number, description: "ID of the user" })
-  @ApiOkResponse({ description: "User found successfully", schema: { example: { id: 1, firstname: 'John', lastname: 'Doe', email: 'john@example.com' } } })
+  @ApiOkResponse({
+    description: "User found successfully",
+    schema: { example: { id: 1, firstname: "John", lastname: "Doe", email: "john@example.com" } },
+  })
   async findUser(@Param("id", ParseIntPipe) id: number): Promise<unknown> {
     return this.proxy.forwardRequest("auth", `/users/${id}`, "GET");
   }
