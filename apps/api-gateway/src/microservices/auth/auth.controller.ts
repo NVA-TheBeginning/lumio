@@ -1,8 +1,7 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBody, ApiOperation, ApiProperty, ApiResponse, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
-import type { FastifyRequest } from "fastify";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export class LoginDto {
