@@ -34,6 +34,13 @@ export class OAuthDto {
   token!: string;
 }
 
+export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: "Refresh token", type: String, example: "eazezaeaz" })
+  refreshToken!: string;
+}
+
 @ApiTags("auth")
 @Controller("auth")
 export class AuthController {
@@ -72,10 +79,10 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Tokens refreshed", schema: { example: { accessToken: "<jwt>" } } })
   @ApiUnauthorizedResponse({ description: "Invalid refresh token" })
   @HttpCode(HttpStatus.OK)
-  refresh(@Body() refreshTokenDto: { refreshToken: string }): Promise<unknown> {
+  refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<unknown> {
     return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", refreshTokenDto);
   }
-  
+
   @Post("oauth/google")
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: OAuthDto })
