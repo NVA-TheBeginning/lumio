@@ -72,11 +72,10 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Tokens refreshed", schema: { example: { accessToken: "<jwt>" } } })
   @ApiUnauthorizedResponse({ description: "Invalid refresh token" })
   @HttpCode(HttpStatus.OK)
-  refresh(@Req() req: FastifyRequest & { refreshToken: string }): Promise<unknown> {
-    const { refreshToken } = req;
-    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", { refreshToken });
+  refresh(@Body() refreshTokenDto: { refreshToken: string }): Promise<unknown> {
+    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", refreshTokenDto);
   }
-
+  
   @Post("oauth/google")
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: OAuthDto })
