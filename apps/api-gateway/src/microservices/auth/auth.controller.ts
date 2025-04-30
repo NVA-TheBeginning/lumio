@@ -1,8 +1,7 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBody, ApiOperation, ApiProperty, ApiResponse, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
-import type { FastifyRequest } from "fastify";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 export class LoginDto {
@@ -32,6 +31,13 @@ export class OAuthDto {
   @IsNotEmpty()
   @ApiProperty({ description: "OAuth provider token", type: String, example: "ya29.a0ARrdaM..." })
   token!: string;
+}
+
+export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: "Refresh token", type: String, example: "eazezaeaz" })
+  refreshToken!: string;
 }
 
 @ApiTags("auth")
@@ -72,9 +78,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Tokens refreshed", schema: { example: { accessToken: "<jwt>" } } })
   @ApiUnauthorizedResponse({ description: "Invalid refresh token" })
   @HttpCode(HttpStatus.OK)
-  refresh(@Req() req: FastifyRequest & { refreshToken: string }): Promise<unknown> {
-    const { refreshToken } = req;
-    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", { refreshToken });
+  refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<unknown> {
+    return this.proxy.forwardRequest("auth", "/auth/refresh", "POST", refreshTokenDto);
   }
 
   @Post("oauth/google")
