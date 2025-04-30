@@ -105,7 +105,7 @@ describe("ProjectsController.findByStudentDetailed", () => {
     };
     const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
     // @ts-ignore
-    svc.mockResolvedValueOnce(mockMap);
+    svc.mockResolvedValueOnce(mockMap as Paginated<unknown>);
 
     const pagination = new PaginationQueryDto();
     pagination.page = 2;
@@ -118,8 +118,8 @@ describe("ProjectsController.findByStudentDetailed", () => {
   });
 
   it("uses default pagination when none provided", async () => {
-    const defaultMap: Record<string, Paginated<unknown>> = {
-      "1": { data: [], pagination: { totalRecords: 0, currentPage: 1, totalPages: 0, nextPage: null, prevPage: null } },
+    const defaultMap: Record<number, Paginated<unknown>> = {
+      1: { data: [], pagination: { totalRecords: 0, currentPage: 1, totalPages: 0, nextPage: null, prevPage: null } },
     };
     const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
     // @ts-ignore
