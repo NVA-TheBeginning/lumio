@@ -32,7 +32,7 @@ export class ProjectsService {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
   async findProjectsForStudent(studentId: number, page = 1, size = 10): Promise<ProjectsByPromotion> {
-    if (!studentId) throw new BadRequestException("studentId is required");
+    if (studentId == null) throw new BadRequestException("studentId is required");
 
     const promotions = await this.proxy.forwardRequest<Array<{ id: number }>>(
       "project",
