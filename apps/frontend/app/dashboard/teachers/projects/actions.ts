@@ -55,6 +55,83 @@ export async function createProject(data: CreateProjectData): Promise<void> {
   await authPostData(`${API_URL}/projects`, data);
 }
 
+export async function getProjectById(id: number): Promise<ProjectType> {
+  const data = await authFetchData(`${API_URL}/projects/${id}`);
+
+  if (!data) {
+    throw new Error(`Project with ID ${id} not found`);
+  }
+
+  const baseProject = data as Omit<ProjectType, "promotions" | "deliverables">;
+
+  const mockPromotions: PromotionType[] = [
+    {
+      id: 101,
+      name: "Promotion 2025",
+      description: "Étudiants de la promotion 2025",
+      status: "active",
+      groupSettings: { minMembers: 3, maxMembers: 5, mode: "manual", deadline: "2025-12-31T23:59:59Z" },
+      groups: [
+        {
+          id: 201,
+          name: "Groupe Alpha",
+          members: [
+            { id: 301, name: "Alice Smith" },
+            { id: 302, name: "Bob Johnson" },
+          ],
+        },
+        { id: 202, name: "Groupe Beta", members: [{ id: 303, name: "Charlie Brown" }] },
+      ],
+    },
+    {
+      id: 102,
+      name: "Promotion 2026",
+      description: "Étudiants de la promotion 2026",
+      status: "active",
+      groupSettings: { minMembers: 2, maxMembers: 4, mode: "auto", deadline: "2026-12-31T23:59:59Z" },
+      groups: [],
+    },
+  ];
+
+  const mockDeliverables: DeliverableType[] = [
+    {
+      id: 401,
+      title: "Rapport initial",
+      description: "Soumission du rapport de cadrage du projet.",
+      deadline: "2025-06-15T23:59:59Z",
+      status: "due",
+      promotionId: 101,
+      submissions: [{ groupId: 201, status: "submitted", submittedAt: "2025-06-14T10:00:00Z", grade: null }],
+    },
+    {
+      id: 402,
+      title: "Démonstration finale",
+      description: "Démonstration du projet fonctionnel.",
+      deadline: "2025-08-30T23:59:59Z",
+      status: "upcoming",
+      promotionId: 101,
+      submissions: [],
+    },
+    {
+      id: 403,
+      title: "Présentation",
+      description: "Présentation orale des résultats.",
+      deadline: "2025-09-15T23:59:59Z",
+      status: "upcoming",
+      promotionId: 102,
+      submissions: [],
+    },
+  ];
+
+  const projectWithMocks: ProjectType = {
+    ...baseProject,
+    promotions: mockPromotions,
+    deliverables: mockDeliverables,
+  };
+
+  return projectWithMocks;
+}
+
 export interface MemberType {
   id: number;
   name: string;
