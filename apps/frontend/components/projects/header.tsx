@@ -1,9 +1,11 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Copy, Edit, Eye, EyeOff, MoreHorizontal, Trash } from "lucide-react";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useState } from "react";
-import { ProjectType } from "@/app/dashboard/teachers/projects/actions";
+import { toast } from "sonner";
+import { deleteProject, ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -44,6 +46,19 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
   const [projectName, setProjectName] = useState(project.name);
   const [projectDescription, setProjectDescription] = useState(project.description);
 
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      await deleteProject(projectId);
+    },
+    onSuccess: () => {
+      toast.success("Projet supprimé avec succès");
+      router.push("/dashboard/teachers/projects");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression du projet");
+    },
+  });
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "visible":
@@ -75,8 +90,8 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
   };
 
   const handleDeleteProject = () => {
+    deleteProjectMutation.mutate(project.id);
     setConfirmDelete(false);
-    router.push("/dashboard/teachers/projects");
   };
 
   const handleChangeStatus = (newStatus: string) => {
