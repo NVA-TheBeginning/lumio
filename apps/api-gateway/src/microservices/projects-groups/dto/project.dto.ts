@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { IsEnum } from "class-validator";
 
 enum ProjectStatus {
   VISIBLE = "VISIBLE",
@@ -11,5 +12,6 @@ export class UpdateProjectStatusDto {
     description: "The new status of the project",
     enum: ProjectStatus,
   })
+  @IsEnum(ProjectStatus)
   status: ProjectStatus;
 }

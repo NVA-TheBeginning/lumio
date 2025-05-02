@@ -3,6 +3,7 @@
 import { Clock, FileCheck, Filter, Plus, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JSX, useState } from "react";
+import { toast } from "sonner";
 import { DeliverableType, ProjectType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { CreateDeliverableDialog } from "../create-deliverables";
-import { toast } from "sonner";
 
 interface ProjectDeliverablesProps {
   project: ProjectType;
