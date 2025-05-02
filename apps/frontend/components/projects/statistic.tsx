@@ -1,8 +1,8 @@
 "use client";
 
 import { ProjectType } from "@/app/dashboard/teachers/projects/actions";
-import { Progress } from "@/components//ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface ProjectStatisticsProps {
   project: ProjectType;
