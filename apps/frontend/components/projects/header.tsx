@@ -1,11 +1,11 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Copy, Edit, Eye, EyeOff, MoreHorizontal, Trash } from "lucide-react";
+import { ArrowLeft, Copy, Edit, MoreHorizontal, Trash } from "lucide-react";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteProject, ProjectType } from "@/app/dashboard/teachers/projects/actions";
+import { deleteProject, ProjectStatus, ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -59,26 +59,26 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
     },
   });
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: ProjectStatus | string) => {
     switch (status) {
-      case "visible":
+      case ProjectStatus.VISIBLE:
         return "default";
-      case "draft":
+      case ProjectStatus.DRAFT:
         return "secondary";
-      case "hidden":
+      case ProjectStatus.HIDDEN:
         return "outline";
       default:
         return "secondary";
     }
   };
 
-  const getStatusDisplayText = (status: string) => {
+  const getStatusDisplayText = (status: ProjectStatus | string) => {
     switch (status) {
-      case "visible":
+      case ProjectStatus.VISIBLE:
         return "Visible";
-      case "draft":
+      case ProjectStatus.DRAFT:
         return "Brouillon";
-      case "hidden":
+      case ProjectStatus.HIDDEN:
         return "Masqué";
       default:
         return status;
@@ -94,14 +94,10 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
     setConfirmDelete(false);
   };
 
-  const handleChangeStatus = (newStatus: string) => {
-    console.log(`Changing status to ${newStatus}`);
-  };
-
   return (
-    <div className="sticky top-0 z-10 bg-background border-b">
+    <div className="sticky top-0 z-10 border-b bg-background">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/teachers/projects")}>
               <ArrowLeft className="h-5 w-5" />
@@ -123,7 +119,10 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
             </Breadcrumb>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
+            {project.status && (
+              <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
+            )}
+
             <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
@@ -136,17 +135,6 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {project.status === "visible" ? (
-                  <DropdownMenuItem onClick={() => handleChangeStatus("hidden")}>
-                    <EyeOff className="mr-2 h-4 w-4" />
-                    Masquer le projet
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem onClick={() => handleChangeStatus("visible")}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Rendre visible
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem>
                   <Copy className="mr-2 h-4 w-4" />
                   Dupliquer le projet
@@ -197,7 +185,7 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
           <DialogHeader>
             <DialogTitle>Supprimer le projet</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.
+              Êtes-vous sûre de vouloir supprimer ce projet ? Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -68,7 +68,7 @@ export async function getProjectById(id: number): Promise<ProjectType> {
       id: 101,
       name: "Promotion 2025",
       description: "Étudiants de la promotion 2025",
-      status: "active",
+      status: "VISIBLE",
       groupSettings: { minMembers: 3, maxMembers: 5, mode: "manual", deadline: "2025-12-31T23:59:59Z" },
       groups: [
         {
@@ -86,7 +86,7 @@ export async function getProjectById(id: number): Promise<ProjectType> {
       id: 102,
       name: "Promotion 2026",
       description: "Étudiants de la promotion 2026",
-      status: "active",
+      status: "HIDDEN",
       groupSettings: { minMembers: 2, maxMembers: 4, mode: "auto", deadline: "2026-12-31T23:59:59Z" },
       groups: [],
     },
@@ -143,6 +143,34 @@ export async function deleteProject(id: number): Promise<void> {
     },
   });
 
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+}
+
+export enum ProjectStatus {
+  VISIBLE = "VISIBLE",
+  DRAFT = "DRAFT",
+  HIDDEN = "HIDDEN",
+}
+
+export async function updateProjectStatus(
+  idProject: number,
+  idPromotion: number,
+  status: ProjectStatus,
+): Promise<void> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
+  const response = await fetch(`${API_URL}/projects/${idProject}/${idPromotion}/status`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
   if (!response.ok) {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
