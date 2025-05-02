@@ -1,6 +1,6 @@
 "use client";
 
-import { getUserFromCookie } from "@/lib/cookie";
+import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostData } from "@/lib/utils";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
@@ -42,7 +42,6 @@ export const getAllProjects = async (): Promise<{ projects: Project[]; promotion
     project.promotions = ["randomPromotions"];
     project.status = "visible";
   }
-  console.log("data", data);
   const promoSet = new Set<string>(data.flatMap((project) => project.promotions));
   return {
     projects: data,
@@ -130,6 +129,24 @@ export async function getProjectById(id: number): Promise<ProjectType> {
   };
 
   return projectWithMocks;
+}
+
+export async function deleteProject(id: number): Promise<void> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
+  const response = await fetch(`${API_URL}/projects/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
 }
 
 export interface MemberType {

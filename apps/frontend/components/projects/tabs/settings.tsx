@@ -1,13 +1,41 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { Download } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
+import { deleteProject } from "@/app/dashboard/teachers/projects/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-export function ProjectSettings() {
-  const [, setConfirmDelete] = useState(false);
+export function ProjectSettings({ projectId }: { projectId: number }) {
+  const router = useRouter();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      await deleteProject(projectId);
+    },
+    onSuccess: () => {
+      toast.success("Projet supprimé avec succès");
+      router.push("/dashboard/teachers/projects");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression du projet");
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -75,6 +103,22 @@ export function ProjectSettings() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action ne peut pas être annulée. Cela supprimera définitivement votre projet ainsi que toutes les
+              données associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteProjectMutation.mutate(projectId)}>Supprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
