@@ -88,7 +88,7 @@ export function ProjectTabs({ project, activeTab, setActiveTab }: ProjectTabsPro
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">
-            <ProjectSettings />
+            <ProjectSettings projectId={project.id} />
           </TabsContent>
         </div>
       </div>
