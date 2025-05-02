@@ -35,8 +35,8 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
     }) => {
       await updateProjectStatus(idProject, idPromotion, status);
     },
-    onSuccess: (_, variables) => {
-      toast.success(`Statut du projet mis à jour pour la promotion ${variables.idPromotion}`);
+    onSuccess: () => {
+      toast.success("Statut du projet mis à jour");
       queryClient.invalidateQueries({
         queryKey: ["projects", project.id],
       });
@@ -60,7 +60,6 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
   };
 
   const getStatusDisplayText = (status: ProjectStatus | string) => {
-    console.log("Status:", status);
     switch (status) {
       case ProjectStatus.VISIBLE:
         return "Visible";
