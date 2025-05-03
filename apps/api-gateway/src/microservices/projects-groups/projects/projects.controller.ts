@@ -38,6 +38,7 @@ import {
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
 import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import { UpdateProjectStatusDto } from "../dto/project.dto.js";
 
 export enum GroupMode {
   AUTO = "AUTO",
@@ -181,6 +182,30 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async update(@Param("id", ParseIntPipe) id: number, @Body() updateProjectDto: Partial<CreateProjectDto>) {
     return this.proxy.forwardRequest("project", `/projects/${id}`, "PATCH", updateProjectDto);
+  }
+
+  @Patch(":idProject/:idPromotion/status")
+  @ApiOperation({ summary: "Update the status of a project for a specific promotion" })
+  @ApiResponse({ status: 200, description: "Project status successfully updated." })
+  @ApiResponse({ status: 400, description: "Bad Request" })
+  @ApiResponse({ status: 404, description: "Project or promotion not found." })
+  @ApiParam({ name: "idProject", description: "Project ID", type: Number })
+  @ApiParam({ name: "idPromotion", description: "Promotion ID", type: Number })
+  @ApiBody({
+    type: UpdateProjectStatusDto,
+    description: "The status to set for the project in the specified promotion",
+  })
+  async updateStatus(
+    @Param("idProject", ParseIntPipe) idProject: number,
+    @Param("idPromotion", ParseIntPipe) idPromotion: number,
+    @Body() updateProjectStatusDto: UpdateProjectStatusDto,
+  ) {
+    return this.proxy.forwardRequest(
+      "project",
+      `/projects/${idProject}/${idPromotion}/status`,
+      "PATCH",
+      updateProjectStatusDto,
+    );
   }
 
   @Delete(":id")
