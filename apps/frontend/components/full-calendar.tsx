@@ -24,7 +24,7 @@ import {
   subYears,
 } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
-import { createContext, forwardRef, ReactNode, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, forwardRef, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -73,6 +73,7 @@ type ContextType = {
   onEventClick?: (event: CalendarEvent) => void;
   enableHotkeys?: boolean;
   today: Date;
+  isClient: boolean;
 };
 
 const Context = createContext<ContextType>({} as ContextType);
@@ -109,6 +110,11 @@ const Calendar = ({
   const [view, setView] = useState<View>(_defaultMode);
   const [date, setDate] = useState(defaultDate);
   const [events, setEvents] = useState<CalendarEvent[]>(defaultEvents);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const changeView = (view: View) => {
     setView(view);
@@ -144,7 +150,8 @@ const Calendar = ({
         enableHotkeys,
         onEventClick,
         onChangeView,
-        today: new Date(),
+        today: isClient ? new Date() : defaultDate,
+        isClient,
       }}
     >
       {children}
@@ -159,7 +166,7 @@ const CalendarViewTrigger = forwardRef<
   React.HTMLAttributes<HTMLButtonElement> & {
     view: View;
   }
->(({ children, view, ...props }) => {
+>(({ children, view, ...props }, ref) => {
   const { view: currentView, setView, onChangeView } = useCalendar();
 
   return (
@@ -167,6 +174,7 @@ const CalendarViewTrigger = forwardRef<
       aria-current={currentView === view}
       size="sm"
       variant="ghost"
+      ref={ref}
       {...props}
       onClick={() => {
         setView(view);
@@ -525,7 +533,11 @@ const CalendarTodayTrigger = forwardRef<HTMLButtonElement, React.HTMLAttributes<
 CalendarTodayTrigger.displayName = "CalendarTodayTrigger";
 
 const CalendarCurrentDate = () => {
-  const { date, view } = useCalendar();
+  const { date, view, isClient } = useCalendar();
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <time dateTime={date.toISOString()} className="tabular-nums">
@@ -535,6 +547,12 @@ const CalendarCurrentDate = () => {
 };
 
 const TimeTable = () => {
+  const { isClient } = useCalendar();
+
+  if (!isClient) {
+    return null;
+  }
+
   const now = new Date();
 
   return (
