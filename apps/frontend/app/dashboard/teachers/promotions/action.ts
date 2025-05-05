@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getUserFromCookie } from "@/lib/cookie";
+import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostData } from "@/lib/utils";
 
 export interface Promotion {
@@ -94,8 +94,15 @@ export async function createPromotion(data: {
 }
 
 export async function deletePromotion(id: number): Promise<void> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
   const response = await fetch(`${API_URL}/promotions/${id}`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (!response.ok) {
