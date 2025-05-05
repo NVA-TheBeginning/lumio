@@ -83,9 +83,10 @@ export default function CreateProjectForm() {
     },
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: False positive with form.watch
+  const watchPromotionIds = watch("promotionIds");
+
   useEffect(() => {
-    const currentPromotionIds = getValues("promotionIds") || [];
+    const currentPromotionIds = watchPromotionIds || [];
     const currentGroupSettings = getValues("groupSettings") || [];
     const existingSettingsMap = new Map(currentGroupSettings.map((setting) => [setting.promotionId, setting]));
 
@@ -106,7 +107,7 @@ export default function CreateProjectForm() {
       .filter((setting) => currentPromotionIds.includes(setting.promotionId));
 
     setValue("groupSettings", newGroupSettings, { shouldDirty: true, shouldValidate: true });
-  }, [getValues, setValue, form.watch("promotionIds")]);
+  }, [getValues, setValue, watchPromotionIds]);
 
   const onSubmit = async (data: CreateProjectFormValues) => {
     createProjectMutation.mutate(data);
