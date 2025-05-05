@@ -66,10 +66,10 @@ export default function CreateProjectForm() {
   const form = useForm<CreateProjectFormValues>({
     resolver: zodResolver(createProjectSchema),
     defaultValues,
+    mode: "onChange",
   });
 
-  const { watch, setValue } = form;
-  const promotionIds = watch("promotionIds") || [];
+  const { watch, setValue, getValues } = form;
   const groupSettings = watch("groupSettings") || [];
 
   const createProjectMutation = useMutation({
@@ -83,31 +83,30 @@ export default function CreateProjectForm() {
     },
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: False positive with form.watch
   useEffect(() => {
-    promotionIds.forEach((promotionId) => {
-      const existingGroupSetting = groupSettings.find((gs) => gs.promotionId === promotionId);
-      if (!existingGroupSetting) {
-        setValue("groupSettings", [
-          ...groupSettings,
-          {
-            promotionId: promotionId,
-            minMembers: 1,
-            maxMembers: 5,
-            mode: "FREE",
-            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-        ]);
-      }
-    });
+    const currentPromotionIds = getValues("promotionIds") || [];
+    const currentGroupSettings = getValues("groupSettings") || [];
+    const existingSettingsMap = new Map(currentGroupSettings.map((setting) => [setting.promotionId, setting]));
 
-    const settingsToRemove = groupSettings.filter((gs) => !promotionIds.includes(gs.promotionId));
-    if (settingsToRemove.length > 0) {
-      setValue(
-        "groupSettings",
-        groupSettings.filter((gs) => promotionIds.includes(gs.promotionId)),
-      );
-    }
-  }, [promotionIds, groupSettings, setValue]);
+    const newGroupSettings = currentPromotionIds
+      .map((promotionId) => {
+        const existingSetting = existingSettingsMap.get(promotionId);
+        if (existingSetting) {
+          return existingSetting;
+        }
+        return {
+          promotionId: promotionId,
+          minMembers: 1,
+          maxMembers: 5,
+          mode: "FREE",
+          deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        };
+      })
+      .filter((setting) => currentPromotionIds.includes(setting.promotionId));
+
+    setValue("groupSettings", newGroupSettings, { shouldDirty: true, shouldValidate: true });
+  }, [getValues, setValue, form.watch("promotionIds")]);
 
   const onSubmit = async (data: CreateProjectFormValues) => {
     createProjectMutation.mutate(data);
@@ -223,6 +222,7 @@ export default function CreateProjectForm() {
                               field.onChange([...currentIds, selectedId]);
                             }
                           }}
+                          value=""
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionner des promotions" />
@@ -270,64 +270,85 @@ export default function CreateProjectForm() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Paramètres des groupes</CardTitle>
-              <CardDescription>Définissez comment les groupes seront formés pour chaque promotion</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {groupSettings?.map((groupSetting, index) => (
-                <div key={groupSetting.promotionId} className="border rounded-lg p-4 space-y-4 relative">
-                  <FormField
-                    control={form.control}
-                    name={`groupSettings.${index}.promotionId`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Promotion</FormLabel>
-                        {isLoadingPromotions ? (
-                          <Skeleton className="h-10 w-full" />
-                        ) : (
-                          <Select
-                            onValueChange={(value) => field.onChange(Number.parseInt(value))}
-                            defaultValue={field.value?.toString()}
-                          >
+          {groupSettings.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Paramètres des groupes</CardTitle>
+                <CardDescription>Définissez comment les groupes seront formés pour chaque promotion</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {groupSettings?.map((groupSetting, index) => (
+                  <div key={groupSetting.promotionId} className="border rounded-lg p-4 space-y-4 relative">
+                    <h3 className="text-lg font-semibold">
+                      {promotions.find((p) => p.id === groupSetting.promotionId)?.name}
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`groupSettings.${index}.minMembers`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre minimum de membres</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={form.getValues(`groupSettings.${index}.maxMembers`) || 10}
+                                {...field}
+                                onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`groupSettings.${index}.maxMembers`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre maximum de membres</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={form.getValues(`groupSettings.${index}.minMembers`) || 1}
+                                {...field}
+                                onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name={`groupSettings.${index}.mode`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mode de formation des groupes</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner une promotion" />
+                                <SelectValue placeholder="Sélectionner un mode" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {promotions
-                                .filter((promotion) => promotionIds.includes(promotion.id))
-                                .map((promotion) => (
-                                  <SelectItem key={promotion.id} value={promotion.id.toString()}>
-                                    {promotion.name}
-                                  </SelectItem>
-                                ))}
+                              <SelectItem value="AUTO">Automatique</SelectItem>
+                              <SelectItem value="FREE">Libre</SelectItem>
+                              <SelectItem value="MANUAL">Manuel</SelectItem>
                             </SelectContent>
                           </Select>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name={`groupSettings.${index}.minMembers`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre minimum de membres</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={form.getValues(`groupSettings.${index}.maxMembers`) || 10}
-                              {...field}
-                              onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
-                            />
-                          </FormControl>
+                          <FormDescription>
+                            Automatique: les groupes sont formés par le système
+                            <br />
+                            Libre: les étudiants forment leurs groupes
+                            <br />
+                            Manuel: l&apos;enseignant forme les groupes
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -335,96 +356,46 @@ export default function CreateProjectForm() {
 
                     <FormField
                       control={form.control}
-                      name={`groupSettings.${index}.maxMembers`}
+                      name={`groupSettings.${index}.deadline`}
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre maximum de membres</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={form.getValues(`groupSettings.${index}.minMembers`) || 1}
-                              {...field}
-                              onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
-                            />
-                          </FormControl>
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Date limite de formation des groupes</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={`w-1/4 justify-start text-left font-normal ${
+                                    !field.value && "text-muted-foreground"
+                                  }`}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? (
+                                    <span>{formatDate(field.value)}</span>
+                                  ) : (
+                                    <span>Sélectionner une date</span>
+                                  )}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ? new Date(field.value) : undefined}
+                                onSelect={(date) => field.onChange(date?.toISOString())}
+                                disabled={(date) => date < new Date()}
+                              />
+                            </PopoverContent>
+                          </Popover>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name={`groupSettings.${index}.mode`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mode de formation des groupes</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un mode" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="AUTO">Automatique</SelectItem>
-                            <SelectItem value="FREE">Libre</SelectItem>
-                            <SelectItem value="MANUAL">Manuel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Automatique: les groupes sont formés par le système
-                          <br />
-                          Libre: les étudiants forment leurs groupes
-                          <br />
-                          Manuel: l&apos;enseignant forme les groupes
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`groupSettings.${index}.deadline`}
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date limite de formation des groupes</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={`w-full justify-start text-left font-normal ${
-                                  !field.value && "text-muted-foreground"
-                                }`}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? (
-                                  <span>{formatDate(field.value)}</span>
-                                ) : (
-                                  <span>Sélectionner une date</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date?.toISOString())}
-                              initialFocus
-                              disabled={(date) => date < new Date()}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           <CardFooter className="flex justify-between border rounded-lg p-4">
             <Button type="button" variant="outline" onClick={() => router.push("/dashboard/teachers/projects")}>
