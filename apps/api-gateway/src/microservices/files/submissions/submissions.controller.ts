@@ -39,9 +39,10 @@ export class SubmissionsController {
         gitUrl: {
           type: "string",
           description: "The URL of the Git repository",
+          example: "https://github.com/Jayllyz/sudoku-rust",
         },
         groupId: {
-          type: "string",
+          type: "number",
           description: "The ID of the group submitting the deliverable",
         },
       },
@@ -49,8 +50,8 @@ export class SubmissionsController {
     },
   })
   async submit(
-    @Param("idDeliverable") idDeliverable: string,
-    @Body("groupId") groupId: string,
+    @Param("idDeliverable") idDeliverable: number,
+    @Body("groupId") groupId: number,
     @UploadedFile() file?: File,
     @Body("gitUrl") gitUrl?: string,
   ) {

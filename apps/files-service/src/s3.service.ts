@@ -81,7 +81,7 @@ export class S3Service {
    */
   async uploadZipSubmission(
     input: Buffer,
-    groupId: string,
+    groupId: number,
     projectId: number,
     promotionId: number,
     stepId: number,
@@ -128,7 +128,7 @@ export class S3Service {
   async uploadGitSubmission(
     username: string,
     repoName: string,
-    groupId: string,
+    groupId: number,
     projectId: number,
     promotionId: number,
     idDeliverable: number,

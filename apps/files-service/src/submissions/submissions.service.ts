@@ -25,7 +25,7 @@ export class SubmissionsService {
     private s3Service: S3Service,
   ) {}
 
-  async submit(idDeliverable: number, groupId: string, file: Buffer, gitUrl?: string): Promise<Submissions> {
+  async submit(idDeliverable: number, groupId: number, file: Buffer, gitUrl?: string): Promise<Submissions> {
     const deliverable = await this.prisma.deliverables.findUnique({
       where: { id: idDeliverable },
     });
@@ -80,7 +80,7 @@ export class SubmissionsService {
       data: {
         deliverableId: idDeliverable,
         status: penalty > 0 ? "LATE" : "PASSED",
-        groupId: Number(groupId),
+        groupId: groupId,
         penalty,
         fileUrl: key,
       },

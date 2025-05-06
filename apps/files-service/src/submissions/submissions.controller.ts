@@ -40,9 +40,10 @@ export class SubmissionsController {
         gitUrl: {
           type: "string",
           description: "The URL of the Git repository",
+          example: "https://github.com/Jayllyz/sudoku-rust",
         },
         groupId: {
-          type: "string",
+          type: "number",
           description: "The ID of the group submitting the deliverable",
         },
       },
@@ -50,8 +51,8 @@ export class SubmissionsController {
     },
   })
   async submit(
-    @Param("idDeliverable") idDeliverable: string,
-    @Body("groupId") groupId: string,
+    @Param("idDeliverable") idDeliverable: number,
+    @Body("groupId") groupId: number,
     @UploadedFile() file?: File,
     @Body("gitUrl") gitUrl?: string,
   ): Promise<Submissions> {
@@ -59,14 +60,14 @@ export class SubmissionsController {
       throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
-    return this.submissionsService.submit(Number(idDeliverable), groupId, file?.buffer as Buffer, gitUrl);
+    return this.submissionsService.submit(idDeliverable, groupId, file?.buffer as Buffer, gitUrl);
   }
 
   @Get("deliverables/:idDeliverable/submissions")
   @ApiOperation({ summary: "Get all submissions for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: string): Promise<SubmissionFileResponse[]> {
+  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: number): Promise<SubmissionFileResponse[]> {
     return this.submissionsService.findAllSubmissions(Number(idDeliverable));
   }
 
@@ -75,8 +76,8 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.OK, description: "Submission details." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
   async findOne(
-    @Param("idDeliverable") idDeliverable: string,
-    @Param("idSubmission") idSubmission: string,
+    @Param("idDeliverable") idDeliverable: number,
+    @Param("idSubmission") idSubmission: number,
   ): Promise<SubmissionFileResponse> {
     return this.submissionsService.findSubmissionById(Number(idDeliverable), Number(idSubmission));
   }
@@ -86,8 +87,8 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.OK, description: "Submission deleted successfully." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
   async deleteSubmission(
-    @Param("idDeliverable") idDeliverable: string,
-    @Param("idSubmission") idSubmission: string,
+    @Param("idDeliverable") idDeliverable: number,
+    @Param("idSubmission") idSubmission: number,
   ): Promise<void> {
     return this.submissionsService.deleteSubmission(Number(idDeliverable), Number(idSubmission));
   }
