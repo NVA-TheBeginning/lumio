@@ -16,6 +16,8 @@ export interface SubmissionFileResponse {
   status: string;
 }
 
+const GIT_URL_REGEX = "^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(?:(?:\.git)|(?:\/))?$";
+
 @Injectable()
 export class SubmissionsService {
   constructor(
@@ -51,6 +53,9 @@ export class SubmissionsService {
     if (gitUrl) {
       // https://github.com/username/reponame(.git)
       // .git is optional so some students may add it
+      if (!gitUrl.match(GIT_URL_REGEX)) {
+        throw new BadRequestException("Invalid Git URL format");
+      }
       const username = gitUrl.split("/").slice(-2, -1)[0];
       const repoName = gitUrl.split("/").slice(-1)[0].replace(".git", "");
       key = await this.s3Service.uploadGitSubmission(
@@ -61,7 +66,7 @@ export class SubmissionsService {
         deliverable.promotionId,
         idDeliverable,
       );
-    } else if (file) {
+    } else {
       key = await this.s3Service.uploadZipSubmission(
         file,
         groupId,
@@ -69,8 +74,6 @@ export class SubmissionsService {
         deliverable.promotionId,
         idDeliverable,
       );
-    } else {
-      throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
     const created = await this.prisma.submissions.create({
