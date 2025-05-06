@@ -1,4 +1,4 @@
-"use client";
+"use server";
 
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostData } from "@/lib/utils";
