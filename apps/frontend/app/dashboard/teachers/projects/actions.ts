@@ -1,3 +1,4 @@
+"use server";
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostData } from "@/lib/utils";
 
@@ -11,7 +12,7 @@ interface Project {
   updatedAt: string;
   createdAt: string;
   deletedAt: string;
-  status: "visible" | "draft" | "hidden";
+  status: "VISIBLE" | "DRAFT" | "HIDDEN" | string;
 }
 
 interface CreateProjectData {
@@ -28,6 +29,63 @@ interface CreateProjectData {
   }[];
 }
 
+export interface MemberType {
+  id: number;
+  name: string;
+}
+
+export interface GroupType {
+  id: number;
+  name: string;
+  members: MemberType[];
+}
+
+export interface GroupSettingsType {
+  minMembers: number;
+  maxMembers: number;
+  mode: string;
+  deadline: string;
+}
+
+export interface PromotionType {
+  id: number;
+  name: string;
+  description: string;
+  status: string;
+  groupSettings: GroupSettingsType;
+  groups: GroupType[];
+}
+
+export interface SubmissionType {
+  groupId: number;
+  status: string;
+  submittedAt: string | null;
+  grade: number | null;
+}
+
+export interface DeliverableType {
+  id: number;
+  title: string;
+  description: string;
+  deadline: string;
+  status: string;
+  promotionId: number;
+  submissions: SubmissionType[];
+}
+
+export interface ProjectType {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  status: string;
+  promotions: PromotionType[];
+  deliverables: DeliverableType[];
+}
+
 async function getUserId(): Promise<number> {
   const user = await getUserFromCookie();
   return Number(user?.id);
@@ -35,7 +93,7 @@ async function getUserId(): Promise<number> {
 
 export async function getAllProjects(): Promise<{ projects: Project[]; promotions: string[] }> {
   const id = await getUserId();
-  const data = (await authFetchData(`${API_URL}/projects/creator/${id}`)) as Project[];
+  const data = await authFetchData<Project[]>(`${API_URL}/projects/creator/${id}`);
   for (const project of data) {
     project.promotions = ["randomPromotions"];
     project.status = "visible";
@@ -146,16 +204,10 @@ export async function deleteProject(id: number): Promise<void> {
   }
 }
 
-export enum ProjectStatus {
-  VISIBLE = "VISIBLE",
-  DRAFT = "DRAFT",
-  HIDDEN = "HIDDEN",
-}
-
 export async function updateProjectStatus(
   idProject: number,
   idPromotion: number,
-  status: ProjectStatus,
+  status: "VISIBLE" | "DRAFT" | "HIDDEN" | string,
 ): Promise<void> {
   const { accessToken } = await getTokens();
   if (!accessToken) {
@@ -172,61 +224,4 @@ export async function updateProjectStatus(
   if (!response.ok) {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
-}
-
-export interface MemberType {
-  id: number;
-  name: string;
-}
-
-export interface GroupType {
-  id: number;
-  name: string;
-  members: MemberType[];
-}
-
-export interface GroupSettingsType {
-  minMembers: number;
-  maxMembers: number;
-  mode: string;
-  deadline: string;
-}
-
-export interface PromotionType {
-  id: number;
-  name: string;
-  description: string;
-  status: string;
-  groupSettings: GroupSettingsType;
-  groups: GroupType[];
-}
-
-export interface SubmissionType {
-  groupId: number;
-  status: string;
-  submittedAt: string | null;
-  grade: number | null;
-}
-
-export interface DeliverableType {
-  id: number;
-  title: string;
-  description: string;
-  deadline: string;
-  status: string;
-  promotionId: number;
-  submissions: SubmissionType[];
-}
-
-export interface ProjectType {
-  id: number;
-  name: string;
-  description: string;
-  creatorId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  status: string;
-  promotions: PromotionType[];
-  deliverables: DeliverableType[];
 }

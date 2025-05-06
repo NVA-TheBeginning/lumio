@@ -38,37 +38,16 @@ export async function getPromotions(): Promise<Promotion[]> {
   if (!user) {
     return [];
   }
-  try {
-    const response = await fetch(`${API_URL}/promotions?creatorId=${Number(user?.id)}`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch promotions");
-    }
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching promotions:", error);
-    throw error;
-  }
+  return await authFetchData<Promotion[]>(`${API_URL}/promotions?creatorId=${Number(user?.id)}`);
 }
-export async function getPromotion(id: number): Promise<Promotion | null> {
-  try {
-    const response = await fetch(`${API_URL}/promotions/${id}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch promotion with id ${id}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching promotion ${id}:`, error);
-    return null;
-  }
+export async function getPromotion(id: number): Promise<Promotion> {
+  return await authFetchData<Promotion>(`${API_URL}/promotions/${id}`);
 }
 
 export async function getPromotionMembers(promotionId: number, page = 1, size = 50): Promise<MembersResponse> {
-  const response = await authFetchData<MembersResponse>(
+  return await authFetchData<MembersResponse>(
     `${API_URL}/promotions/${promotionId}/students?page=${page}&size=${size}`,
   );
-  return response;
 }
 
 export async function createPromotion(data: {
