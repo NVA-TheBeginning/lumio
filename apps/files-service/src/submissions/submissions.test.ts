@@ -224,7 +224,7 @@ describe("SubmissionsController", () => {
         submissionDate: submission.submissionDate,
         groupId: submission.groupId,
         penalty: Number(submission.penalty),
-        type: [mockDeliverable.type],
+        type: mockDeliverable.type,
         status: submission.status,
       }));
 
