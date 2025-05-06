@@ -20,7 +20,7 @@ export class SubmissionsController {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post("deliverables/:idDeliverable/submit")
-  @ApiOperation({ summary: "Submit a deliverable with a ZIP file" })
+  @ApiOperation({ summary: "Submit a deliverable with a ZIP file or Github URL" })
   @ApiResponse({ status: HttpStatus.CREATED, description: "The deliverable has been successfully submitted." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
