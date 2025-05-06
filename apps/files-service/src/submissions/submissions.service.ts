@@ -50,7 +50,7 @@ export class SubmissionsService {
     }
 
     let key: string | undefined;
-    if (gitUrl) {
+    if (gitUrl && deliverable.type === "GIT") {
       // https://github.com/username/reponame(.git)
       // .git is optional so some students may add it
       if (!gitUrl.match(GIT_URL_REGEX)) {
@@ -66,7 +66,7 @@ export class SubmissionsService {
         deliverable.promotionId,
         idDeliverable,
       );
-    } else {
+    } else if (file && deliverable.type === "FILE") {
       key = await this.s3Service.uploadZipSubmission(
         file,
         groupId,
@@ -74,6 +74,8 @@ export class SubmissionsService {
         deliverable.promotionId,
         idDeliverable,
       );
+    } else {
+      throw new BadRequestException("Invalid submission type");
     }
 
     const created = await this.prisma.submissions.create({

@@ -77,14 +77,14 @@ describe("SubmissionsController", () => {
       mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
       mockPrismaService.submissions.create.mockResolvedValue(mockSubmission);
 
-      await controller.submit("1", "123", mockFile as unknown as File);
+      await controller.submit(1, 123, mockFile as unknown as File);
 
       expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
       });
       expect(mockS3Service.uploadZipSubmission).toHaveBeenCalledWith(
         mockFile.buffer,
-        "123",
+        123,
         mockDeliverable.projectId,
         mockDeliverable.promotionId,
         1,
@@ -103,7 +103,7 @@ describe("SubmissionsController", () => {
     test("should throw BadRequestException when no file is provided", async () => {
       let error: Error | null = null;
       try {
-        await controller.submit("1", "123", null as unknown as File);
+        await controller.submit(1, 123, null as unknown as File);
       } catch (e) {
         error = e as Error;
       }
@@ -116,7 +116,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.submit("1", "123", fileWithoutBuffer as unknown as File);
+        await controller.submit(1, 123, fileWithoutBuffer as unknown as File);
       } catch (e) {
         error = e as Error;
       }
@@ -150,7 +150,7 @@ describe("SubmissionsController", () => {
       mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
       mockPrismaService.submissions.create.mockResolvedValue(mockSubmission);
 
-      await controller.submit("1", "123", mockFile as unknown as File);
+      await controller.submit(1, 123, mockFile as unknown as File);
 
       expect(mockPrismaService.submissions.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -177,7 +177,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.submit("1", "123", mockFile as unknown as File);
+        await controller.submit(1, 123, mockFile as unknown as File);
       } catch (e) {
         error = e as Error;
       }
@@ -232,7 +232,7 @@ describe("SubmissionsController", () => {
       mockPrismaService.submissions.findMany.mockResolvedValue(mockSubmissions);
       mockS3Service.getFile.mockResolvedValue(Buffer.from("test data"));
 
-      const result = await controller.findAllByDeliverable("1");
+      const result = await controller.findAllByDeliverable(1);
 
       expect(result).toEqual(mockFileResponses);
       expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
@@ -250,7 +250,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.findAllByDeliverable("1");
+        await controller.findAllByDeliverable(1);
       } catch (e) {
         error = e as Error;
       }
@@ -293,7 +293,7 @@ describe("SubmissionsController", () => {
       mockPrismaService.submissions.findUnique.mockResolvedValue(mockSubmission);
       mockS3Service.getFile.mockResolvedValue(Buffer.from("test data"));
 
-      const result = await controller.findOne("1", "1");
+      const result = await controller.findOne(1, 1);
 
       expect(result).toEqual(mockFileResponse);
       expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
@@ -310,7 +310,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.findOne("1", "1");
+        await controller.findOne(1, 1);
       } catch (e) {
         error = e as Error;
       }
@@ -329,7 +329,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.findOne("1", "1");
+        await controller.findOne(1, 1);
       } catch (e) {
         error = e as Error;
       }
@@ -358,7 +358,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.findOne("1", "1");
+        await controller.findOne(1, 1);
       } catch (e) {
         error = e as Error;
       }
@@ -390,7 +390,7 @@ describe("SubmissionsController", () => {
       mockPrismaService.submissions.delete.mockResolvedValue({});
       mockS3Service.deleteFile.mockResolvedValue(undefined);
 
-      await controller.deleteSubmission("1", "1");
+      await controller.deleteSubmission(1, 1);
 
       expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -409,7 +409,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.deleteSubmission("1", "1");
+        await controller.deleteSubmission(1, 1);
       } catch (e) {
         error = e as Error;
       }
@@ -428,7 +428,7 @@ describe("SubmissionsController", () => {
 
       let error: Error | null = null;
       try {
-        await controller.deleteSubmission("1", "1");
+        await controller.deleteSubmission(1, 1);
       } catch (e) {
         error = e as Error;
       }
@@ -456,7 +456,7 @@ describe("SubmissionsController", () => {
       mockPrismaService.submissions.findUnique.mockResolvedValue(mockSubmission);
       mockPrismaService.submissions.delete.mockResolvedValue({});
 
-      await controller.deleteSubmission("1", "1");
+      await controller.deleteSubmission(1, 1);
 
       expect(mockPrismaService.submissions.delete).toHaveBeenCalledWith({
         where: { id: 1 },
