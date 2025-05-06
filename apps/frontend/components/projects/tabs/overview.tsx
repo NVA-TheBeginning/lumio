@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, Eye, EyeOff, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
-import { ProjectStatus, ProjectType, updateProjectStatus } from "@/app/dashboard/teachers/projects/actions";
+import { ProjectType, updateProjectStatus } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/utils";
+import { ProjectStatus } from "../header";
 import { ProjectStatistics } from "../statistic";
 
 interface ProjectOverviewProps {
@@ -33,7 +34,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       idPromotion: number;
       status: ProjectStatus;
     }) => {
-      await updateProjectStatus(idProject, idPromotion, status);
+      await updateProjectStatus(idProject, idPromotion, status as ProjectStatus);
     },
     onSuccess: () => {
       toast.success("Statut du projet mis à jour");

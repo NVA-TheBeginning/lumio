@@ -5,7 +5,7 @@ import { ArrowLeft, Copy, Edit, MoreHorizontal, Trash } from "lucide-react";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteProject, ProjectStatus, ProjectType } from "@/app/dashboard/teachers/projects/actions";
+import { deleteProject, ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -38,6 +38,12 @@ import { Textarea } from "@/components/ui/textarea";
 interface ProjectHeaderProps {
   project: ProjectType;
   router: AppRouterInstance;
+}
+
+export enum ProjectStatus {
+  VISIBLE = "VISIBLE",
+  DRAFT = "DRAFT",
+  HIDDEN = "HIDDEN",
 }
 
 export function ProjectHeader({ project, router }: ProjectHeaderProps) {
