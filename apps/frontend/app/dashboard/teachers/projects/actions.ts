@@ -12,7 +12,7 @@ interface Project {
   updatedAt: string;
   createdAt: string;
   deletedAt: string;
-  status: "visible" | "draft" | "hidden";
+  status: "VISIBLE" | "DRAFT" | "HIDDEN" | string;
 }
 
 interface CreateProjectData {
@@ -207,7 +207,7 @@ export async function deleteProject(id: number): Promise<void> {
 export async function updateProjectStatus(
   idProject: number,
   idPromotion: number,
-  status: "visible" | "draft" | "hidden",
+  status: "VISIBLE" | "DRAFT" | "HIDDEN" | string,
 ): Promise<void> {
   const { accessToken } = await getTokens();
   if (!accessToken) {
