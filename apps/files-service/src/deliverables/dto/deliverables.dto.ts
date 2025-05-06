@@ -1,7 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { DeliverableType } from "@prisma-files/client";
 import { Type } from "class-transformer";
-import { IsBoolean, IsDate, IsDecimal, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsDate,
+  IsDecimal,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 export class CreateDeliverableDto {
   @ApiProperty({ description: "Project ID" })
@@ -36,9 +47,15 @@ export class CreateDeliverableDto {
   @Type(() => Number)
   lateSubmissionPenalty: number;
 
-  @ApiProperty({ description: "Deliverable type", enum: DeliverableType })
+  @ApiProperty({
+    description: "Deliverable type",
+    enum: DeliverableType,
+    isArray: true,
+    example: [DeliverableType.GIT, DeliverableType.FILE],
+  })
   @IsEnum(DeliverableType)
-  type: DeliverableType;
+  @ArrayNotEmpty()
+  type: DeliverableType[];
 }
 
 export class UpdateDeliverableDto {
@@ -80,7 +97,8 @@ export class UpdateDeliverableDto {
   @ApiPropertyOptional({ description: "Deliverable type", enum: DeliverableType })
   @IsEnum(DeliverableType)
   @IsOptional()
-  type?: DeliverableType;
+  @IsArray()
+  type?: DeliverableType[];
 }
 
 export class DeliverableIdParams {

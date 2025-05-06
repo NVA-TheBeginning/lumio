@@ -12,7 +12,7 @@ export interface SubmissionFileResponse {
   submissionDate: Date;
   groupId: number;
   penalty: number;
-  type: DeliverableType;
+  type: DeliverableType[];
   status: string;
 }
 
@@ -50,7 +50,7 @@ export class SubmissionsService {
     }
 
     let key: string | undefined;
-    if (gitUrl && deliverable.type === "GIT") {
+    if (gitUrl && deliverable.type.includes(DeliverableType.GIT)) {
       // https://github.com/username/reponame(.git)
       // .git is optional so some students may add it
       if (!gitUrl.match(GIT_URL_REGEX)) {
@@ -66,7 +66,7 @@ export class SubmissionsService {
         deliverable.promotionId,
         idDeliverable,
       );
-    } else if (file && deliverable.type === "FILE") {
+    } else if (file && deliverable.type.includes(DeliverableType.FILE)) {
       key = await this.s3Service.uploadZipSubmission(
         file,
         groupId,

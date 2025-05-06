@@ -224,7 +224,7 @@ describe("SubmissionsController", () => {
         submissionDate: submission.submissionDate,
         groupId: submission.groupId,
         penalty: Number(submission.penalty),
-        type: mockDeliverable.type,
+        type: [mockDeliverable.type],
         status: submission.status,
       }));
 
@@ -263,7 +263,7 @@ describe("SubmissionsController", () => {
     test("should get a specific submission", async () => {
       const mockDeliverable = {
         id: 1,
-        type: DeliverableType.FILE,
+        type: [DeliverableType.FILE],
       };
 
       const mockSubmission = {
