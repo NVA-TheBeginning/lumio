@@ -7,7 +7,7 @@
     "start": "cargo run",
     "dev": "cargo watch -x run",
     "start:prod": "cargo run --release",
-    "test": "cargo test",
+    "test": "cargo nextest run --no-fail-fast --all-features && cargo test --doc",
     "lint": "cargo clippy --all-targets --all-features --fix --allow-dirty --allow-staged -- -D warnings"
   }
 }
