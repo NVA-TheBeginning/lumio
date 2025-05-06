@@ -49,11 +49,10 @@ async fn main() -> Result<(), impl Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
+        let result = 2.add(2);
         assert_eq!(result, 4);
     }
 }
