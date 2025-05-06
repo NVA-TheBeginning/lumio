@@ -1,5 +1,3 @@
-"use server";
-
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostData } from "@/lib/utils";
 
@@ -35,7 +33,7 @@ async function getUserId(): Promise<number> {
   return Number(user?.id);
 }
 
-export const getAllProjects = async (): Promise<{ projects: Project[]; promotions: string[] }> => {
+export async function getAllProjects(): Promise<{ projects: Project[]; promotions: string[] }> {
   const id = await getUserId();
   const data = (await authFetchData(`${API_URL}/projects/creator/${id}`)) as Project[];
   for (const project of data) {
@@ -47,7 +45,7 @@ export const getAllProjects = async (): Promise<{ projects: Project[]; promotion
     projects: data,
     promotions: Array.from(promoSet),
   };
-};
+}
 
 export async function createProject(data: CreateProjectData): Promise<void> {
   data.creatorId = await getUserId();
