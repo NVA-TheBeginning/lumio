@@ -23,7 +23,7 @@ export class SubmissionsService {
     private s3Service: S3Service,
   ) {}
 
-  async submit(idDeliverable: number, groupId: string, file: Buffer): Promise<Submissions> {
+  async submit(idDeliverable: number, groupId: string, file: Buffer, gitUrl?: string): Promise<Submissions> {
     const deliverable = await this.prisma.deliverables.findUnique({
       where: { id: idDeliverable },
     });
@@ -47,13 +47,31 @@ export class SubmissionsService {
       }
     }
 
-    const key = await this.s3Service.uploadZipSubmission(
-      file,
-      groupId,
-      deliverable.projectId,
-      deliverable.promotionId,
-      idDeliverable,
-    );
+    let key: string | undefined;
+    if (gitUrl) {
+      // https://github.com/username/reponame(.git)
+      // .git is optional so some students may add it
+      const username = gitUrl.split("/").slice(-2, -1)[0];
+      const repoName = gitUrl.split("/").slice(-1)[0].replace(".git", "");
+      key = await this.s3Service.uploadGitSubmission(
+        username,
+        repoName,
+        groupId,
+        deliverable.projectId,
+        deliverable.promotionId,
+        idDeliverable,
+      );
+    } else if (file) {
+      key = await this.s3Service.uploadZipSubmission(
+        file,
+        groupId,
+        deliverable.projectId,
+        deliverable.promotionId,
+        idDeliverable,
+      );
+    } else {
+      throw new BadRequestException("Either a file or a Git URL must be provided.");
+    }
 
     const created = await this.prisma.submissions.create({
       data: {

@@ -124,4 +124,25 @@ export class S3Service {
       return [];
     }
   }
+
+  async uploadGitSubmission(
+    username: string,
+    repoName: string,
+    groupId: string,
+    projectId: number,
+    promotionId: number,
+    idDeliverable: number,
+  ): Promise<string> {
+    const key = `project-${projectId}/promo-${promotionId}/step-${idDeliverable}/${groupId}-${Date.now()}.zip`;
+    // https://codeload.github.com/username/reponame/zip/main
+    const url = `https://codeload.github.com/${username}/${repoName}/zip/main`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch the file from GitHub: ${response.statusText}`);
+    }
+    const buffer = await response.arrayBuffer();
+    const file = Buffer.from(buffer);
+    await this.uploadFile(file, key);
+    return key;
+  }
 }

@@ -37,24 +37,29 @@ export class SubmissionsController {
           format: "binary",
           description: "The ZIP file to upload",
         },
+        gitUrl: {
+          type: "string",
+          description: "The URL of the Git repository",
+        },
         groupId: {
           type: "string",
           description: "The ID of the group submitting the deliverable",
         },
       },
-      required: ["file", "groupId"],
+      required: ["groupId"],
     },
   })
   async submit(
     @Param("idDeliverable") idDeliverable: string,
     @Body("groupId") groupId: string,
-    @UploadedFile() file: File,
+    @UploadedFile() file?: File,
+    @Body("gitUrl") gitUrl?: string,
   ): Promise<Submissions> {
-    if (!file?.buffer) {
-      throw new BadRequestException("No file uploaded");
+    if (!(file?.buffer || gitUrl)) {
+      throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
-    return this.submissionsService.submit(Number(idDeliverable), groupId, file.buffer);
+    return this.submissionsService.submit(Number(idDeliverable), groupId, file?.buffer as Buffer, gitUrl);
   }
 
   @Get("deliverables/:idDeliverable/submissions")
