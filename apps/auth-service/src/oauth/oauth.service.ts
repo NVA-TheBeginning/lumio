@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { AuthService, AuthTokens } from "@/auth/auth.service";
+import { AuthLogin, AuthService } from "@/auth/auth.service";
 import { PrismaService } from "@/prisma.service.js";
 
 @Injectable()
@@ -9,17 +9,17 @@ export class OAuthService {
     private authService: AuthService,
   ) {}
 
-  async handleGoogle(token: string): Promise<AuthTokens> {
+  async handleGoogle(token: string): Promise<AuthLogin> {
     const email = await this.verifyGoogleToken(token);
     return this.findOrCreateUser(email);
   }
 
-  async handleMicrosoft(token: string): Promise<AuthTokens> {
+  async handleMicrosoft(token: string): Promise<AuthLogin> {
     const email = await this.verifyMicrosoftToken(token);
     return this.findOrCreateUser(email);
   }
 
-  private async findOrCreateUser(email: string): Promise<AuthTokens> {
+  private async findOrCreateUser(email: string): Promise<AuthLogin> {
     let user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
@@ -31,7 +31,15 @@ export class OAuthService {
       });
     }
 
-    return this.authService.generateTokens(user.id, user.email);
+    const tokens = this.authService.generateTokens(user.id, user.email);
+    return {
+      id: user.id,
+      email: user.email,
+      firstname: user.firstname ?? "",
+      lastname: user.lastname ?? "",
+      role: user.role,
+      AuthTokens: tokens,
+    };
   }
 
   private async verifyGoogleToken(token: string): Promise<string> {
