@@ -70,7 +70,7 @@ export class SubmissionsController {
   @ApiOperation({ summary: "Get all submissions for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: string) {
+  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: number) {
     return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions`, "GET");
   }
 
@@ -78,7 +78,7 @@ export class SubmissionsController {
   @ApiOperation({ summary: "Get a specific submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission details." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
-  async findOne(@Param("idDeliverable") idDeliverable: string, @Param("idSubmission") idSubmission: string) {
+  async findOne(@Param("idDeliverable") idDeliverable: number, @Param("idSubmission") idSubmission: number) {
     return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions/${idSubmission}`, "GET");
   }
 
@@ -87,8 +87,8 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.OK, description: "Submission deleted successfully." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
   async deleteSubmission(
-    @Param("idDeliverable") idDeliverable: string,
-    @Param("idSubmission") idSubmission: string,
+    @Param("idDeliverable") idDeliverable: number,
+    @Param("idSubmission") idSubmission: number,
   ): Promise<void> {
     return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions/${idSubmission}`, "DELETE");
   }

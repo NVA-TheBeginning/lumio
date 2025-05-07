@@ -16,7 +16,7 @@ export interface SubmissionFileResponse {
   status: string;
 }
 
-const GIT_URL_REGEX = "^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(?:(?:\.git)|(?:\/))?$";
+const GIT_URL_REGEX = /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(?:(?:\.git)|(?:\/))?$/;
 
 @Injectable()
 export class SubmissionsService {
@@ -53,7 +53,7 @@ export class SubmissionsService {
     if (gitUrl && deliverable.type.includes(DeliverableType.GIT)) {
       // https://github.com/username/reponame(.git)
       // .git is optional so some students may add it
-      if (!gitUrl.match(GIT_URL_REGEX)) {
+      if (!GIT_URL_REGEX.test(gitUrl)) {
         throw new BadRequestException("Invalid Git URL format");
       }
       const username = gitUrl.split("/").slice(-2, -1)[0];
