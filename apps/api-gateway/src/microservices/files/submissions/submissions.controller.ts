@@ -12,13 +12,12 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Submissions } from "@prisma-files/client";
-import { SubmissionFileResponse, SubmissionsService } from "./submissions.service";
+import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 @ApiTags("submissions")
 @Controller()
 export class SubmissionsController {
-  constructor(private readonly submissionsService: SubmissionsService) {}
+  constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post("deliverables/:idDeliverable/submit")
   @ApiOperation({ summary: "Submit a deliverable with a ZIP file or Github URL" })
@@ -55,31 +54,32 @@ export class SubmissionsController {
     @Body("groupId") groupId: number,
     @UploadedFile() file?: File,
     @Body("gitUrl") gitUrl?: string,
-  ): Promise<Submissions> {
+  ) {
     if (!(file?.buffer || gitUrl)) {
       throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
-    return this.submissionsService.submit(idDeliverable, groupId, file?.buffer as Buffer, gitUrl);
+    return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submit`, "POST", {
+      file,
+      gitUrl,
+      groupId,
+    });
   }
 
   @Get("deliverables/:idDeliverable/submissions")
   @ApiOperation({ summary: "Get all submissions for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: number): Promise<SubmissionFileResponse[]> {
-    return this.submissionsService.findAllSubmissions(Number(idDeliverable));
+  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: number) {
+    return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions`, "GET");
   }
 
   @Get("deliverables/:idDeliverable/submissions/:idSubmission")
   @ApiOperation({ summary: "Get a specific submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission details." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
-  async findOne(
-    @Param("idDeliverable") idDeliverable: number,
-    @Param("idSubmission") idSubmission: number,
-  ): Promise<SubmissionFileResponse> {
-    return this.submissionsService.findSubmissionById(Number(idDeliverable), Number(idSubmission));
+  async findOne(@Param("idDeliverable") idDeliverable: number, @Param("idSubmission") idSubmission: number) {
+    return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions/${idSubmission}`, "GET");
   }
 
   @Delete("deliverables/:idDeliverable/submissions/:idSubmission")
@@ -90,6 +90,6 @@ export class SubmissionsController {
     @Param("idDeliverable") idDeliverable: number,
     @Param("idSubmission") idSubmission: number,
   ): Promise<void> {
-    return this.submissionsService.deleteSubmission(Number(idDeliverable), Number(idSubmission));
+    return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions/${idSubmission}`, "DELETE");
   }
 }

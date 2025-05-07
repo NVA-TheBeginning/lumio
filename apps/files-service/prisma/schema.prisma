@@ -18,7 +18,7 @@ datasource db {
 }
 
 model Deliverables {
-  id                    Int             @unique @default(autoincrement())
+  id                    Int               @unique @default(autoincrement())
   projectId             Int
   promotionId           Int
   name                  String
@@ -26,8 +26,8 @@ model Deliverables {
   deadline              DateTime
   allowLateSubmission   Boolean
   lateSubmissionPenalty Decimal
-  type                  DeliverableType
-  createdAt             DateTime        @default(now())
+  type                  DeliverableType[]
+  createdAt             DateTime          @default(now())
 
   @@id([projectId, promotionId])
   @@map("DELIVERABLES")
