@@ -82,9 +82,10 @@ export class SubmissionsService {
       data: {
         deliverableId: idDeliverable,
         status: penalty > 0 ? "LATE" : "PASSED",
-        groupId: groupId,
+        groupId,
         penalty,
         fileUrl: key,
+        gitUrl: gitUrl ?? undefined,
       },
     });
 

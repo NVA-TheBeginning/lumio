@@ -191,7 +191,7 @@ describe("SubmissionsController", () => {
     test("should get all submissions for a deliverable", async () => {
       const mockDeliverable = {
         id: 1,
-        type: DeliverableType.FILE,
+        type: [DeliverableType.FILE],
       };
 
       const mockSubmissions = [
