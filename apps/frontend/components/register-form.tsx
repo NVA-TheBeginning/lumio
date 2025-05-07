@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { cn } from "@/lib/utils";
+import { GoogleOAuthButton } from "./google-auth-btn";
 
 const registerSchema = z
   .object({
@@ -89,9 +90,7 @@ export function RegisterForm({ className, onRegisterSubmit, ...props }: Register
             <Button type="submit" className="w-full">
               S'inscrire
             </Button>
-            <Button variant="outline" className="w-full">
-              S'incrire avec Google
-            </Button>
+            <GoogleOAuthButton className="mt-2" />
           </div>
         </form>
       </Form>
