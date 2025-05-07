@@ -181,7 +181,7 @@ describe("MicroserviceProxyService", () => {
 
       axios.request = (() => Promise.reject(axiosErr)) as unknown as typeof axios.request;
 
-      await expect(service.forwardRequest("auth", "/fail", "GET")).rejects.toMatchObject({
+      expect(service.forwardRequest("auth", "/fail", "GET")).rejects.toMatchObject({
         status: 418,
         message: "[auth] I am a teapot",
       });
