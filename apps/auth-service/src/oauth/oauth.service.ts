@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { AuthService } from "@/auth/auth.service";
+import { AuthService, AuthTokens } from "@/auth/auth.service";
 import { PrismaService } from "@/prisma.service.js";
 
 @Injectable()
@@ -9,22 +9,25 @@ export class OAuthService {
     private authService: AuthService,
   ) {}
 
-  async handleGoogle(token: string) {
+  async handleGoogle(token: string): Promise<AuthTokens> {
     const email = await this.verifyGoogleToken(token);
     return this.findOrCreateUser(email);
   }
 
-  async handleMicrosoft(token: string) {
+  async handleMicrosoft(token: string): Promise<AuthTokens> {
     const email = await this.verifyMicrosoftToken(token);
     return this.findOrCreateUser(email);
   }
 
-  private async findOrCreateUser(email: string) {
+  private async findOrCreateUser(email: string): Promise<AuthTokens> {
     let user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       user = await this.prisma.user.create({
-        data: { email, password: "" }, // pas de mot de passe dans ce cas
+        data: {
+          email,
+          password: await Bun.password.hash(Bun.randomUUIDv7()),
+        },
       });
     }
 
@@ -39,7 +42,8 @@ export class OAuthService {
         throw new Error(`HTTP error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { email: string };
+
       return data.email;
     } catch {
       throw new UnauthorizedException("Invalid Google token");
@@ -56,7 +60,7 @@ export class OAuthService {
         throw new Error(`HTTP error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { mail: string; userPrincipalName: string };
       return data.mail || data.userPrincipalName;
     } catch {
       throw new UnauthorizedException("Invalid Microsoft token");
