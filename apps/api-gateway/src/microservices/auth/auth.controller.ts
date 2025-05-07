@@ -1,5 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
+import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiProperty, ApiResponse, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
@@ -72,7 +71,6 @@ export class AuthController {
     return this.proxy.forwardRequest("auth", "/auth/signup", "POST", signUpDto);
   }
 
-  @UseGuards(AuthGuard("jwt-refresh"))
   @Post("refresh")
   @ApiOperation({ summary: "Generate new access/refresh token from validated user" })
   @ApiResponse({ status: 200, description: "Tokens refreshed", schema: { example: { accessToken: "<jwt>" } } })
