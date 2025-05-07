@@ -124,6 +124,26 @@ describe("SubmissionsController", () => {
       expect(error).toBeInstanceOf(BadRequestException);
     });
 
+    test("should throw BadRequestException for invalid Git URL format", async () => {
+      const mockDeliverable = {
+        id: 1,
+        projectId: 100,
+        promotionId: 200,
+        type: [DeliverableType.GIT],
+        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        allowLateSubmission: true,
+      };
+
+      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
+
+      const invalidGitUrl = "this-is-not-a-valid-git-url";
+
+      expect(() => controller.submit(1, 123, mockFile as unknown as File, invalidGitUrl)).toThrow(BadRequestException);
+      expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+    });
+
     test("should apply penalty for late submissions", async () => {
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 5);
