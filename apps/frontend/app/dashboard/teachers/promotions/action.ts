@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getUserFromCookie } from "@/lib/cookie";
+import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostData } from "@/lib/utils";
 
 export interface Promotion {
@@ -38,37 +38,16 @@ export async function getPromotions(): Promise<Promotion[]> {
   if (!user) {
     return [];
   }
-  try {
-    const response = await fetch(`${API_URL}/promotions?creatorId=${Number(user?.id)}`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch promotions");
-    }
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching promotions:", error);
-    throw error;
-  }
+  return await authFetchData<Promotion[]>(`${API_URL}/promotions?creatorId=${Number(user?.id)}`);
 }
-export async function getPromotion(id: number): Promise<Promotion | null> {
-  try {
-    const response = await fetch(`${API_URL}/promotions/${id}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch promotion with id ${id}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching promotion ${id}:`, error);
-    return null;
-  }
+export async function getPromotion(id: number): Promise<Promotion> {
+  return await authFetchData<Promotion>(`${API_URL}/promotions/${id}`);
 }
 
 export async function getPromotionMembers(promotionId: number, page = 1, size = 50): Promise<MembersResponse> {
-  const response = await authFetchData<MembersResponse>(
+  return await authFetchData<MembersResponse>(
     `${API_URL}/promotions/${promotionId}/students?page=${page}&size=${size}`,
   );
-  return response;
 }
 
 export async function createPromotion(data: {
@@ -94,8 +73,15 @@ export async function createPromotion(data: {
 }
 
 export async function deletePromotion(id: number): Promise<void> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
   const response = await fetch(`${API_URL}/promotions/${id}`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (!response.ok) {

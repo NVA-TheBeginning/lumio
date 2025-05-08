@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, jest, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { AddMembersDto, CreateGroupDto, GroupMode, GroupSettingsDto, UpdateGroupDto } from "./dto/group.dto.js";
+import { AddMembersDto, CreateGroupDto, GroupMode, GroupSettingsDto, UpdateGroupDto } from "../dto/group.dto.js";
 import { GroupsController } from "./groups.controller.js";
 
 describe("GroupsController", () => {
@@ -31,7 +31,7 @@ describe("GroupsController", () => {
 
     const result = await controller.create(1, 2, dto);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/projects/1/promotions/2/groups", "POST", dto);
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/1/promotions/2/groups", "POST", dto);
     expect(result).toEqual(["g1", "g2", "g3"]);
   });
 
@@ -40,7 +40,7 @@ describe("GroupsController", () => {
 
     const result = await controller.findAll(1, 2);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/projects/1/promotions/2/groups", "GET");
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/1/promotions/2/groups", "GET");
     expect(result).toEqual([]);
   });
 
@@ -50,7 +50,7 @@ describe("GroupsController", () => {
 
     const result = await controller.update(5, dto);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/groups/5", "PUT", dto);
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/groups/5", "PUT", dto);
     expect(result).toEqual({ id: 5, name: "NewName" });
   });
 
@@ -59,7 +59,7 @@ describe("GroupsController", () => {
 
     const result = await controller.remove(5);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/groups/5", "DELETE");
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/groups/5", "DELETE");
     expect(result).toEqual({ deleted: true });
   });
 
@@ -69,7 +69,7 @@ describe("GroupsController", () => {
 
     const result = await controller.addMembers(5, dto);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/groups/5/students", "POST", dto);
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/groups/5/students", "POST", dto);
     expect(result).toEqual({ added: 2 });
   });
 
@@ -78,7 +78,7 @@ describe("GroupsController", () => {
 
     const result = await controller.removeMember(5, 42);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/groups/5/students/42", "DELETE");
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/groups/5/students/42", "DELETE");
     expect(result).toEqual({ removed: true });
   });
 
@@ -93,7 +93,7 @@ describe("GroupsController", () => {
 
     const result = await controller.getSettings(1, 2);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/projects/1/promotions/2/group-settings", "GET");
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/1/promotions/2/group-settings", "GET");
     expect(result).toEqual(settings);
   });
 
@@ -108,7 +108,12 @@ describe("GroupsController", () => {
 
     const result = await controller.updateSettings(1, 2, dto);
 
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("group", "/projects/1/promotions/2/group-settings", "PATCH", dto);
+    expect(proxy.forwardRequest).toHaveBeenCalledWith(
+      "project",
+      "/projects/1/promotions/2/group-settings",
+      "PATCH",
+      dto,
+    );
     expect(result).toEqual({ success: true });
   });
 });

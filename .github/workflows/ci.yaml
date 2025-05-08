@@ -44,6 +44,25 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
 
+    # Used to check if any files related to Rust have changed
+    - name: Check for Rust-related changes
+      id: changed-files
+      uses: tj-actions/changed-files@v46
+      with:
+        files: |
+          .github/workflows/ci.yaml
+          rust-toolchain.toml
+          justfile
+          apps/plagiarism-service/**
+
+    - name: Install Rust toolchain
+      if: steps.changed-files.outputs.any_changed == 'true'
+      uses: moonrepo/setup-rust@v1
+      with:
+        bins: cargo-nextest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:

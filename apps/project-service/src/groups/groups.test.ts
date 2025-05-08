@@ -4,21 +4,7 @@ import { Test } from "@nestjs/testing";
 import { GroupMode, ProjectStatus } from "@prisma-project/client";
 import { AppModule } from "@/app.module.js";
 import { PrismaService } from "@/prisma.service";
-
-// DTOs
-interface CreateGroupDto {
-  numberOfGroups: number;
-  baseName?: string;
-}
-interface UpdateGroupDto {
-  name?: string;
-}
-interface GroupSettingsDto {
-  minMembers: number;
-  maxMembers: number;
-  mode: GroupMode;
-  deadline: string;
-}
+import { CreateGroupDto, GroupSettingsDto, UpdateGroupDto } from "./dto/group.dto";
 
 describe("Groups API", () => {
   let app: NestFastifyApplication;
@@ -40,24 +26,20 @@ describe("Groups API", () => {
 
     prisma = app.get(PrismaService);
 
-    // Create one promotion
     const promo = await prisma.promotion.create({
       data: { name: `Promo ${now}`, description: "for groups", creatorId: 1 },
     });
     promotionId = promo.id;
 
-    // Create one project
     const proj = await prisma.project.create({
       data: { name: `Proj ${now}`, description: "for groups", creatorId: 1 },
     });
     projectId = proj.id;
 
-    // Link project <-> promotion
     await prisma.projectPromotion.create({
       data: { projectId, promotionId, status: ProjectStatus.DRAFT },
     });
 
-    // Initialise group settings
     await prisma.groupSettings.create({
       data: {
         projectId,
@@ -151,7 +133,7 @@ describe("Groups API", () => {
     expect(res.statusCode).toBe(200);
     const body: GroupSettingsDto = JSON.parse(res.body);
     expect(body.minMembers).toBe(2);
-    expect(body.mode).toBe(GroupMode.MANUAL);
+    expect(body.mode as GroupMode).toBe(GroupMode.MANUAL);
   });
 
   test("PATCH /projects/:projectId/promotions/:promotionId/group-settings — update settings", async () => {

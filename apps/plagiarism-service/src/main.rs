@@ -99,3 +99,14 @@ async fn main() -> Result<(), impl Error> {
     .await
 }
 */
+
+#[cfg(test)]
+mod tests {
+    use std::ops::Add;
+
+    #[test]
+    fn it_works() {
+        let result = 2_i32.add(2);
+        assert_eq!(result, 4);
+    }
+}

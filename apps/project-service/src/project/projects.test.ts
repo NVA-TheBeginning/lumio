@@ -169,6 +169,15 @@ describe("Projects", () => {
     expect(res.statusCode).toBe(404);
   });
 
+  test("/projects/:id/:promotionId/status (PATCH) - should update project status", async () => {
+    const res = await app.inject({
+      method: "PATCH",
+      url: `/projects/${projectId}/${promotionIds[0]}/status`,
+      payload: { status: ProjectStatus.VISIBLE },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
   test("/projects/:id (DELETE) - should soft-delete the project", async () => {
     const res = await app.inject({ method: "DELETE", url: `/projects/${projectId}` });
     expect(res.statusCode).toBe(200);

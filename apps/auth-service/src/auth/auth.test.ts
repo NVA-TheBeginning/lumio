@@ -92,6 +92,34 @@ describe("Auth", () => {
     expect(response.statusCode).toEqual(401);
   });
 
+  test("/auth/refresh (POST) - should refresh access token", async () => {
+    const loginResponse = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email, password },
+    });
+    const { refreshToken } = JSON.parse(loginResponse.body).AuthTokens;
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/auth/refresh",
+      payload: { refreshToken },
+    });
+    expect(response.statusCode).toEqual(200);
+    const body = JSON.parse(response.body);
+
+    expect(body).toHaveProperty("accessToken");
+  });
+
+  test("/auth/refresh (POST) - should return 500 for invalid refresh token", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/auth/refresh",
+      payload: { refreshToken: "invalid-refresh-token" },
+    });
+    expect(response.statusCode).toEqual(500);
+  });
+
   afterAll(async () => {
     await app.get(PrismaService).user.deleteMany({ where: { email } });
     await app.close();

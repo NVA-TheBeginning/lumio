@@ -28,6 +28,5 @@ async function bootstrap() {
   Logger.log(`Server is running on: ${url}`);
   Logger.log(`API Docs available at: ${url}/docs`);
   Logger.log(`Swagger UI available at: ${url}/ui`);
-  Logger.log("This is the Auth Service");
 }
 void bootstrap();

@@ -6,10 +6,12 @@ on:
     paths:
     - 'apps/plagiarism-service/**'
     - '.github/workflows/ci-rust.yaml'
+    - 'rust-toolchain.toml'
   pull_request:
     paths:
     - 'apps/plagiarism-service/**'
     - '.github/workflows/ci-rust.yaml'
+    - 'rust-toolchain.toml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

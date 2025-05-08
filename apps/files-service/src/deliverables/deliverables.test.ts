@@ -17,7 +17,7 @@ export const createDeliverableDto = (
   deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   allowLateSubmission: true,
   lateSubmissionPenalty: 2,
-  type: DeliverableType.FILE,
+  type: [DeliverableType.FILE],
   projectId: projectId,
 });
 
