@@ -37,16 +37,16 @@ export default function CalendarPage() {
     >
       <div className="h-dvh py-6 flex flex-col">
         <div className="flex px-6 items-center gap-2 mb-6">
-          <CalendarViewTrigger className="aria-[current=true]:bg-accent" view="day">
+          <CalendarViewTrigger className="aria-current:bg-accent" view="day">
             Jour
           </CalendarViewTrigger>
-          <CalendarViewTrigger view="week" className="aria-[current=true]:bg-accent">
+          <CalendarViewTrigger view="week" className="aria-current:bg-accent">
             Semaine
           </CalendarViewTrigger>
-          <CalendarViewTrigger view="month" className="aria-[current=true]:bg-accent">
+          <CalendarViewTrigger view="month" className="aria-current:bg-accent">
             Mois
           </CalendarViewTrigger>
-          <CalendarViewTrigger view="year" className="aria-[current=true]:bg-accent">
+          <CalendarViewTrigger view="year" className="aria-current:bg-accent">
             Année
           </CalendarViewTrigger>
 
