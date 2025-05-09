@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { DeliverableType, Submissions } from "@prisma-files/client";
+import * as yauzl from "yauzl";
 import { PrismaService } from "@/prisma.service";
 import { S3Service } from "@/s3.service";
 
@@ -67,6 +68,11 @@ export class SubmissionsService {
         idDeliverable,
       );
     } else if (file && deliverable.type.includes(DeliverableType.FILE)) {
+      const containsForbiddenFiles = await this.checkForbiddenFiles(file);
+      if (containsForbiddenFiles) {
+        throw new BadRequestException("ZIP is invalid or contains forbidden files");
+      }
+
       key = await this.s3Service.uploadZipSubmission(
         file,
         groupId,
@@ -90,6 +96,49 @@ export class SubmissionsService {
     });
 
     return created;
+  }
+
+  private async checkForbiddenFiles(fileBuffer: Buffer): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      yauzl.fromBuffer(fileBuffer, { lazyEntries: true }, (err, zipfile) => {
+        if (err || !zipfile) {
+          reject(new BadRequestException("Invalid zip file"));
+          return;
+        }
+
+        let hasDll = false;
+        let isResolved = false;
+
+        zipfile.on("entry", (entry) => {
+          if (entry.fileName.toLowerCase().endsWith(".dll")) {
+            hasDll = true;
+            zipfile.close();
+            if (!isResolved) {
+              isResolved = true;
+              resolve(true);
+            }
+            return;
+          }
+          zipfile.readEntry();
+        });
+
+        zipfile.on("end", () => {
+          if (!isResolved) {
+            isResolved = true;
+            resolve(hasDll);
+          }
+        });
+
+        zipfile.on("error", (err) => {
+          if (!isResolved) {
+            isResolved = true;
+            reject(new BadRequestException("Invalid zip file"));
+          }
+        });
+
+        zipfile.readEntry();
+      });
+    });
   }
 
   async findAllSubmissions(idDeliverable: number): Promise<SubmissionFileResponse[]> {
