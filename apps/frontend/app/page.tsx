@@ -38,7 +38,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <section className="flex-1 flex items-center bg-gradient-to-b from-background to-muted">
+      <section className="flex-1 flex items-center bg-linear-to-b from-background to-muted">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>

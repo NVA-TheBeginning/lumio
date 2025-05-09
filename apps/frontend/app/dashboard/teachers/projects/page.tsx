@@ -415,7 +415,7 @@ export default function ProjectList() {
                   <Skeleton className="h-6 w-1/5" />
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow pb-3">
+              <CardContent className="grow pb-3">
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-3/4 mb-4" />
@@ -444,7 +444,7 @@ export default function ProjectList() {
                   <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow pb-3">
+              <CardContent className="grow pb-3">
                 <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
 
                 <div className="mt-2 flex flex-wrap gap-2">
