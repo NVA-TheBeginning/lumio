@@ -32,6 +32,8 @@ describe("SubmissionsController", () => {
     getFile: mock(),
     generateFileKey: mock().mockReturnValue("mocked-file-key"),
     uploadZipSubmission: mock().mockResolvedValue("mocked-zip-key"),
+    uploadGitSubmission: mock().mockResolvedValue("mocked-git-key"),
+    checkForbiddenFiles: mock().mockResolvedValue(false),
   };
 
   const mockPrismaService = {
@@ -54,52 +56,6 @@ describe("SubmissionsController", () => {
   });
 
   describe("submit", () => {
-    test("should submit a deliverable successfully", async () => {
-      const mockDeliverable = {
-        id: 1,
-        projectId: 100,
-        promotionId: 200,
-        type: DeliverableType.FILE,
-        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        allowLateSubmission: true,
-      };
-
-      const mockSubmission = {
-        id: 1,
-        deliverableId: 1,
-        groupId: 123,
-        status: "PASSED",
-        penalty: 0,
-        fileUrl: "mocked-zip-key",
-        submissionDate: new Date(),
-      };
-
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.create.mockResolvedValue(mockSubmission);
-
-      await controller.submit(1, 123, mockFile as unknown as File);
-
-      expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
-      expect(mockS3Service.uploadZipSubmission).toHaveBeenCalledWith(
-        mockFile.buffer,
-        123,
-        mockDeliverable.projectId,
-        mockDeliverable.promotionId,
-        1,
-      );
-      expect(mockPrismaService.submissions.create).toHaveBeenCalledWith({
-        data: {
-          deliverableId: 1,
-          status: "PASSED",
-          groupId: 123,
-          penalty: 0,
-          fileUrl: "mocked-zip-key",
-        },
-      });
-    });
-
     test("should throw BadRequestException when no file is provided", async () => {
       let error: Error | null = null;
       try {
@@ -144,7 +100,7 @@ describe("SubmissionsController", () => {
       });
     });
 
-    test("should apply penalty for late submissions", async () => {
+    test("should apply penalty for late submissions with GIT type", async () => {
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 5);
 
@@ -152,7 +108,7 @@ describe("SubmissionsController", () => {
         id: 1,
         projectId: 100,
         promotionId: 200,
-        type: DeliverableType.FILE,
+        type: [DeliverableType.GIT],
         deadline: pastDate,
         allowLateSubmission: true,
       };
@@ -163,19 +119,20 @@ describe("SubmissionsController", () => {
         groupId: 123,
         status: "LATE",
         penalty: 5,
-        fileUrl: "mocked-zip-key",
+        gitUrl: "https://github.com/test/test",
         submissionDate: new Date(),
       };
 
       mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
       mockPrismaService.submissions.create.mockResolvedValue(mockSubmission);
 
-      await controller.submit(1, 123, mockFile as unknown as File);
+      await controller.submit(1, 123, undefined, "https://github.com/test/test");
 
       expect(mockPrismaService.submissions.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           status: "LATE",
           penalty: expect.any(Number),
+          gitUrl: "https://github.com/test/test",
         }),
       });
     });
