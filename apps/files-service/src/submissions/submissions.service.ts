@@ -28,7 +28,7 @@ export class SubmissionsService {
 
   async submit(idDeliverable: number, groupId: number, file: Buffer, gitUrl?: string): Promise<Submissions> {
     const deliverable = await this.prisma.deliverables.findUnique({
-      where: { id: idDeliverable },
+      where: { id: Number(idDeliverable) },
     });
 
     if (!deliverable) {
@@ -143,7 +143,7 @@ export class SubmissionsService {
 
   async findAllSubmissions(idDeliverable: number): Promise<SubmissionFileResponse[]> {
     const deliverable = await this.prisma.deliverables.findUnique({
-      where: { id: idDeliverable },
+      where: { id: Number(idDeliverable) },
     });
 
     if (!deliverable) {
@@ -187,7 +187,7 @@ export class SubmissionsService {
 
   async findSubmissionById(idDeliverable: number, idSubmission: number): Promise<SubmissionFileResponse> {
     const deliverable = await this.prisma.deliverables.findUnique({
-      where: { id: idDeliverable },
+      where: { id: Number(idDeliverable) },
     });
 
     if (!deliverable) {
@@ -195,7 +195,7 @@ export class SubmissionsService {
     }
 
     const submission = await this.prisma.submissions.findUnique({
-      where: { id: idSubmission },
+      where: { id: Number(idSubmission) },
     });
 
     if (!submission) {
@@ -224,7 +224,7 @@ export class SubmissionsService {
 
   async deleteSubmission(idDeliverable: number, idSubmission: number): Promise<void> {
     const deliverable = await this.prisma.deliverables.findUnique({
-      where: { id: idDeliverable },
+      where: { id: Number(idDeliverable) },
     });
 
     if (!deliverable) {
@@ -232,7 +232,7 @@ export class SubmissionsService {
     }
 
     const submission = await this.prisma.submissions.findUnique({
-      where: { id: idSubmission },
+      where: { id: Number(idSubmission) },
     });
 
     if (!submission) {
@@ -243,7 +243,7 @@ export class SubmissionsService {
       await this.s3Service.deleteFile(submission.fileUrl);
     }
     await this.prisma.submissions.delete({
-      where: { id: idSubmission },
+      where: { id: Number(idSubmission) },
     });
   }
 }

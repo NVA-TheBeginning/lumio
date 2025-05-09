@@ -60,7 +60,7 @@ export class SubmissionsController {
       throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
-    return this.submissionsService.submit(idDeliverable, groupId, file?.buffer as Buffer, gitUrl);
+    return this.submissionsService.submit(Number(idDeliverable), Number(groupId), file?.buffer as Buffer, gitUrl);
   }
 
   @Get("deliverables/:idDeliverable/submissions")
