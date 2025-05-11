@@ -1,19 +1,21 @@
-import { beforeEach, describe, expect, it, Mock, mock } from "bun:test";
-import { Paginated } from "@/common/interfaces/pagination.interface.js";
+import { beforeEach, describe, expect, it, type Mock, mock } from "bun:test";
+import type { Paginated } from "@/common/interfaces/pagination.interface.js";
 import {
-  Group,
-  Project,
+  type Group,
+  type Project,
   ProjectsService,
-  ProjectWithGroupStatus,
+  type ProjectWithGroupStatus,
 } from "@/microservices/projects-groups/projects/projects.service.js";
-import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import type { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 
 describe("ProjectsService.findProjectsForStudent", () => {
   let service: ProjectsService;
   let proxy: MicroserviceProxyService;
 
   beforeEach(() => {
-    proxy = { forwardRequest: mock(async () => []) } as unknown as MicroserviceProxyService;
+    proxy = {
+      forwardRequest: mock(async () => []),
+    } as unknown as MicroserviceProxyService;
     service = new ProjectsService(proxy);
   });
 
@@ -28,9 +30,30 @@ describe("ProjectsService.findProjectsForStudent", () => {
     const studentId = 2;
     const promos = [{ id: 10 }];
     const projects: Project[] = [
-      { id: 100, name: "A", description: "", creatorId: 0, createdAt: new Date(), updatedAt: new Date() },
-      { id: 101, name: "B", description: "", creatorId: 0, createdAt: new Date(), updatedAt: new Date() },
-      { id: 102, name: "C", description: "", creatorId: 0, createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: 100,
+        name: "A",
+        description: "",
+        creatorId: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 101,
+        name: "B",
+        description: "",
+        creatorId: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 102,
+        name: "C",
+        description: "",
+        creatorId: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ];
     const groupsFor100 = [{ id: 200, name: "G1", members: [{ studentId }] }];
     const groupsFor101: Group[] = [{ id: 201, name: "G2", members: [{ studentId: 999 }] }];
@@ -48,7 +71,6 @@ describe("ProjectsService.findProjectsForStudent", () => {
 
     const result = await service.findProjectsForStudent(studentId, 1, 2);
 
-    const page = result[10] as unknown as Paginated<{ project: Project; groupStatus: string }>[];
     expect(Object.keys(result)).toContain("10");
     const paginated = result[10] as Paginated<ProjectWithGroupStatus>;
     expect(paginated.data.length).toBe(2);

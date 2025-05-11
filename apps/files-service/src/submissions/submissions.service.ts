@@ -129,7 +129,7 @@ export class SubmissionsService {
           }
         });
 
-        zipfile.on("error", (err) => {
+        zipfile.on("error", (_err) => {
           if (!isResolved) {
             isResolved = true;
             reject(new BadRequestException("Invalid zip file"));
