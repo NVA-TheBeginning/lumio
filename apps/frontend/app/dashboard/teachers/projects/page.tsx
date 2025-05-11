@@ -118,9 +118,11 @@ export default function ProjectList() {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-      } else if (sortBy === "title") {
+      }
+      if (sortBy === "title") {
         return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      } else if (sortBy === "status") {
+      }
+      if (sortBy === "status") {
         return sortOrder === "asc" ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status);
       }
       return 0;
