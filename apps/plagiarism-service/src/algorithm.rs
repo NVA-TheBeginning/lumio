@@ -8,6 +8,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+
 #[derive(Debug)]
 pub enum AlgorithmError {
     Io(io::Error),
@@ -49,6 +50,8 @@ pub struct PlagiarismMatch {
     pub matched_folder: String,
     #[serde(rename = "matchPercentage")]
     pub match_percentage: f64,
+    #[serde(rename = "matchFrequency")]
+    pub match_frequency: f64
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, Clone)]
@@ -82,13 +85,42 @@ fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
+fn calculate_char_frequency(content: &str) -> HashMap<char, usize> {
+    let mut frequency_map = HashMap::new();
+    for ch in content.chars() {
+        *frequency_map.entry(ch).or_insert(0) += 1;
+    }
+    frequency_map
+}
+
+fn compare_frequencies(
+    freq1: &HashMap<char, usize>,
+    freq2: &HashMap<char, usize>,
+) -> f64 {
+    let mut total = 0;
+    let mut match_count = 0;
+
+    for (ch, count1) in freq1 {
+        total += count1;
+        if let Some(count2) = freq2.get(ch) {
+            match_count += count1.min(count2);
+        }
+    }
+
+    if total == 0 {
+        0.0
+    } else {
+        (match_count as f64 / total as f64) * 100.0
+    }
+}
+
 pub fn run_plagiarism_check(
     project_id: String,
     promotion_id: String,
     base_extract_dir: &Path,
 ) -> Result<PlagiarismAlgorithmResponse, AlgorithmError> {
-    let mut folder_hashes: HashMap<String, String> = HashMap::new();
     let mut folder_details: Vec<FolderPlagiarismDetail> = Vec::new();
+    let mut folder_frequencies: HashMap<String, HashMap<char, usize>> = HashMap::new();
 
     let entries = fs::read_dir(base_extract_dir).map_err(|e| {
         AlgorithmError::DirectoryListing(format!("Failed to read base extraction directory: {}", e))
@@ -100,11 +132,25 @@ pub fn run_plagiarism_check(
 
         if path.is_dir() {
             if let Some(folder_name) = path.file_name().and_then(|name| name.to_str()) {
-                println!("Calculating SHA1 for folder: {}", folder_name);
+                println!("Processing folder: {}", folder_name);
                 match calculate_directory_sha1(&path) {
                     Ok(hash) => {
                         println!("SHA1 for {} is: {}", folder_name, hash);
-                        folder_hashes.insert(folder_name.to_string(), hash.clone());
+                        let mut folder_content = String::new();
+
+                        // Read all files in the folder to calculate character frequency
+                        for file_entry in fs::read_dir(&path)? {
+                            let file_entry = file_entry?;
+                            if file_entry.path().is_file() {
+                                if let Ok(content) = fs::read_to_string(file_entry.path()) {
+                                    folder_content.push_str(&content);
+                                }
+                            }
+                        }
+
+                        let frequency = calculate_char_frequency(&folder_content);
+                        folder_frequencies.insert(folder_name.to_string(), frequency);
+
                         folder_details.push(FolderPlagiarismDetail {
                             folder_name: folder_name.to_string(),
                             sha1: hash,
@@ -113,19 +159,17 @@ pub fn run_plagiarism_check(
                         });
                     }
                     Err(e) => {
-                        println!("Failed to calculate SHA1 for {}: {}", folder_name, e);
+                        println!("Failed to process folder {}: {}", folder_name, e);
                     }
                 }
             }
         }
     }
 
-    // MOCK PLAGIARISM COMPARISON AND SCORING
-    let mut rng = rand::rng();
-
     for i in 0..folder_details.len() {
         let current_folder_name = folder_details[i].folder_name.clone();
         let current_folder_sha1 = folder_details[i].sha1.clone();
+        let current_frequency = folder_frequencies.get(&current_folder_name).unwrap();
         let mut matches = Vec::new();
         let mut total_match_percentage = 0.0;
         let mut match_count = 0;
@@ -134,24 +178,25 @@ pub fn run_plagiarism_check(
             if i != j {
                 let other_folder_name = folder_details[j].folder_name.clone();
                 let other_folder_sha1 = folder_details[j].sha1.clone();
+                let other_frequency = folder_frequencies.get(&other_folder_name).unwrap();
 
-                // MOCK COMPARISON: If SHA1s are the same, it's a 100% match
-                let match_percentage = if current_folder_sha1 == other_folder_sha1 {
+                // Compare SHA1 and frequencies
+                let sha1_match_percentage = if current_folder_sha1 == other_folder_sha1 {
                     100.0
                 } else {
-                    // Simulate partial match
-                    let random_match = rng.random_range(0.0..40.0);
-                    if random_match > 10.0 {
-                        random_match
-                    } else {
-                        0.0
-                    }
+                    0.0
                 };
+
+                let frequency_match_percentage =
+                    compare_frequencies(current_frequency, other_frequency);
+
+                let match_percentage = (sha1_match_percentage + frequency_match_percentage) / 2.0;
 
                 if match_percentage > 0.0 {
                     matches.push(PlagiarismMatch {
                         matched_folder: other_folder_name.clone(),
                         match_percentage,
+                        match_frequency: frequency_match_percentage,
                     });
                     total_match_percentage += match_percentage;
                     match_count += 1;
@@ -161,7 +206,6 @@ pub fn run_plagiarism_check(
 
         folder_details[i].matches = matches;
 
-        // MOCK PLAGIARISM PERCENTAGE: Average of match percentages (if any matches)
         folder_details[i].plagiarism_percentage = if match_count > 0 {
             total_match_percentage / match_count as f64
         } else {
