@@ -92,6 +92,22 @@ pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
     h_mult
 }
 
+pub fn recalculate_hash(
+    old_hash: u64,
+    old_byte: u8,
+    new_byte: u8,
+    h_multiplier: u64,
+    radix: u64,
+    prime: u64,
+) -> u64 {
+    let mut new_hash = old_hash;
+    // Subtract old_byte contribution (ensuring positive result before modulo)
+    new_hash = (new_hash + prime - (u64::from(old_byte) * h_multiplier) % prime) % prime;
+    // Multiply by radix and add new_byte contribution
+    new_hash = (new_hash * radix + u64::from(new_byte)) % prime;
+    new_hash
+}
+
 #[cfg(test)]
 mod tests {
     use super::*; // To bring calculate_kgram_hash and constants into scope
@@ -179,6 +195,59 @@ mod tests {
         // For k_length = 2, radix = 256, prime = 101
         // h_mult = (256^(2-1)) % 101 = 256 % 101 = 54
         assert_eq!(calculate_h_multiplier(2, RK_RADIX, RK_PRIME_Q), 54);
+    }
+
+    #[test]
+    fn test_recalculate_hash_simple() {
+        // H("ABC") = 59 (from previous test using RK_RADIX, RK_PRIME_Q)
+        // old_hash = 59, old_byte = 'A' (65), new_byte = 'D' (68)
+        // k_length = 3 for "ABC"
+        // h_multiplier for k=3, R=256, Q=101 is 88 (from previous test)
+        // Prime Q = 101
+        // Radix R = 256
+
+        // Expected H("BCD"):
+        // H("BCD") = ( ( (B*R + C)*R) + D) % Q
+        //          = ( ( (66*256 + 67)*256) + 68) % 101
+        //          = ( ( (16896 + 67)*256) + 68) % 101
+        //          = ( ( (16963)*256) + 68) % 101
+        // 16963 % 101 = (101 * 167 + 96) = 96
+        //          = ( (96 * 256) + 68) % 101
+        // 96 * 256 = 24576
+        // 24576 % 101 = (101 * 243 + 33) = 33
+        //          = ( 33 + 68 ) % 101
+        //          = 101 % 101 = 0
+        let initial_kgram = &[b'A', b'B', b'C'];
+        let old_hash = calculate_kgram_hash(initial_kgram);
+        assert_eq!(old_hash, 59, "Pre-condition: H(ABC) should be 59");
+
+        let old_byte = b'A';
+        let new_byte = b'D';
+        let k_length = initial_kgram.len();
+        let h_multiplier = calculate_h_multiplier(k_length, RK_RADIX, RK_PRIME_Q);
+        assert_eq!(h_multiplier, 88, "Pre-condition: h_multiplier for k=3 should be 88");
+
+        let recalculated_hash = recalculate_hash(
+            old_hash,       // H("ABC")
+            old_byte,       // 'A'
+            new_byte,       // 'D'
+            h_multiplier,   // R^(k-1) % Q for k=3
+            RK_RADIX,
+            RK_PRIME_Q,
+        );
+
+        // Calculate H("BCD") directly for verification
+        let expected_hash_bcd = calculate_kgram_hash(&[b'B', b'C', b'D']);
+        assert_eq!(expected_hash_bcd, 0, "Verification: H(BCD) should be 0"); 
+        // Note: The manual calculation for H(BCD) above resulted in 0.
+        // ( ( (66*256+67)*256 )+68 ) % 101 -> ( ( (16896+67)*256 )+68 ) % 101 -> ( (16963*256)+68 ) % 101
+        // 16963 % 101 = 96
+        // new_hash_step1 = (96 * 256 + 68) % 101
+        // 96 * 256 = 24576
+        // 24576 % 101 = 33
+        // new_hash_step2 = (33+68) % 101 = 101 % 101 = 0.
+
+        assert_eq!(recalculated_hash, expected_hash_bcd);
     }
 }
 
