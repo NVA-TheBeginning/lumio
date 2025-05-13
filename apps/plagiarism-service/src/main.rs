@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mock_project_id = "test-project".to_string();
     let mock_promotion_id = "test-promotion".to_string();
 
-    match run_plagiarism_check(mock_project_id, mock_promotion_id, &test_extract_dir) {
+    match run_plagiarism_check(mock_project_id, mock_promotion_id, test_extract_dir) {
         Ok(response) => {
             println!("Algorithm finished successfully.");
 

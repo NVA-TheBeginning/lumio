@@ -1,4 +1,3 @@
-use rand::Rng;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
@@ -7,7 +6,6 @@ use std::fmt;
 use std::fs;
 use std::io;
 use std::path::Path;
-
 
 #[derive(Debug)]
 pub enum AlgorithmError {
@@ -51,7 +49,7 @@ pub struct PlagiarismMatch {
     #[serde(rename = "matchPercentage")]
     pub match_percentage: f64,
     #[serde(rename = "matchFrequency")]
-    pub match_frequency: f64
+    pub match_frequency: f64,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, Clone)]
@@ -64,27 +62,27 @@ pub struct PlagiarismAlgorithmResponse {
     pub folder_results: Vec<FolderPlagiarismDetail>,
 }
 
-// Let's define our constants for hashing. These can be tuned later.
-const RK_RADIX: u64 = 256; // Size of the alphabet (e.g., for bytes)
-const RK_PRIME_Q: u64 = 101; // A small prime for easy manual calculation in tests.
-                            // In practice, a much larger prime is used.
+const RK_RADIX: u64 = 256;
+const RK_PRIME_Q: u64 = 101;
 
-// This is the function we will implement.
-// It calculates the hash for a given slice of bytes (our k-gram).
-pub fn calculate_kgram_hash(kgram: &[u8]) -> u64 {
+pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
     if kgram.is_empty() {
-        return 0; // Or handle as an error/panic if empty k-grams are invalid
+        return 0;
     }
     let mut hash_value: u64 = 0;
     for &byte_val in kgram {
-        hash_value = (hash_value * RK_RADIX + u64::from(byte_val)) % RK_PRIME_Q;
+        hash_value = (hash_value * radix + u64::from(byte_val)) % prime;
     }
     hash_value
 }
 
 pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
-    if k_length == 0 { return 0; } // Or handle error, k=0 is invalid for R^(k-1)
-    if k_length == 1 { return 1; } // R^0 = 1
+    if k_length == 0 {
+        return 0;
+    }
+    if k_length == 1 {
+        return 1;
+    }
     let mut h_mult: u64 = 1;
     for _ in 0..(k_length - 1) {
         h_mult = (h_mult * radix) % prime;
@@ -101,154 +99,41 @@ pub fn recalculate_hash(
     prime: u64,
 ) -> u64 {
     let mut new_hash = old_hash;
-    // Subtract old_byte contribution (ensuring positive result before modulo)
     new_hash = (new_hash + prime - (u64::from(old_byte) * h_multiplier) % prime) % prime;
-    // Multiply by radix and add new_byte contribution
     new_hash = (new_hash * radix + u64::from(new_byte)) % prime;
     new_hash
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*; // To bring calculate_kgram_hash and constants into scope
+pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) -> Vec<usize> {
+    let m = pattern.len();
+    let n = text.len();
+    let mut matches = Vec::new();
 
-    // Test from previous MOSS TDD cycle (keep it if you want, or remove if focusing only on RK now)
-    // #[test]
-    // fn test_tokenize_empty_string() { ... }
-
-    #[test]
-    fn test_calculate_kgram_hash_empty() {
-        // Define behavior for empty k-gram. Returning 0 is a common choice.
-        assert_eq!(calculate_kgram_hash(&[]), 0);
+    if m == 0 || n == 0 || m > n {
+        return matches;
     }
 
-    #[test]
-    fn test_calculate_kgram_hash_single_char() {
-        // H("A") = ascii('A') % Q
-        // ascii('A') = 65
-        // 65 % 101 = 65
-        assert_eq!(calculate_kgram_hash(&[b'A']), 65);
-    }
+    let h_multiplier = calculate_h_multiplier(m, radix, prime);
+    let pattern_hash = calculate_kgram_hash(pattern, radix, prime);
+    let mut current_text_hash = calculate_kgram_hash(&text[0..m], radix, prime);
 
-    #[test]
-    fn test_calculate_kgram_hash_simple_string() {
-        // H("AB") = (ascii('A') * R + ascii('B')) % Q
-        //         = (65 * 256 + 66) % 101
-        //         = (16640 + 66) % 101
-        //         = 16706 % 101
-        // 16706 = 101 * 165 + 41
-        // So, hash should be 41
-        assert_eq!(calculate_kgram_hash(&[b'A', b'B']), 41);
-
-        // H("ABC") = ( (ascii('A') * R + ascii('B')) * R + ascii('C') ) % Q
-        //          = ( H("AB") * R + ascii('C') ) % Q -> using our previous calculation without modulo yet.
-        //          = ( ( (65 * 256 + 66) % RK_PRIME_Q ) * RK_RADIX + 67 ) % RK_PRIME_Q
-        //          = ( 41 * 256 + 67 ) % 101
-        //          = ( 10496 + 67 ) % 101
-        //          = ( 10563 ) % 101
-        // 10563 = 101 * 104 + 59
-        // So, hash should be 59
-        assert_eq!(calculate_kgram_hash(&[b'A', b'B', b'C']), 59);
-    }
-
-    #[test]
-    fn test_calculate_kgram_hash_with_prime_larger_than_char_value() {
-        // Using a different prime to ensure the logic holds
-        const TEST_PRIME: u64 = 257; // Larger than any byte value
-        fn calculate_with_custom_prime(kgram: &[u8], prime: u64, radix: u64) -> u64 {
-            let mut hash_value = 0_u64;
-            for &byte in kgram {
-                hash_value = (hash_value * radix + u64::from(byte)) % prime;
-            }
-            hash_value
+    for i in 0..=(n - m) {
+        if pattern_hash == current_text_hash && &text[i..i + m] == pattern {
+            matches.push(i);
         }
-        // H("a") = 97 % 257 = 97
-        assert_eq!(calculate_with_custom_prime(&[b'a'], TEST_PRIME, RK_RADIX), 97);
-        // H("ab") = (97 * 256 + 98) % 257
-        //         = (24832 + 98) % 257
-        //         = 24930 % 257
-        // 24930 = 257 * 97 + 1
-        assert_eq!(calculate_with_custom_prime(&[b'a', b'b'], TEST_PRIME, RK_RADIX), 1);
+
+        if i < n - m {
+            current_text_hash = recalculate_hash(
+                current_text_hash,
+                text[i],
+                text[i + m],
+                h_multiplier,
+                radix,
+                prime,
+            );
+        }
     }
-
-    #[test]
-    fn test_calculate_h_multiplier_k_zero() {
-        assert_eq!(calculate_h_multiplier(0, RK_RADIX, RK_PRIME_Q), 0);
-    }
-
-    #[test]
-    fn test_calculate_h_multiplier_k_one() {
-        assert_eq!(calculate_h_multiplier(1, RK_RADIX, RK_PRIME_Q), 1);
-    }
-
-    #[test]
-    fn test_calculate_h_multiplier_k_greater_than_one() {
-        // For k_length = 3, radix = 256, prime = 101
-        // h_mult = (256^(3-1)) % 101 = (256^2) % 101
-        // 256 % 101 = 54
-        // h_mult = (54 * 54) % 101
-        //        = 2916 % 101
-        // 2916 = 101 * 28 + 88
-        // So, h_mult should be 88
-        assert_eq!(calculate_h_multiplier(3, RK_RADIX, RK_PRIME_Q), 88);
-
-        // For k_length = 2, radix = 256, prime = 101
-        // h_mult = (256^(2-1)) % 101 = 256 % 101 = 54
-        assert_eq!(calculate_h_multiplier(2, RK_RADIX, RK_PRIME_Q), 54);
-    }
-
-    #[test]
-    fn test_recalculate_hash_simple() {
-        // H("ABC") = 59 (from previous test using RK_RADIX, RK_PRIME_Q)
-        // old_hash = 59, old_byte = 'A' (65), new_byte = 'D' (68)
-        // k_length = 3 for "ABC"
-        // h_multiplier for k=3, R=256, Q=101 is 88 (from previous test)
-        // Prime Q = 101
-        // Radix R = 256
-
-        // Expected H("BCD"):
-        // H("BCD") = ( ( (B*R + C)*R) + D) % Q
-        //          = ( ( (66*256 + 67)*256) + 68) % 101
-        //          = ( ( (16896 + 67)*256) + 68) % 101
-        //          = ( ( (16963)*256) + 68) % 101
-        // 16963 % 101 = (101 * 167 + 96) = 96
-        //          = ( (96 * 256) + 68) % 101
-        // 96 * 256 = 24576
-        // 24576 % 101 = (101 * 243 + 33) = 33
-        //          = ( 33 + 68 ) % 101
-        //          = 101 % 101 = 0
-        let initial_kgram = &[b'A', b'B', b'C'];
-        let old_hash = calculate_kgram_hash(initial_kgram);
-        assert_eq!(old_hash, 59, "Pre-condition: H(ABC) should be 59");
-
-        let old_byte = b'A';
-        let new_byte = b'D';
-        let k_length = initial_kgram.len();
-        let h_multiplier = calculate_h_multiplier(k_length, RK_RADIX, RK_PRIME_Q);
-        assert_eq!(h_multiplier, 88, "Pre-condition: h_multiplier for k=3 should be 88");
-
-        let recalculated_hash = recalculate_hash(
-            old_hash,       // H("ABC")
-            old_byte,       // 'A'
-            new_byte,       // 'D'
-            h_multiplier,   // R^(k-1) % Q for k=3
-            RK_RADIX,
-            RK_PRIME_Q,
-        );
-
-        // Calculate H("BCD") directly for verification
-        let expected_hash_bcd = calculate_kgram_hash(&[b'B', b'C', b'D']);
-        assert_eq!(expected_hash_bcd, 0, "Verification: H(BCD) should be 0"); 
-        // Note: The manual calculation for H(BCD) above resulted in 0.
-        // ( ( (66*256+67)*256 )+68 ) % 101 -> ( ( (16896+67)*256 )+68 ) % 101 -> ( (16963*256)+68 ) % 101
-        // 16963 % 101 = 96
-        // new_hash_step1 = (96 * 256 + 68) % 101
-        // 96 * 256 = 24576
-        // 24576 % 101 = 33
-        // new_hash_step2 = (33+68) % 101 = 101 % 101 = 0.
-
-        assert_eq!(recalculated_hash, expected_hash_bcd);
-    }
+    matches
 }
 
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
@@ -281,10 +166,7 @@ fn calculate_char_frequency(content: &str) -> HashMap<char, usize> {
     frequency_map
 }
 
-fn compare_frequencies(
-    freq1: &HashMap<char, usize>,
-    freq2: &HashMap<char, usize>,
-) -> f64 {
+fn compare_frequencies(freq1: &HashMap<char, usize>, freq2: &HashMap<char, usize>) -> f64 {
     let mut total = 0;
     let mut match_count = 0;
 
@@ -406,4 +288,180 @@ pub fn run_plagiarism_check(
         promotion_id,
         folder_results: folder_details,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_kgram_hash_empty() {
+        assert_eq!(calculate_kgram_hash(&[], RK_RADIX, RK_PRIME_Q), 0);
+    }
+
+    #[test]
+    fn test_calculate_kgram_hash_single_char() {
+        assert_eq!(calculate_kgram_hash(b"A", RK_RADIX, RK_PRIME_Q), 65);
+    }
+
+    #[test]
+    fn test_calculate_kgram_hash_simple_string() {
+        assert_eq!(calculate_kgram_hash(b"AB", RK_RADIX, RK_PRIME_Q), 41);
+        assert_eq!(calculate_kgram_hash(b"ABC", RK_RADIX, RK_PRIME_Q), 59);
+    }
+
+    #[test]
+    fn test_calculate_kgram_hash_with_prime_larger_than_char_value() {
+        const TEST_PRIME: u64 = 257;
+        assert_eq!(calculate_kgram_hash(b"a", RK_RADIX, TEST_PRIME), 97);
+        assert_eq!(calculate_kgram_hash(b"ab", RK_RADIX, TEST_PRIME), 1);
+    }
+
+    #[test]
+    fn test_calculate_h_multiplier_k_zero() {
+        assert_eq!(calculate_h_multiplier(0, RK_RADIX, RK_PRIME_Q), 0);
+    }
+
+    #[test]
+    fn test_calculate_h_multiplier_k_one() {
+        assert_eq!(calculate_h_multiplier(1, RK_RADIX, RK_PRIME_Q), 1);
+    }
+
+    #[test]
+    fn test_calculate_h_multiplier_k_greater_than_one() {
+        assert_eq!(calculate_h_multiplier(3, RK_RADIX, RK_PRIME_Q), 88);
+        assert_eq!(calculate_h_multiplier(2, RK_RADIX, RK_PRIME_Q), 54);
+    }
+
+    #[test]
+    fn test_recalculate_hash_simple() {
+        let initial_kgram = b"ABC";
+        let old_hash = calculate_kgram_hash(initial_kgram, RK_RADIX, RK_PRIME_Q);
+        assert_eq!(old_hash, 59, "Pre-condition: H(ABC) should be 59");
+
+        let old_byte = b'A';
+        let new_byte = b'D';
+        let k_length = initial_kgram.len();
+        let h_multiplier = calculate_h_multiplier(k_length, RK_RADIX, RK_PRIME_Q);
+        assert_eq!(
+            h_multiplier, 88,
+            "Pre-condition: h_multiplier for k=3 should be 88"
+        );
+
+        let recalculated_hash = recalculate_hash(
+            old_hash,
+            old_byte,
+            new_byte,
+            h_multiplier,
+            RK_RADIX,
+            RK_PRIME_Q,
+        );
+
+        let expected_hash_bcd = calculate_kgram_hash(b"BCD", RK_RADIX, RK_PRIME_Q);
+        assert_eq!(expected_hash_bcd, 0, "Verification: H(BCD) should be 0");
+        assert_eq!(recalculated_hash, expected_hash_bcd);
+    }
+
+    #[test]
+    fn test_rabin_karp_search_empty_text() {
+        assert_eq!(
+            rabin_karp_search(&[] as &[u8], b"A" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![] as Vec<usize>
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_empty_pattern() {
+        assert_eq!(
+            rabin_karp_search(b"ABC" as &[u8], &[] as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![] as Vec<usize>
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_pattern_longer_than_text() {
+        assert_eq!(
+            rabin_karp_search(b"AB" as &[u8], b"ABC" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![] as Vec<usize>
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_no_match() {
+        assert_eq!(
+            rabin_karp_search(b"ABCD" as &[u8], b"XY" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![] as Vec<usize>
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_single_match_start() {
+        assert_eq!(
+            rabin_karp_search(b"ABCD" as &[u8], b"AB" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![0usize]
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_single_match_end() {
+        assert_eq!(
+            rabin_karp_search(b"ABCD" as &[u8], b"CD" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![2usize]
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_single_match_middle() {
+        assert_eq!(
+            rabin_karp_search(b"ABCD" as &[u8], b"BC" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![1usize]
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_multiple_matches() {
+        assert_eq!(
+            rabin_karp_search(b"ABABA" as &[u8], b"AB" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![0usize, 2usize]
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_multiple_matches_overlapping() {
+        assert_eq!(
+            calculate_kgram_hash(b"AAA" as &[u8], RK_RADIX, RK_PRIME_Q),
+            3,
+            "Pre-check hash of AAA"
+        );
+        assert_eq!(
+            rabin_karp_search(b"AAAAA" as &[u8], b"AAA" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![0usize, 1usize, 2usize]
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_pattern_is_text() {
+        assert_eq!(
+            rabin_karp_search(b"ABC" as &[u8], b"ABC" as &[u8], RK_RADIX, RK_PRIME_Q),
+            vec![0usize]
+        );
+    }
+
+    #[test]
+    fn test_rabin_karp_search_with_different_prime() {
+        const TEST_PRIME_SEARCH: u64 = 257;
+        let text: &[u8] = b"ababcab";
+        let pattern: &[u8] = b"ab";
+        assert_eq!(
+            rabin_karp_search(text, pattern, RK_RADIX, TEST_PRIME_SEARCH),
+            vec![0usize, 2usize, 5usize]
+        );
+
+        let text2: &[u8] = b"testthispattern";
+        let pattern2: &[u8] = b"pattern";
+        assert_eq!(
+            rabin_karp_search(text2, pattern2, RK_RADIX, TEST_PRIME_SEARCH),
+            vec![8usize]
+        );
+    }
 }
