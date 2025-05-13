@@ -63,6 +63,89 @@ pub struct PlagiarismAlgorithmResponse {
     #[serde(rename = "folderResults")]
     pub folder_results: Vec<FolderPlagiarismDetail>,
 }
+
+// Let's define our constants for hashing. These can be tuned later.
+const RK_RADIX: u64 = 256; // Size of the alphabet (e.g., for bytes)
+const RK_PRIME_Q: u64 = 101; // A small prime for easy manual calculation in tests.
+                            // In practice, a much larger prime is used.
+
+// This is the function we will implement.
+// It calculates the hash for a given slice of bytes (our k-gram).
+pub fn calculate_kgram_hash(kgram: &[u8]) -> u64 {
+    if kgram.is_empty() {
+        return 0; // Or handle as an error/panic if empty k-grams are invalid
+    }
+    let mut hash_value: u64 = 0;
+    for &byte_val in kgram {
+        hash_value = (hash_value * RK_RADIX + u64::from(byte_val)) % RK_PRIME_Q;
+    }
+    hash_value
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*; // To bring calculate_kgram_hash and constants into scope
+
+    // Test from previous MOSS TDD cycle (keep it if you want, or remove if focusing only on RK now)
+    // #[test]
+    // fn test_tokenize_empty_string() { ... }
+
+    #[test]
+    fn test_calculate_kgram_hash_empty() {
+        // Define behavior for empty k-gram. Returning 0 is a common choice.
+        assert_eq!(calculate_kgram_hash(&[]), 0);
+    }
+
+    #[test]
+    fn test_calculate_kgram_hash_single_char() {
+        // H("A") = ascii('A') % Q
+        // ascii('A') = 65
+        // 65 % 101 = 65
+        assert_eq!(calculate_kgram_hash(&[b'A']), 65);
+    }
+
+    #[test]
+    fn test_calculate_kgram_hash_simple_string() {
+        // H("AB") = (ascii('A') * R + ascii('B')) % Q
+        //         = (65 * 256 + 66) % 101
+        //         = (16640 + 66) % 101
+        //         = 16706 % 101
+        // 16706 = 101 * 165 + 41
+        // So, hash should be 41
+        assert_eq!(calculate_kgram_hash(&[b'A', b'B']), 41);
+
+        // H("ABC") = ( (ascii('A') * R + ascii('B')) * R + ascii('C') ) % Q
+        //          = ( H("AB") * R + ascii('C') ) % Q -> using our previous calculation without modulo yet.
+        //          = ( ( (65 * 256 + 66) % RK_PRIME_Q ) * RK_RADIX + 67 ) % RK_PRIME_Q
+        //          = ( 41 * 256 + 67 ) % 101
+        //          = ( 10496 + 67 ) % 101
+        //          = ( 10563 ) % 101
+        // 10563 = 101 * 104 + 59
+        // So, hash should be 59
+        assert_eq!(calculate_kgram_hash(&[b'A', b'B', b'C']), 59);
+    }
+
+    #[test]
+    fn test_calculate_kgram_hash_with_prime_larger_than_char_value() {
+        // Using a different prime to ensure the logic holds
+        const TEST_PRIME: u64 = 257; // Larger than any byte value
+        fn calculate_with_custom_prime(kgram: &[u8], prime: u64, radix: u64) -> u64 {
+            let mut hash_value = 0_u64;
+            for &byte in kgram {
+                hash_value = (hash_value * radix + u64::from(byte)) % prime;
+            }
+            hash_value
+        }
+        // H("a") = 97 % 257 = 97
+        assert_eq!(calculate_with_custom_prime(&[b'a'], TEST_PRIME, RK_RADIX), 97);
+        // H("ab") = (97 * 256 + 98) % 257
+        //         = (24832 + 98) % 257
+        //         = 24930 % 257
+        // 24930 = 257 * 97 + 1
+        assert_eq!(calculate_with_custom_prime(&[b'a', b'b'], TEST_PRIME, RK_RADIX), 1);
+    }
+}
+
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
     let mut hasher = Sha1::new();
 
