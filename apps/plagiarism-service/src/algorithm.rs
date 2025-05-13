@@ -82,6 +82,16 @@ pub fn calculate_kgram_hash(kgram: &[u8]) -> u64 {
     hash_value
 }
 
+pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
+    if k_length == 0 { return 0; } // Or handle error, k=0 is invalid for R^(k-1)
+    if k_length == 1 { return 1; } // R^0 = 1
+    let mut h_mult: u64 = 1;
+    for _ in 0..(k_length - 1) {
+        h_mult = (h_mult * radix) % prime;
+    }
+    h_mult
+}
+
 #[cfg(test)]
 mod tests {
     use super::*; // To bring calculate_kgram_hash and constants into scope
@@ -143,6 +153,32 @@ mod tests {
         //         = 24930 % 257
         // 24930 = 257 * 97 + 1
         assert_eq!(calculate_with_custom_prime(&[b'a', b'b'], TEST_PRIME, RK_RADIX), 1);
+    }
+
+    #[test]
+    fn test_calculate_h_multiplier_k_zero() {
+        assert_eq!(calculate_h_multiplier(0, RK_RADIX, RK_PRIME_Q), 0);
+    }
+
+    #[test]
+    fn test_calculate_h_multiplier_k_one() {
+        assert_eq!(calculate_h_multiplier(1, RK_RADIX, RK_PRIME_Q), 1);
+    }
+
+    #[test]
+    fn test_calculate_h_multiplier_k_greater_than_one() {
+        // For k_length = 3, radix = 256, prime = 101
+        // h_mult = (256^(3-1)) % 101 = (256^2) % 101
+        // 256 % 101 = 54
+        // h_mult = (54 * 54) % 101
+        //        = 2916 % 101
+        // 2916 = 101 * 28 + 88
+        // So, h_mult should be 88
+        assert_eq!(calculate_h_multiplier(3, RK_RADIX, RK_PRIME_Q), 88);
+
+        // For k_length = 2, radix = 256, prime = 101
+        // h_mult = (256^(2-1)) % 101 = 256 % 101 = 54
+        assert_eq!(calculate_h_multiplier(2, RK_RADIX, RK_PRIME_Q), 54);
     }
 }
 
