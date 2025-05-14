@@ -1,8 +1,6 @@
-import { beforeEach, describe, expect, it, jest, Mock, mock, test } from "bun:test";
+import { beforeEach, describe, expect, it, jest, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
-import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
-import { Paginated } from "@/common/interfaces/pagination.interface.js";
-import { ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
+import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { CreateProjectDto, GroupMode, ProjectsController } from "./projects.controller.js";
 
@@ -89,46 +87,76 @@ describe("ProjectsController", () => {
 
 describe("ProjectsController.findByStudentDetailed", () => {
   let controller: ProjectsController;
-  let service: ProjectsService;
+  let proxy: MicroserviceProxyService;
 
-  beforeEach(() => {
-    service = { findProjectsForStudent: mock(async () => ({})) } as unknown as ProjectsService;
-    controller = new ProjectsController({} as MicroserviceProxyService, service);
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [ProjectsController],
+      providers: [
+        {
+          provide: MicroserviceProxyService,
+          useValue: {
+            forwardRequest: jest.fn(),
+          },
+        },
+        {
+          provide: ProjectsService,
+          useValue: {
+            findProjectsForStudent: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    controller = module.get<ProjectsController>(ProjectsController);
+    proxy = module.get<MicroserviceProxyService>(MicroserviceProxyService);
   });
 
-  it("calls service with correct numeric pagination", async () => {
-    const mockMap: Record<number, Paginated<unknown>> = {
+  it("calls proxy.forwardRequest with the correct route and numeric pagination", async () => {
+    const mockMap: ProjectsByPromotion = {
       1: {
-        data: [{ project: { id: 5 }, groupStatus: "no_groups" }],
-        pagination: { totalRecords: 1, currentPage: 2, totalPages: 1, nextPage: null, prevPage: 1 },
+        data: [{ project: { id: 5 } } as any /* … */],
+        pagination: {
+          totalRecords: 1,
+          currentPage: 2,
+          totalPages: 1,
+          nextPage: null,
+          prevPage: 1,
+        },
       },
     };
-    const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
-    // @ts-ignore
-    svc.mockResolvedValueOnce(mockMap as Paginated<unknown>);
+    (proxy.forwardRequest as jest.Mock).mockResolvedValueOnce(mockMap);
 
-    const pagination = new PaginationQueryDto();
-    pagination.page = 2;
-    pagination.size = 5;
+    const result = await controller.findByStudentDetailed(1, 2, 5);
 
-    const result = await controller.findByStudentDetailed(1, pagination);
-    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 2, 5);
-    // @ts-ignore
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/student/1/detailed", "GET", undefined, {
+      page: "2",
+      size: "5",
+    });
     expect(result).toEqual(mockMap);
   });
 
   it("uses default pagination when none provided", async () => {
-    const defaultMap: Record<number, Paginated<unknown>> = {
-      1: { data: [], pagination: { totalRecords: 0, currentPage: 1, totalPages: 0, nextPage: null, prevPage: null } },
+    const defaultMap: ProjectsByPromotion = {
+      1: {
+        data: [],
+        pagination: {
+          totalRecords: 0,
+          currentPage: 1,
+          totalPages: 0,
+          nextPage: null,
+          prevPage: null,
+        },
+      },
     };
-    const svc = service.findProjectsForStudent as Mock<(id: number, page: number, size: number) => unknown>;
-    // @ts-ignore
-    svc.mockResolvedValueOnce(defaultMap);
+    (proxy.forwardRequest as jest.Mock).mockResolvedValueOnce(defaultMap);
 
-    const pagination = new PaginationQueryDto();
-    const result = await controller.findByStudentDetailed(1, pagination);
-    expect(service.findProjectsForStudent).toHaveBeenCalledWith(1, 1, 10);
-    // @ts-ignore
+    const result = await controller.findByStudentDetailed(1, undefined, undefined);
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/student/1/detailed", "GET", undefined, {
+      page: "1",
+      size: "10",
+    });
     expect(result).toEqual(defaultMap);
   });
 });

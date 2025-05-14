@@ -119,11 +119,11 @@ export class ProjectController {
   })
   async findByStudentDetailed(
     @Param("studentId", ParseIntPipe) studentId: number,
-    @Query("page") page?: string,
-    @Query("size") size?: string,
+    @Query("page") page?: number,
+    @Query("size") size?: number,
   ): Promise<ProjectsByPromotion> {
-    const p = page ? parseInt(page, 10) : 1;
-    const s = size ? parseInt(size, 10) : 10;
+    const p = page ? page : 1;
+    const s = size ? size : 10;
     return this.projectService.findProjectsForStudent(studentId, p, s);
   }
 }

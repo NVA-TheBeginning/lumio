@@ -258,8 +258,8 @@ export class ProjectsController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async findByStudentDetailed(
     @Param("studentId", ParseIntPipe) studentId: number,
-    @Query("page") page?: string,
-    @Query("size") size?: string,
+    @Query("page") page?: number,
+    @Query("size") size?: number,
   ): Promise<ProjectsByPromotion> {
     return this.proxy.forwardRequest("project", `/projects/student/${studentId}/detailed`, "GET", undefined, {
       page,
