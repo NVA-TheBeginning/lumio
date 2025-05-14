@@ -164,39 +164,41 @@ export class ProjectService {
       const pageProjects = allProjects.slice(start, start + size);
 
       const enriched: ProjectWithGroupStatus[] = [];
-      for (const proj of pageProjects) {
-        const groups = await this.prisma.groupSettings.findMany({
-          where: { projectId: proj.id, promotionId: pid },
-          include: {
-            projectPromotion: {
-              include: {
-                groups: { include: { members: true } },
+      const enriched = await Promise.all(
+        pageProjects.map(async (proj) => {
+          const groups = await this.prisma.groupSettings.findMany({
+            where: { projectId: proj.id, promotionId: pid },
+            include: {
+              projectPromotion: {
+                include: {
+                  groups: { include: { members: true } },
+                },
               },
             },
-          },
-        }).then((settings) =>
-            settings.flatMap((gs) => gs.projectPromotion.groups)
-        );
-
-        let status: GroupStatus = 'no_groups';
-        let ownGroup: Group | undefined;
-
-        if (groups.length) {
-          const found = groups.find((g) =>
-              g.members.some((m) => m.studentId === studentId)
+          }).then((settings) =>
+              settings.flatMap((gs) => gs.projectPromotion.groups)
           );
-          status = found ? 'in_group' : 'not_in_group';
-          if (found) {
-            ownGroup = {
-              id: found.id,
-              name: found.name,
-              members: found.members.map((m) => ({ studentId: m.studentId })),
-            };
-          }
-        }
 
-        enriched.push({ project: proj, groupStatus: status, group: ownGroup });
-      }
+          let status: GroupStatus = 'no_groups';
+          let ownGroup: Group | undefined;
+
+          if (groups.length) {
+            const found = groups.find((g) =>
+                g.members.some((m) => m.studentId === studentId)
+            );
+            status = found ? 'in_group' : 'not_in_group';
+            if (found) {
+              ownGroup = {
+                id: found.id,
+                name: found.name,
+                members: found.members.map((m) => ({ studentId: m.studentId })),
+              };
+            }
+          }
+
+          return { project: proj, groupStatus: status, group: ownGroup };
+        })
+      );
 
       const meta: PaginationMeta = {
         totalRecords,
