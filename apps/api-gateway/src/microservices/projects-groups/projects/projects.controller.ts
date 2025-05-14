@@ -35,7 +35,6 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
-import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
 import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { UpdateProjectStatusDto } from "../dto/project.dto.js";
@@ -258,16 +257,13 @@ export class ProjectsController {
   })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async findByStudentDetailed(
-      @Param('studentId', ParseIntPipe) studentId: number,
-      @Query('page') page?: string,
-      @Query('size') size?: string,
+    @Param("studentId", ParseIntPipe) studentId: number,
+    @Query("page") page?: string,
+    @Query("size") size?: string,
   ): Promise<ProjectsByPromotion> {
-    return this.proxy.forwardRequest(
-        'project',
-        `/projects/student/${studentId}/detailed`,
-        'GET',
-        undefined,
-        { page, size },
-    );
+    return this.proxy.forwardRequest("project", `/projects/student/${studentId}/detailed`, "GET", undefined, {
+      page,
+      size,
+    });
   }
 }
