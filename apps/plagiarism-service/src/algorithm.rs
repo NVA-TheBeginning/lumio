@@ -145,6 +145,18 @@ pub fn tokenize(text: &str) -> Vec<String> {
         .collect() // Collect into a Vec<String>
 }
 
+// This is the new function we will implement.
+// k_val is the number of tokens in each k-gram.
+pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>> {
+    if k_val == 0 || tokens.len() < k_val {
+        return Vec::new();
+    }
+    tokens
+        .windows(k_val) // Creates an iterator over all contiguous windows of length k_val
+        .map(|window_slice| window_slice.to_vec()) // Convert each window (&[String]) to Vec<String>
+        .collect() // Collect into a Vec<Vec<String>>
+}
+
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
     let mut hasher = Sha1::new();
 
@@ -519,5 +531,62 @@ mod tests {
         let text = "---word---";
         let expected = vec!["word".to_string()];
         assert_eq!(tokenize(text), expected);
+    }
+
+    // --- MOSS Token K-gram Tests ---
+    #[test]
+    fn test_moss_generate_token_kgrams_empty_tokens() {
+        let tokens: Vec<String> = vec![];
+        assert_eq!(generate_token_kgrams(&tokens, 3), Vec::<Vec<String>>::new());
+    }
+
+    #[test]
+    fn test_moss_generate_token_kgrams_k_is_zero() {
+        let tokens = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        // k=0 is not meaningful for k-grams, should return empty.
+        assert_eq!(generate_token_kgrams(&tokens, 0), Vec::<Vec<String>>::new());
+    }
+
+    #[test]
+    fn test_moss_generate_token_kgrams_k_greater_than_tokens_length() {
+        let tokens = vec!["a".to_string(), "b".to_string()];
+        assert_eq!(generate_token_kgrams(&tokens, 3), Vec::<Vec<String>>::new());
+    }
+
+    #[test]
+    fn test_moss_generate_token_kgrams_simple_case() {
+        let tokens = vec![
+            "the".to_string(), "quick".to_string(), "brown".to_string(),
+            "fox".to_string(), "jumps".to_string()
+        ];
+        let k_val = 3;
+        let expected = vec![
+            vec!["the".to_string(), "quick".to_string(), "brown".to_string()],
+            vec!["quick".to_string(), "brown".to_string(), "fox".to_string()],
+            vec!["brown".to_string(), "fox".to_string(), "jumps".to_string()],
+        ];
+        assert_eq!(generate_token_kgrams(&tokens, k_val), expected);
+    }
+
+    #[test]
+    fn test_moss_generate_token_kgrams_k_equals_tokens_length() {
+        let tokens = vec!["one".to_string(), "two".to_string(), "three".to_string()];
+        let k_val = 3;
+        let expected = vec![
+            vec!["one".to_string(), "two".to_string(), "three".to_string()],
+        ];
+        assert_eq!(generate_token_kgrams(&tokens, k_val), expected);
+    }
+
+    #[test]
+    fn test_moss_generate_token_kgrams_k_is_one() {
+        let tokens = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let k_val = 1;
+        let expected = vec![
+            vec!["a".to_string()],
+            vec!["b".to_string()],
+            vec!["c".to_string()],
+        ];
+        assert_eq!(generate_token_kgrams(&tokens, k_val), expected);
     }
 }
