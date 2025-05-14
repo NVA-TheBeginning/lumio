@@ -2,6 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::fmt;
 use std::fs;
@@ -167,6 +168,43 @@ pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     // This considers both the content of the strings and their order in the slice.
     token_kgram.hash(&mut hasher);
     hasher.finish()
+}
+
+// This is the new function we will implement.
+// original_kgram_start_index is the starting index of the k-gram that produced the hash.
+pub fn winnow_hashes(
+    hashes_with_indices: &[(u64, usize)], // Each tuple: (hash_value, original_kgram_index)
+    window_size: usize,
+) -> HashSet<(u64, usize)> {
+    // Return a set of (hash, original_kgram_index)
+    let mut selected_fingerprints = HashSet::new();
+
+    if window_size == 0 || hashes_with_indices.is_empty() {
+        return selected_fingerprints;
+    }
+
+    if hashes_with_indices.len() < window_size {
+        if let Some(min_entry) = hashes_with_indices
+            .iter()
+            .min_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
+        // Min hash, then rightmost (max index) for ties
+        {
+            selected_fingerprints.insert(*min_entry);
+        }
+        return selected_fingerprints;
+    }
+
+    for i in 0..=(hashes_with_indices.len() - window_size) {
+        let current_window = &hashes_with_indices[i..i + window_size];
+
+        if let Some(min_in_window) = current_window
+            .iter()
+            .min_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
+        {
+            selected_fingerprints.insert(*min_in_window);
+        }
+    }
+    selected_fingerprints
 }
 
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
@@ -515,8 +553,12 @@ mod tests {
     fn test_moss_tokenize_with_punctuation_and_mixed_case() {
         let text = "First, a Sentence; then ANOTHeR one.";
         let expected = vec![
-            "first".to_string(), "a".to_string(), "sentence".to_string(),
-            "then".to_string(), "another".to_string(), "one".to_string()
+            "first".to_string(),
+            "a".to_string(),
+            "sentence".to_string(),
+            "then".to_string(),
+            "another".to_string(),
+            "one".to_string(),
         ];
         assert_eq!(tokenize(text), expected);
     }
@@ -526,8 +568,13 @@ mod tests {
         // Underscores are typically non-alphanumeric, so they should act as delimiters.
         let text = "Var1able_names l1k3 th1s_are_c0mm0n_2";
         let expected = vec![
-            "var1able".to_string(), "names".to_string(), "l1k3".to_string(),
-            "th1s".to_string(), "are".to_string(), "c0mm0n".to_string(), "2".to_string()
+            "var1able".to_string(),
+            "names".to_string(),
+            "l1k3".to_string(),
+            "th1s".to_string(),
+            "are".to_string(),
+            "c0mm0n".to_string(),
+            "2".to_string(),
         ];
         assert_eq!(tokenize(text), expected);
     }
@@ -568,8 +615,11 @@ mod tests {
     #[test]
     fn test_moss_generate_token_kgrams_simple_case() {
         let tokens = vec![
-            "the".to_string(), "quick".to_string(), "brown".to_string(),
-            "fox".to_string(), "jumps".to_string()
+            "the".to_string(),
+            "quick".to_string(),
+            "brown".to_string(),
+            "fox".to_string(),
+            "jumps".to_string(),
         ];
         let k_val = 3;
         let expected = vec![
@@ -584,9 +634,11 @@ mod tests {
     fn test_moss_generate_token_kgrams_k_equals_tokens_length() {
         let tokens = vec!["one".to_string(), "two".to_string(), "three".to_string()];
         let k_val = 3;
-        let expected = vec![
-            vec!["one".to_string(), "two".to_string(), "three".to_string()],
-        ];
+        let expected = vec![vec![
+            "one".to_string(),
+            "two".to_string(),
+            "three".to_string(),
+        ]];
         assert_eq!(generate_token_kgrams(&tokens, k_val), expected);
     }
 
@@ -651,14 +703,86 @@ mod tests {
         let kgram1 = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let kgram2 = vec!["a".to_string(), "b".to_string(), "d".to_string()]; // Different last token
         let kgram3 = vec!["x".to_string(), "y".to_string(), "z".to_string()]; // Completely different
-        
+
         let hash1 = hash_token_kgram(&kgram1);
         let hash2 = hash_token_kgram(&kgram2);
         let hash3 = hash_token_kgram(&kgram3);
 
-        assert_ne!(hash1, hash2, "Hashes for kgrams differing by one token should differ");
-        assert_ne!(hash1, hash3, "Hashes for completely different kgrams should differ");
+        assert_ne!(
+            hash1, hash2,
+            "Hashes for kgrams differing by one token should differ"
+        );
+        assert_ne!(
+            hash1, hash3,
+            "Hashes for completely different kgrams should differ"
+        );
         // Note: With DefaultHasher, it's highly unlikely these specific short examples will collide,
         // but it's good to be aware that hash collisions are theoretically possible.
+    }
+
+    // --- MOSS Winnowing Tests ---
+    #[test]
+    fn test_moss_winnow_empty_hashes() {
+        let hashes: Vec<(u64, usize)> = vec![];
+        assert_eq!(winnow_hashes(&hashes, 4), HashSet::new());
+    }
+
+    #[test]
+    fn test_moss_winnow_window_size_zero() {
+        let hashes = vec![(10, 0), (20, 1), (5, 2), (30, 3)];
+        // Window size 0 is not meaningful, should probably return empty.
+        assert_eq!(winnow_hashes(&hashes, 0), HashSet::new());
+    }
+
+    #[test]
+    fn test_moss_winnow_hashes_less_than_window_size() {
+        // If total hashes < window_size, select the overall minimum hash.
+        // (Or an alternative consistent strategy, e.g. select all)
+        // Let's go with selecting the overall minimum.
+        let hashes = vec![(10, 0), (20, 1), (5, 2)]; // len 3
+        let mut expected = HashSet::new();
+        expected.insert((5, 2)); // Overall minimum
+        assert_eq!(winnow_hashes(&hashes, 4), expected); // window_size = 4
+
+        let hashes_single = vec![(100, 0)];
+        let mut expected_single = HashSet::new();
+        expected_single.insert((100, 0));
+        assert_eq!(winnow_hashes(&hashes_single, 4), expected_single);
+    }
+
+    #[test]
+    fn test_moss_winnow_simple_case_no_ties() {
+        let hashes = vec![
+            (77, 0),
+            (74, 1),
+            (42, 2),
+            (17, 3),
+            (98, 4),
+            (12, 5),
+            (12, 6),
+            (42, 7),
+            (5, 8),
+            (69, 9),
+        ];
+        let w = 4;
+        let expected_fingerprints = [(17, 3), (12, 5), (12, 6), (5, 8)]
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>();
+        assert_eq!(winnow_hashes(&hashes, w), expected_fingerprints);
+    }
+
+    #[test]
+    fn test_moss_winnow_all_same_hash() {
+        let hashes = vec![(5, 0), (5, 1), (5, 2), (5, 3), (5, 4)];
+        let w = 3;
+        // Window 1: [(5,0), (5,1), (5,2)] -> selects (5,2) (rightmost)
+        // Window 2: [(5,1), (5,2), (5,3)] -> selects (5,3) (rightmost)
+        // Window 3: [(5,2), (5,3), (5,4)] -> selects (5,4) (rightmost)
+        let mut expected = HashSet::new();
+        expected.insert((5, 2));
+        expected.insert((5, 3));
+        expected.insert((5, 4));
+        assert_eq!(winnow_hashes(&hashes, w), expected);
     }
 }
