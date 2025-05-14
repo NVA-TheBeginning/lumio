@@ -27,6 +27,19 @@ export interface ProjectWithGroupStatus {
   groupStatus: GroupStatus;
   group?: Group;
 }
+export interface ProjectWithPromotions {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  promotions: Array<{
+    id: number;
+    name: string;
+    status: ProjectStatus;
+  }>;
+}
 
 export type ProjectsByPromotion = Record<number, Paginated<ProjectWithGroupStatus>>;
 
@@ -88,8 +101,45 @@ export class ProjectService {
     });
   }
 
-  async findByCreator(creatorId: number) {
-    return this.prisma.project.findMany({ where: { creatorId, deletedAt: null } });
+  async findByCreator(creatorId: number): Promise<ProjectWithPromotions[]> {
+    if (creatorId == null) {
+      throw new BadRequestException("creatorId is required");
+    }
+
+    const projects = await this.prisma.project.findMany({
+      where: { creatorId, deletedAt: null },
+      include: {
+        projectPromotions: {
+          select: {
+            promotionId: true,
+            status: true,
+            promotion: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (projects.length === 0) {
+      return [];
+    }
+
+    return projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      creatorId: p.creatorId,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      promotions: p.projectPromotions.map((pp) => ({
+        id: pp.promotionId,
+        name: pp.promotion.name,
+        status: pp.status,
+      })),
+    }));
   }
 
   async findAll() {
