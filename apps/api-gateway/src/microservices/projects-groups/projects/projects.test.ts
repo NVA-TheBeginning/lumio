@@ -130,8 +130,8 @@ describe("ProjectsController.findByStudentDetailed", () => {
     const result = await controller.findByStudentDetailed(1, 2, 5);
 
     expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/student/1/detailed", "GET", undefined, {
-      page: "2",
-      size: "5",
+      page: 2,
+      size: 5,
     });
     expect(result).toEqual(mockMap);
   });
@@ -154,8 +154,8 @@ describe("ProjectsController.findByStudentDetailed", () => {
     const result = await controller.findByStudentDetailed(1, undefined, undefined);
 
     expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/student/1/detailed", "GET", undefined, {
-      page: "1",
-      size: "10",
+      page: 1,
+      size: 10,
     });
     expect(result).toEqual(defaultMap);
   });
