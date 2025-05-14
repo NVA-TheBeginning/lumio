@@ -151,11 +151,11 @@ describe("ProjectsController.findByStudentDetailed", () => {
     };
     (proxy.forwardRequest as jest.Mock).mockResolvedValueOnce(defaultMap);
 
-    const result = await controller.findByStudentDetailed(1, undefined, undefined);
+    const result = await controller.findByStudentDetailed(1);
 
     expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/student/1/detailed", "GET", undefined, {
-      page: 1,
-      size: 10,
+      page: undefined,
+      size: undefined,
     });
     expect(result).toEqual(defaultMap);
   });
