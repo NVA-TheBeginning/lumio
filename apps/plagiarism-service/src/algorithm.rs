@@ -13,7 +13,6 @@ use std::path::Path;
 #[derive(Debug)]
 pub enum AlgorithmError {
     Io(io::Error),
-    Sha1Error(String),
     DirectoryListing(String),
 }
 
@@ -21,7 +20,6 @@ impl fmt::Display for AlgorithmError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             AlgorithmError::Io(err) => write!(f, "I/O error: {}", err),
-            AlgorithmError::Sha1Error(msg) => write!(f, "SHA1 hashing error: {}", msg),
             AlgorithmError::DirectoryListing(msg) => write!(f, "Directory listing error: {}", msg),
         }
     }
@@ -65,9 +63,12 @@ pub struct PlagiarismAlgorithmResponse {
     pub folder_results: Vec<FolderPlagiarismDetail>,
 }
 
+#[allow(dead_code)]
 const RK_RADIX: u64 = 256;
+#[allow(dead_code)]
 const RK_PRIME_Q: u64 = 101;
 
+#[allow(dead_code)]
 pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
     if kgram.is_empty() {
         return 0;
@@ -79,6 +80,7 @@ pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
     hash_value
 }
 
+#[allow(dead_code)]
 pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
     if k_length == 0 {
         return 0;
@@ -93,6 +95,7 @@ pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
     h_mult
 }
 
+#[allow(dead_code)]
 pub fn recalculate_hash(
     old_hash: u64,
     old_byte: u8,
@@ -107,6 +110,7 @@ pub fn recalculate_hash(
     new_hash
 }
 
+#[allow(dead_code)]
 pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) -> Vec<usize> {
     let m = pattern.len();
     let n = text.len();
@@ -139,6 +143,7 @@ pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) ->
     matches
 }
 
+#[allow(dead_code)]
 pub fn tokenize(text: &str) -> Vec<String> {
     text.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
@@ -147,6 +152,7 @@ pub fn tokenize(text: &str) -> Vec<String> {
         .collect()
 }
 
+#[allow(dead_code)]
 pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>> {
     if k_val == 0 || tokens.len() < k_val {
         return Vec::new();
@@ -157,6 +163,7 @@ pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>
         .collect()
 }
 
+#[allow(dead_code)]
 pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     let mut hasher = DefaultHasher::new();
 
@@ -164,6 +171,7 @@ pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     hasher.finish()
 }
 
+#[allow(dead_code)]
 pub fn winnow_hashes(
     hashes_with_indices: &[(u64, usize)],
     window_size: usize,
@@ -197,6 +205,7 @@ pub fn winnow_hashes(
     selected_fingerprints
 }
 
+#[allow(dead_code)]
 pub fn calculate_jaccard_index(
     set_a: &HashSet<(u64, usize)>,
     set_b: &HashSet<(u64, usize)>,
@@ -213,6 +222,52 @@ pub fn calculate_jaccard_index(
     }
 
     intersection_size as f64 / union_size as f64
+}
+
+#[allow(dead_code)]
+pub struct MossResult {
+    pub score: f64,
+    pub fingerprints_matched: usize,
+    pub fingerprints_doc1: usize,
+    pub fingerprints_doc2: usize,
+}
+
+#[allow(dead_code)]
+pub fn compare_documents_moss_like(
+    doc1_content: &str,
+    doc2_content: &str,
+    k_token: usize,
+    window_size: usize,
+) -> MossResult {
+    let tokens1 = tokenize(doc1_content);
+    let tokens2 = tokenize(doc2_content);
+
+    let kgrams1 = generate_token_kgrams(&tokens1, k_token);
+    let kgrams2 = generate_token_kgrams(&tokens2, k_token);
+
+    let hashes_with_indices1: Vec<(u64, usize)> = kgrams1
+        .iter()
+        .enumerate()
+        .map(|(idx, kg)| (hash_token_kgram(kg), idx))
+        .collect();
+
+    let hashes_with_indices2: Vec<(u64, usize)> = kgrams2
+        .iter()
+        .enumerate()
+        .map(|(idx, kg)| (hash_token_kgram(kg), idx))
+        .collect();
+
+    let fingerprints1 = winnow_hashes(&hashes_with_indices1, window_size);
+    let fingerprints2 = winnow_hashes(&hashes_with_indices2, window_size);
+
+    let score = calculate_jaccard_index(&fingerprints1, &fingerprints2);
+
+    MossResult {
+        score,
+        fingerprints_matched: fingerprints1.intersection(&fingerprints2).count(),
+        fingerprints_doc1: fingerprints1.len(),
+        fingerprints_doc2: fingerprints2.len(),
+    }
 }
 
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
@@ -319,10 +374,10 @@ pub fn run_plagiarism_check(
         let mut total_match_percentage = 0.0;
         let mut match_count = 0;
 
-        for j in 0..folder_details.len() {
+        for (j, other_folder_detail) in folder_details.iter().enumerate() {
             if i != j {
-                let other_folder_name = folder_details[j].folder_name.clone();
-                let other_folder_sha1 = folder_details[j].sha1.clone();
+                let other_folder_name = other_folder_detail.folder_name.clone();
+                let other_folder_sha1 = other_folder_detail.sha1.clone();
                 let other_frequency = folder_frequencies.get(&other_folder_name).unwrap();
 
                 let sha1_match_percentage = if current_folder_sha1 == other_folder_sha1 {
@@ -820,5 +875,122 @@ mod tests {
 
         let expected = 2.0 / 7.0;
         assert!((calculate_jaccard_index(&set_a, &set_b) - expected).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_compare_documents_moss_like_identical_simple() {
+        let doc1 = "The quick brown fox jumps over the lazy dog.";
+        let doc2 = "The quick brown fox jumps over the lazy dog.";
+        let k = 4;
+        let w = 5;
+        let result = compare_documents_moss_like(doc1, doc2, k, w);
+        assert_eq!(result.score, 1.0);
+        assert!(result.fingerprints_doc1 > 0);
+        assert_eq!(result.fingerprints_doc1, result.fingerprints_doc2);
+        assert_eq!(result.fingerprints_matched, result.fingerprints_doc1);
+    }
+
+    #[test]
+    fn test_compare_documents_moss_like_completely_different_simple() {
+        let doc1 = "Hello world, this is document one.";
+        let doc2 = "Another document, completely unrelated content here.";
+        let k = 4;
+        let w = 5;
+        let result = compare_documents_moss_like(doc1, doc2, k, w);
+        assert!(
+            result.score < 0.1,
+            "Expected very low score for different docs, got {}",
+            result.score
+        );
+        assert!(result.fingerprints_doc1 > 0);
+        assert!(result.fingerprints_doc2 > 0);
+
+        assert!((result.fingerprints_matched as f64) < (result.fingerprints_doc1 as f64 * 0.5));
+        assert!((result.fingerprints_matched as f64) < (result.fingerprints_doc2 as f64 * 0.5));
+    }
+
+    #[test]
+    fn test_compare_documents_moss_like_one_empty() {
+        let doc1 = "This document has enough content for kgrams.";
+        let doc2 = "";
+        let k = 4;
+        let w = 5;
+        let result1 = compare_documents_moss_like(doc1, doc2, k, w);
+        assert_eq!(result1.score, 0.0);
+        assert!(
+            result1.fingerprints_doc1 > 0,
+            "Doc1 should have fingerprints"
+        );
+        assert_eq!(result1.fingerprints_doc2, 0);
+        assert_eq!(result1.fingerprints_matched, 0);
+
+        let result2 = compare_documents_moss_like(doc2, doc1, k, w);
+        assert_eq!(result2.score, 0.0);
+        assert_eq!(result2.fingerprints_doc1, 0);
+        assert!(
+            result2.fingerprints_doc2 > 0,
+            "Doc2 (originally doc1) should have fingerprints"
+        );
+        assert_eq!(result2.fingerprints_matched, 0);
+    }
+
+    #[test]
+    fn test_compare_documents_moss_like_both_empty() {
+        let doc1 = "";
+        let doc2 = "";
+        let k = 4;
+        let w = 5;
+        let result = compare_documents_moss_like(doc1, doc2, k, w);
+        assert_eq!(result.score, 1.0);
+        assert_eq!(result.fingerprints_doc1, 0);
+        assert_eq!(result.fingerprints_doc2, 0);
+        assert_eq!(result.fingerprints_matched, 0);
+    }
+
+    #[test]
+    fn test_compare_documents_moss_like_small_content_less_than_k() {
+        let doc1 = "hi";
+        let doc2 = "hi";
+        let k = 4;
+        let w = 5;
+        let result = compare_documents_moss_like(doc1, doc2, k, w);
+
+        assert_eq!(result.score, 1.0);
+        assert_eq!(result.fingerprints_doc1, 0);
+        assert_eq!(result.fingerprints_doc2, 0);
+        assert_eq!(result.fingerprints_matched, 0);
+
+        let doc3 = "bye";
+        let result2 = compare_documents_moss_like(doc1, doc3, k, w);
+        assert_eq!(result2.score, 1.0);
+        assert_eq!(result2.fingerprints_doc1, 0);
+        assert_eq!(result2.fingerprints_doc2, 0);
+        assert_eq!(result2.fingerprints_matched, 0);
+    }
+
+    #[test]
+    fn test_compare_documents_moss_like_content_just_k() {
+        let doc1 = "word word word word";
+        let doc2 = "word word word word";
+        let k = 4;
+        let w = 1;
+        let result = compare_documents_moss_like(doc1, doc2, k, w);
+        assert_eq!(result.score, 1.0);
+        assert_eq!(
+            result.fingerprints_doc1, 1,
+            "Should have 1 fingerprint for doc1"
+        );
+        assert_eq!(
+            result.fingerprints_doc2, 1,
+            "Should have 1 fingerprint for doc2"
+        );
+        assert_eq!(result.fingerprints_matched, 1);
+
+        let doc3 = "diff diff diff diff";
+        let result2 = compare_documents_moss_like(doc1, doc3, k, w);
+        assert_eq!(result2.score, 0.0);
+        assert_eq!(result2.fingerprints_doc1, 1);
+        assert_eq!(result2.fingerprints_doc2, 1);
+        assert_eq!(result2.fingerprints_matched, 0);
     }
 }
