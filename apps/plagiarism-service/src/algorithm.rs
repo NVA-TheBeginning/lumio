@@ -2,8 +2,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
 use std::fmt;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::Path;
 
@@ -155,6 +157,16 @@ pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>
         .windows(k_val) // Creates an iterator over all contiguous windows of length k_val
         .map(|window_slice| window_slice.to_vec()) // Convert each window (&[String]) to Vec<String>
         .collect() // Collect into a Vec<Vec<String>>
+}
+
+// This is the new function we will implement.
+pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    // The &[String] slice (and String itself) implements the Hash trait.
+    // So we can hash the entire slice directly.
+    // This considers both the content of the strings and their order in the slice.
+    token_kgram.hash(&mut hasher);
+    hasher.finish()
 }
 
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
@@ -588,5 +600,65 @@ mod tests {
             vec!["c".to_string()],
         ];
         assert_eq!(generate_token_kgrams(&tokens, k_val), expected);
+    }
+
+    // --- MOSS Hash Token K-gram Tests ---
+    #[test]
+    fn test_moss_hash_token_kgram_empty() {
+        // Hashing an empty slice should produce a consistent value.
+        let empty_kgram: Vec<String> = vec![];
+        let expected_hash = {
+            let mut hasher = DefaultHasher::new();
+            empty_kgram.hash(&mut hasher); // Hash the empty slice itself for the expected value
+            hasher.finish()
+        };
+        assert_eq!(hash_token_kgram(&empty_kgram), expected_hash);
+    }
+
+    #[test]
+    fn test_moss_hash_token_kgram_single_token() {
+        let kgram = vec!["hello".to_string()];
+        let expected_hash = {
+            let mut hasher = DefaultHasher::new();
+            kgram.hash(&mut hasher); // Hash the Vec<String> itself
+            hasher.finish()
+        };
+        assert_eq!(hash_token_kgram(&kgram), expected_hash);
+    }
+
+    #[test]
+    fn test_moss_hash_token_kgram_multiple_tokens() {
+        let kgram = vec!["the".to_string(), "quick".to_string(), "brown".to_string()];
+        let expected_hash = {
+            let mut hasher = DefaultHasher::new();
+            kgram.hash(&mut hasher);
+            hasher.finish()
+        };
+        assert_eq!(hash_token_kgram(&kgram), expected_hash);
+    }
+
+    #[test]
+    fn test_moss_hash_token_kgram_consistency() {
+        // Hashing the same k-gram multiple times should produce the same hash.
+        let kgram1 = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let kgram2 = vec!["a".to_string(), "b".to_string(), "c".to_string()]; // Identical
+        assert_eq!(hash_token_kgram(&kgram1), hash_token_kgram(&kgram2));
+    }
+
+    #[test]
+    fn test_moss_hash_token_kgram_difference() {
+        // Different k-grams should ideally produce different hashes (though collisions are possible).
+        let kgram1 = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let kgram2 = vec!["a".to_string(), "b".to_string(), "d".to_string()]; // Different last token
+        let kgram3 = vec!["x".to_string(), "y".to_string(), "z".to_string()]; // Completely different
+        
+        let hash1 = hash_token_kgram(&kgram1);
+        let hash2 = hash_token_kgram(&kgram2);
+        let hash3 = hash_token_kgram(&kgram3);
+
+        assert_ne!(hash1, hash2, "Hashes for kgrams differing by one token should differ");
+        assert_ne!(hash1, hash3, "Hashes for completely different kgrams should differ");
+        // Note: With DefaultHasher, it's highly unlikely these specific short examples will collide,
+        // but it's good to be aware that hash collisions are theoretically possible.
     }
 }
