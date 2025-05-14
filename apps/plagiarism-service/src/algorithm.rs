@@ -136,6 +136,15 @@ pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) ->
     matches
 }
 
+// This is the new function for MOSS we will implement.
+pub fn tokenize(text: &str) -> Vec<String> {
+    text.to_lowercase() // Convert to lowercase
+        .split(|c: char| !c.is_alphanumeric()) // Split by non-alphanumeric characters
+        .filter(|s| !s.is_empty()) // Remove empty strings that result from multiple delimiters
+        .map(String::from) // Convert &str slices to String
+        .collect() // Collect into a Vec<String>
+}
+
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
     let mut hasher = Sha1::new();
 
@@ -463,5 +472,52 @@ mod tests {
             rabin_karp_search(text2, pattern2, RK_RADIX, TEST_PRIME_SEARCH),
             vec![8usize]
         );
+    }
+
+    // --- MOSS Tests ---
+    #[test]
+    fn test_moss_tokenize_empty_string() {
+        assert_eq!(tokenize(""), Vec::<String>::new());
+    }
+
+    #[test]
+    fn test_moss_tokenize_simple_sentence() {
+        let text = "Hello world";
+        let expected = vec!["hello".to_string(), "world".to_string()];
+        assert_eq!(tokenize(text), expected);
+    }
+
+    #[test]
+    fn test_moss_tokenize_with_punctuation_and_mixed_case() {
+        let text = "First, a Sentence; then ANOTHeR one.";
+        let expected = vec![
+            "first".to_string(), "a".to_string(), "sentence".to_string(),
+            "then".to_string(), "another".to_string(), "one".to_string()
+        ];
+        assert_eq!(tokenize(text), expected);
+    }
+
+    #[test]
+    fn test_moss_tokenize_with_numbers_and_underscores() {
+        // Underscores are typically non-alphanumeric, so they should act as delimiters.
+        let text = "Var1able_names l1k3 th1s_are_c0mm0n_2";
+        let expected = vec![
+            "var1able".to_string(), "names".to_string(), "l1k3".to_string(),
+            "th1s".to_string(), "are".to_string(), "c0mm0n".to_string(), "2".to_string()
+        ];
+        assert_eq!(tokenize(text), expected);
+    }
+
+    #[test]
+    fn test_moss_tokenize_string_with_only_delimiters() {
+        let text = " \t\n,.;!?---\t_";
+        assert_eq!(tokenize(text), Vec::<String>::new());
+    }
+
+    #[test]
+    fn test_moss_tokenize_leading_and_trailing_delimiters() {
+        let text = "---word---";
+        let expected = vec!["word".to_string()];
+        assert_eq!(tokenize(text), expected);
     }
 }
