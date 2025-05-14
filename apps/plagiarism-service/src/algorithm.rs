@@ -139,44 +139,35 @@ pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) ->
     matches
 }
 
-// This is the new function for MOSS we will implement.
 pub fn tokenize(text: &str) -> Vec<String> {
-    text.to_lowercase() // Convert to lowercase
-        .split(|c: char| !c.is_alphanumeric()) // Split by non-alphanumeric characters
-        .filter(|s| !s.is_empty()) // Remove empty strings that result from multiple delimiters
-        .map(String::from) // Convert &str slices to String
-        .collect() // Collect into a Vec<String>
+    text.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect()
 }
 
-// This is the new function we will implement.
-// k_val is the number of tokens in each k-gram.
 pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>> {
     if k_val == 0 || tokens.len() < k_val {
         return Vec::new();
     }
     tokens
-        .windows(k_val) // Creates an iterator over all contiguous windows of length k_val
-        .map(|window_slice| window_slice.to_vec()) // Convert each window (&[String]) to Vec<String>
-        .collect() // Collect into a Vec<Vec<String>>
+        .windows(k_val)
+        .map(|window_slice| window_slice.to_vec())
+        .collect()
 }
 
-// This is the new function we will implement.
 pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     let mut hasher = DefaultHasher::new();
-    // The &[String] slice (and String itself) implements the Hash trait.
-    // So we can hash the entire slice directly.
-    // This considers both the content of the strings and their order in the slice.
+
     token_kgram.hash(&mut hasher);
     hasher.finish()
 }
 
-// This is the new function we will implement.
-// original_kgram_start_index is the starting index of the k-gram that produced the hash.
 pub fn winnow_hashes(
-    hashes_with_indices: &[(u64, usize)], // Each tuple: (hash_value, original_kgram_index)
+    hashes_with_indices: &[(u64, usize)],
     window_size: usize,
 ) -> HashSet<(u64, usize)> {
-    // Return a set of (hash, original_kgram_index)
     let mut selected_fingerprints = HashSet::new();
 
     if window_size == 0 || hashes_with_indices.is_empty() {
@@ -187,7 +178,6 @@ pub fn winnow_hashes(
         if let Some(min_entry) = hashes_with_indices
             .iter()
             .min_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
-        // Min hash, then rightmost (max index) for ties
         {
             selected_fingerprints.insert(*min_entry);
         }
@@ -207,10 +197,27 @@ pub fn winnow_hashes(
     selected_fingerprints
 }
 
+pub fn calculate_jaccard_index(
+    set_a: &HashSet<(u64, usize)>,
+    set_b: &HashSet<(u64, usize)>,
+) -> f64 {
+    if set_a.is_empty() && set_b.is_empty() {
+        return 1.0;
+    }
+
+    let intersection_size = set_a.intersection(set_b).count();
+    let union_size = set_a.union(set_b).count();
+
+    if union_size == 0 {
+        return 1.0;
+    }
+
+    intersection_size as f64 / union_size as f64
+}
+
 fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
     let mut hasher = Sha1::new();
 
-    // Walk the directory
     for entry in fs::read_dir(dir_path)? {
         let entry = entry?;
         let path = entry.path();
@@ -222,8 +229,6 @@ fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
             let sub_hash = calculate_directory_sha1(&path)?;
             hasher.update(sub_hash.as_bytes());
         }
-        // Note: We are intentionally not hashing directory names or file metadata directly,
-        // only the content of files. You might adjust this based on your needs.
     }
 
     Ok(format!("{:x}", hasher.finalize()))
@@ -279,7 +284,6 @@ pub fn run_plagiarism_check(
                         println!("SHA1 for {} is: {}", folder_name, hash);
                         let mut folder_content = String::new();
 
-                        // Read all files in the folder to calculate character frequency
                         for file_entry in fs::read_dir(&path)? {
                             let file_entry = file_entry?;
                             if file_entry.path().is_file() {
@@ -321,7 +325,6 @@ pub fn run_plagiarism_check(
                 let other_folder_sha1 = folder_details[j].sha1.clone();
                 let other_frequency = folder_frequencies.get(&other_folder_name).unwrap();
 
-                // Compare SHA1 and frequencies
                 let sha1_match_percentage = if current_folder_sha1 == other_folder_sha1 {
                     100.0
                 } else {
@@ -536,7 +539,6 @@ mod tests {
         );
     }
 
-    // --- MOSS Tests ---
     #[test]
     fn test_moss_tokenize_empty_string() {
         assert_eq!(tokenize(""), Vec::<String>::new());
@@ -565,7 +567,6 @@ mod tests {
 
     #[test]
     fn test_moss_tokenize_with_numbers_and_underscores() {
-        // Underscores are typically non-alphanumeric, so they should act as delimiters.
         let text = "Var1able_names l1k3 th1s_are_c0mm0n_2";
         let expected = vec![
             "var1able".to_string(),
@@ -592,7 +593,6 @@ mod tests {
         assert_eq!(tokenize(text), expected);
     }
 
-    // --- MOSS Token K-gram Tests ---
     #[test]
     fn test_moss_generate_token_kgrams_empty_tokens() {
         let tokens: Vec<String> = vec![];
@@ -602,7 +602,7 @@ mod tests {
     #[test]
     fn test_moss_generate_token_kgrams_k_is_zero() {
         let tokens = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        // k=0 is not meaningful for k-grams, should return empty.
+
         assert_eq!(generate_token_kgrams(&tokens, 0), Vec::<Vec<String>>::new());
     }
 
@@ -654,14 +654,12 @@ mod tests {
         assert_eq!(generate_token_kgrams(&tokens, k_val), expected);
     }
 
-    // --- MOSS Hash Token K-gram Tests ---
     #[test]
     fn test_moss_hash_token_kgram_empty() {
-        // Hashing an empty slice should produce a consistent value.
         let empty_kgram: Vec<String> = vec![];
         let expected_hash = {
             let mut hasher = DefaultHasher::new();
-            empty_kgram.hash(&mut hasher); // Hash the empty slice itself for the expected value
+            empty_kgram.hash(&mut hasher);
             hasher.finish()
         };
         assert_eq!(hash_token_kgram(&empty_kgram), expected_hash);
@@ -672,7 +670,7 @@ mod tests {
         let kgram = vec!["hello".to_string()];
         let expected_hash = {
             let mut hasher = DefaultHasher::new();
-            kgram.hash(&mut hasher); // Hash the Vec<String> itself
+            kgram.hash(&mut hasher);
             hasher.finish()
         };
         assert_eq!(hash_token_kgram(&kgram), expected_hash);
@@ -691,18 +689,16 @@ mod tests {
 
     #[test]
     fn test_moss_hash_token_kgram_consistency() {
-        // Hashing the same k-gram multiple times should produce the same hash.
         let kgram1 = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        let kgram2 = vec!["a".to_string(), "b".to_string(), "c".to_string()]; // Identical
+        let kgram2 = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         assert_eq!(hash_token_kgram(&kgram1), hash_token_kgram(&kgram2));
     }
 
     #[test]
     fn test_moss_hash_token_kgram_difference() {
-        // Different k-grams should ideally produce different hashes (though collisions are possible).
         let kgram1 = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        let kgram2 = vec!["a".to_string(), "b".to_string(), "d".to_string()]; // Different last token
-        let kgram3 = vec!["x".to_string(), "y".to_string(), "z".to_string()]; // Completely different
+        let kgram2 = vec!["a".to_string(), "b".to_string(), "d".to_string()];
+        let kgram3 = vec!["x".to_string(), "y".to_string(), "z".to_string()];
 
         let hash1 = hash_token_kgram(&kgram1);
         let hash2 = hash_token_kgram(&kgram2);
@@ -716,11 +712,8 @@ mod tests {
             hash1, hash3,
             "Hashes for completely different kgrams should differ"
         );
-        // Note: With DefaultHasher, it's highly unlikely these specific short examples will collide,
-        // but it's good to be aware that hash collisions are theoretically possible.
     }
 
-    // --- MOSS Winnowing Tests ---
     #[test]
     fn test_moss_winnow_empty_hashes() {
         let hashes: Vec<(u64, usize)> = vec![];
@@ -730,19 +723,16 @@ mod tests {
     #[test]
     fn test_moss_winnow_window_size_zero() {
         let hashes = vec![(10, 0), (20, 1), (5, 2), (30, 3)];
-        // Window size 0 is not meaningful, should probably return empty.
+
         assert_eq!(winnow_hashes(&hashes, 0), HashSet::new());
     }
 
     #[test]
     fn test_moss_winnow_hashes_less_than_window_size() {
-        // If total hashes < window_size, select the overall minimum hash.
-        // (Or an alternative consistent strategy, e.g. select all)
-        // Let's go with selecting the overall minimum.
-        let hashes = vec![(10, 0), (20, 1), (5, 2)]; // len 3
+        let hashes = vec![(10, 0), (20, 1), (5, 2)];
         let mut expected = HashSet::new();
-        expected.insert((5, 2)); // Overall minimum
-        assert_eq!(winnow_hashes(&hashes, 4), expected); // window_size = 4
+        expected.insert((5, 2));
+        assert_eq!(winnow_hashes(&hashes, 4), expected);
 
         let hashes_single = vec![(100, 0)];
         let mut expected_single = HashSet::new();
@@ -776,13 +766,59 @@ mod tests {
     fn test_moss_winnow_all_same_hash() {
         let hashes = vec![(5, 0), (5, 1), (5, 2), (5, 3), (5, 4)];
         let w = 3;
-        // Window 1: [(5,0), (5,1), (5,2)] -> selects (5,2) (rightmost)
-        // Window 2: [(5,1), (5,2), (5,3)] -> selects (5,3) (rightmost)
-        // Window 3: [(5,2), (5,3), (5,4)] -> selects (5,4) (rightmost)
+
         let mut expected = HashSet::new();
         expected.insert((5, 2));
         expected.insert((5, 3));
         expected.insert((5, 4));
         assert_eq!(winnow_hashes(&hashes, w), expected);
+    }
+
+    #[test]
+    fn test_moss_jaccard_index_empty_sets() {
+        let set_a: HashSet<(u64, usize)> = HashSet::new();
+        let set_b: HashSet<(u64, usize)> = HashSet::new();
+
+        assert_eq!(calculate_jaccard_index(&set_a, &set_b), 1.0);
+    }
+
+    #[test]
+    fn test_moss_jaccard_index_one_set_empty() {
+        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1)].iter().cloned().collect();
+        let set_b: HashSet<(u64, usize)> = HashSet::new();
+
+        assert_eq!(calculate_jaccard_index(&set_a, &set_b), 0.0);
+        assert_eq!(calculate_jaccard_index(&set_b, &set_a), 0.0);
+    }
+
+    #[test]
+    fn test_moss_jaccard_index_identical_sets() {
+        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1), (30, 2)].iter().cloned().collect();
+        let set_b = set_a.clone();
+
+        assert_eq!(calculate_jaccard_index(&set_a, &set_b), 1.0);
+    }
+
+    #[test]
+    fn test_moss_jaccard_index_no_overlap() {
+        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1)].iter().cloned().collect();
+        let set_b: HashSet<(u64, usize)> = [(30, 2), (40, 3)].iter().cloned().collect();
+
+        assert_eq!(calculate_jaccard_index(&set_a, &set_b), 0.0);
+    }
+
+    #[test]
+    fn test_moss_jaccard_index_partial_overlap() {
+        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1), (30, 2), (40, 3)]
+            .iter()
+            .cloned()
+            .collect();
+        let set_b: HashSet<(u64, usize)> = [(30, 2), (40, 3), (50, 4), (60, 5), (70, 6)]
+            .iter()
+            .cloned()
+            .collect();
+
+        let expected = 2.0 / 7.0;
+        assert!((calculate_jaccard_index(&set_a, &set_b) - expected).abs() < 1e-9);
     }
 }
