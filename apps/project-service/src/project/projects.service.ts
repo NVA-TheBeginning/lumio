@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, ProjectStatus } from "@prisma-project/client";
+import { Paginated, PaginationMeta } from "@/interfaces/pagination.interface";
 import { PrismaService } from "@/prisma.service";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
-import {Paginated, PaginationMeta} from "@/interfaces/pagination.interface";
 
-export type GroupStatus = 'no_groups' | 'not_in_group' | 'in_group';
+export type GroupStatus = "no_groups" | "not_in_group" | "in_group";
 
 export interface Project {
   id: number;
@@ -123,12 +123,8 @@ export class ProjectService {
     return result;
   }
 
-  async findProjectsForStudent(
-      studentId: number,
-      page = 1,
-      size = 10
-  ): Promise<ProjectsByPromotion> {
-    if (studentId == null) throw new BadRequestException('studentId is required');
+  async findProjectsForStudent(studentId: number, page = 1, size = 10): Promise<ProjectsByPromotion> {
+    if (studentId == null) throw new BadRequestException("studentId is required");
 
     const studentPromos = await this.prisma.studentPromotion.findMany({
       where: { userId: studentId },
@@ -163,30 +159,27 @@ export class ProjectService {
       const start = (page - 1) * size;
       const pageProjects = allProjects.slice(start, start + size);
 
-      const enriched: ProjectWithGroupStatus[] = [];
       const enriched = await Promise.all(
         pageProjects.map(async (proj) => {
-          const groups = await this.prisma.groupSettings.findMany({
-            where: { projectId: proj.id, promotionId: pid },
-            include: {
-              projectPromotion: {
-                include: {
-                  groups: { include: { members: true } },
+          const groups = await this.prisma.groupSettings
+            .findMany({
+              where: { projectId: proj.id, promotionId: pid },
+              include: {
+                projectPromotion: {
+                  include: {
+                    groups: { include: { members: true } },
+                  },
                 },
               },
-            },
-          }).then((settings) =>
-              settings.flatMap((gs) => gs.projectPromotion.groups)
-          );
+            })
+            .then((settings) => settings.flatMap((gs) => gs.projectPromotion.groups));
 
-          let status: GroupStatus = 'no_groups';
+          let status: GroupStatus = "no_groups";
           let ownGroup: Group | undefined;
 
           if (groups.length) {
-            const found = groups.find((g) =>
-                g.members.some((m) => m.studentId === studentId)
-            );
-            status = found ? 'in_group' : 'not_in_group';
+            const found = groups.find((g) => g.members.some((m) => m.studentId === studentId));
+            status = found ? "in_group" : "not_in_group";
             if (found) {
               ownGroup = {
                 id: found.id,
@@ -197,7 +190,7 @@ export class ProjectService {
           }
 
           return { project: proj, groupStatus: status, group: ownGroup };
-        })
+        }),
       );
 
       const meta: PaginationMeta = {
