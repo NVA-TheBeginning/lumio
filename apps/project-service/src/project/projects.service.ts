@@ -268,6 +268,19 @@ export class ProjectService {
     });
   }
 
+  async updateStatus(idProject: number, idPromotion: number, status: ProjectStatus): Promise<void> {
+    const existing = await this.prisma.projectPromotion.findUnique({
+      where: { projectId_promotionId: { projectId: idProject, promotionId: idPromotion } },
+    });
+
+    if (!existing) throw new NotFoundException(`Project ${idProject} not found for promotion ${idPromotion}`);
+
+    await this.prisma.projectPromotion.update({
+      where: { projectId_promotionId: { projectId: idProject, promotionId: idPromotion } },
+      data: { status },
+    });
+  }
+
   async remove(id: number) {
     const existing = await this.prisma.project.findUnique({
       where: { id, deletedAt: null },

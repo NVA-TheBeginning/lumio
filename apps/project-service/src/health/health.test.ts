@@ -17,16 +17,13 @@ describe("Health", () => {
     await app.getHttpAdapter().getInstance().ready();
   });
 
-  test("/health (GET)", () => {
-    return app
-      .inject({
-        method: "GET",
-        url: "/health",
-      })
-      .then((result) => {
-        expect(result.statusCode).toEqual(200);
-        expect(JSON.parse(result.body)).toEqual({ status: 200, message: "OK" });
-      });
+  test("/health (GET)", async () => {
+    const result = await app.inject({
+      method: "GET",
+      url: "/health",
+    });
+    expect(result.statusCode).toEqual(200);
+    expect(JSON.parse(result.body)).toEqual({ status: 200, message: "OK" });
   });
 
   afterAll(async () => {

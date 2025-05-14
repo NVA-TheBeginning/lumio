@@ -33,7 +33,7 @@ describe("LoggingInterceptor", () => {
       handle: () => of({}),
     };
 
-    loggerSpy = mock((message: string) => {});
+    loggerSpy = mock(() => {});
     Logger.prototype.log = loggerSpy;
   });
 

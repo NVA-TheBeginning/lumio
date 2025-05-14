@@ -55,11 +55,14 @@ export class PromotionsService {
   async create(createPromotionDto: CreatePromotionDto): Promise<unknown> {
     const studentsData = this.parseStudentsCsv(createPromotionDto.students_csv);
 
-    const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>("auth", "/users/students", "POST", {
-      students: studentsData,
-    } as { students: StudentData[] });
+    const { students } = await this.proxy.forwardRequest<CreateStudentsResponse>(
+      "auth",
+      "/users/students",
+      "POST",
+      studentsData,
+    );
 
-    const studentIds = students.map((s) => s.studentId);
+    const studentIds = students?.map((s) => s.studentId) || [];
 
     const projectDto: ProjectPromotionDto = {
       name: createPromotionDto.name,

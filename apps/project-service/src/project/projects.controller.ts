@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import {ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags} from "@nestjs/swagger";
 import { CreateProjectDto } from "./dto/create-project.dto";
-import { UpdateProjectDto } from "./dto/update-project.dto";
+import { UpdateProjectDto, UpdateProjectStatusDto } from "./dto/update-project.dto";
 import {ProjectsByPromotion, ProjectService} from "./projects.service";
 
 @ApiTags("projects")
@@ -61,6 +61,19 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: "Project not found." })
   async update(@Param("id", ParseIntPipe) id: number, @Body() updateProjectDto: UpdateProjectDto) {
     return this.projectService.update(id, updateProjectDto);
+  }
+
+  @Patch(":idProject/:idPromotion/status")
+  @ApiOperation({ summary: "Update the status of a project for a specific promotion" })
+  @ApiResponse({ status: 200, description: "Project status successfully updated." })
+  @ApiResponse({ status: 400, description: "Bad Request" })
+  @ApiResponse({ status: 404, description: "Project or promotion not found." })
+  async updateStatus(
+    @Param("idProject", ParseIntPipe) idProject: number,
+    @Param("idPromotion", ParseIntPipe) idPromotion: number,
+    @Body() updateProjectStatusDto: UpdateProjectStatusDto,
+  ) {
+    return await this.projectService.updateStatus(idProject, idPromotion, updateProjectStatusDto.status);
   }
 
   @Delete(":id")

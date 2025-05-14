@@ -84,7 +84,7 @@ export class UsersService {
             initialPassword: user.randomPassword,
           };
         })
-        .filter((s): s is NonNullable<typeof s> => s !== null);
+        .filter((student) => student !== null);
 
       return {
         count: insertResult.count,
@@ -144,17 +144,13 @@ export class UsersService {
   }
 
   async deleteUser(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!user) {
-      throw new NotFoundException("User not found");
+    try {
+      await this.prisma.user.delete({
+        where: { id },
+      });
+    } catch (_) {
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
-
-    return this.prisma.user.delete({
-      where: { id },
-    });
   }
 
   async findUsersByIds(

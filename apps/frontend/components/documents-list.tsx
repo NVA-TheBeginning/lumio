@@ -90,53 +90,69 @@ export default function DocumentListGrid({ documents, isLoading, onDocumentDelet
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith("image/")) {
       return <FileImageIcon className="h-16 w-16 text-blue-500" />;
-    } else if (mimeType === "application/pdf") {
-      return <FilePdfIcon className="h-16 w-16 text-red-500" />;
-    } else if (mimeType.startsWith("text/")) {
-      return <FileTextIcon className="h-16 w-16 text-green-500" />;
-    } else if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType.includes("xlsx")) {
-      return <FileSpreadsheetIcon className="h-16 w-16 text-emerald-500" />;
-    } else if (mimeType.includes("presentation") || mimeType.includes("powerpoint") || mimeType.includes("pptx")) {
-      return <FilePresentation className="h-16 w-16 text-orange-500" />;
-    } else if (mimeType.includes("wordprocessing") || mimeType.includes("word") || mimeType.includes("docx")) {
-      return <FileText className="h-16 w-16 text-blue-600" />;
-    } else if (mimeType.includes("zip") || mimeType.includes("compressed") || mimeType.includes("archive")) {
-      return <Archive className="h-16 w-16 text-amber-500" />;
-    } else if (mimeType.includes("video")) {
-      return <Video className="h-16 w-16 text-purple-500" />;
-    } else if (mimeType.includes("audio")) {
-      return <Music className="h-16 w-16 text-pink-500" />;
-    } else if (mimeType.includes("json") || mimeType.includes("javascript") || mimeType.includes("code")) {
-      return <Code className="h-16 w-16 text-gray-600" />;
-    } else {
-      return <FileIcon className="h-16 w-16 text-gray-500" />;
     }
+    if (mimeType === "application/pdf") {
+      return <FilePdfIcon className="h-16 w-16 text-red-500" />;
+    }
+    if (mimeType.startsWith("text/")) {
+      return <FileTextIcon className="h-16 w-16 text-green-500" />;
+    }
+    if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType.includes("xlsx")) {
+      return <FileSpreadsheetIcon className="h-16 w-16 text-emerald-500" />;
+    }
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint") || mimeType.includes("pptx")) {
+      return <FilePresentation className="h-16 w-16 text-orange-500" />;
+    }
+    if (mimeType.includes("wordprocessing") || mimeType.includes("word") || mimeType.includes("docx")) {
+      return <FileText className="h-16 w-16 text-blue-600" />;
+    }
+    if (mimeType.includes("zip") || mimeType.includes("compressed") || mimeType.includes("archive")) {
+      return <Archive className="h-16 w-16 text-amber-500" />;
+    }
+    if (mimeType.includes("video")) {
+      return <Video className="h-16 w-16 text-purple-500" />;
+    }
+    if (mimeType.includes("audio")) {
+      return <Music className="h-16 w-16 text-pink-500" />;
+    }
+    if (mimeType.includes("json") || mimeType.includes("javascript") || mimeType.includes("code")) {
+      return <Code className="h-16 w-16 text-gray-600" />;
+    }
+    return <FileIcon className="h-16 w-16 text-gray-500" />;
   };
 
   const getFileColor = (mimeType: string) => {
     if (mimeType.startsWith("image/")) {
       return "bg-blue-50 border-blue-200";
-    } else if (mimeType === "application/pdf") {
+    }
+    if (mimeType === "application/pdf") {
       return "bg-red-50 border-red-200";
-    } else if (mimeType.startsWith("text/")) {
+    }
+    if (mimeType.startsWith("text/")) {
       return "bg-green-50 border-green-200";
-    } else if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType.includes("xlsx")) {
+    }
+    if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType.includes("xlsx")) {
       return "bg-emerald-50 border-emerald-200";
-    } else if (mimeType.includes("presentation") || mimeType.includes("powerpoint") || mimeType.includes("pptx")) {
+    }
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint") || mimeType.includes("pptx")) {
       return "bg-orange-50 border-orange-200";
-    } else if (mimeType.includes("wordprocessing") || mimeType.includes("word") || mimeType.includes("docx")) {
+    }
+    if (mimeType.includes("wordprocessing") || mimeType.includes("word") || mimeType.includes("docx")) {
       return "bg-blue-50 border-blue-200";
-    } else if (mimeType.includes("zip") || mimeType.includes("compressed") || mimeType.includes("archive")) {
+    }
+    if (mimeType.includes("zip") || mimeType.includes("compressed") || mimeType.includes("archive")) {
       return "bg-amber-50 border-amber-200";
-    } else if (mimeType.includes("video")) {
+    }
+    if (mimeType.includes("video")) {
       return "bg-purple-50 border-purple-200";
-    } else if (mimeType.includes("audio")) {
+    }
+    if (mimeType.includes("audio")) {
       return "bg-pink-50 border-pink-200";
-    } else if (mimeType.includes("json") || mimeType.includes("javascript") || mimeType.includes("code")) {
-      return "bg-gray-50 border-gray-200";
-    } else {
+    }
+    if (mimeType.includes("json") || mimeType.includes("javascript") || mimeType.includes("code")) {
       return "bg-gray-50 border-gray-200";
     }
+    return "bg-gray-50 border-gray-200";
   };
 
   const handleDownload = (id: number) => {
