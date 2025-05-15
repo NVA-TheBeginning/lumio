@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, ProjectStatus } from "@prisma-project/client";
+import { JwtUser } from "@/common/decorators/get-user.decorator";
 import { GroupMode } from "@/groups/dto/group.dto";
 import { Paginated, PaginationMeta } from "@/interfaces/pagination.interface";
 import { PrismaService } from "@/prisma.service";
+import { GroupDto, GroupMemberDto, ProjectDetailedDto, PromotionInfo } from "@/project/dto/project-detailed.dto";
 import { CreateProjectDto, GroupSettingDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
 
@@ -124,6 +126,77 @@ export class ProjectService {
     });
     if (!project) throw new NotFoundException(`Project ${id} not found`);
     return project;
+  }
+
+  async findOneDetailed(id: number, user: JwtUser): Promise<ProjectDetailedDto> {
+    const project = await this.prisma.project.findUnique({
+      where: { id, deletedAt: null },
+    });
+    if (!project) {
+      throw new NotFoundException(`Project ${id} not found`);
+    }
+
+    // Commencer à construire la réponse minimale
+    const dto: ProjectDetailedDto = {
+      id: project.id,
+      name: project.name,
+      description: project.description,
+    };
+
+    // Si c'est un prof ou admin, on ajoute toutes les infos
+    if (user.role === "TEACHER" || user.role === "ADMIN") {
+      // 1) promotions + status
+      const pps = await this.prisma.projectPromotion.findMany({
+        where: { projectId: id },
+        include: { promotion: true },
+      });
+      dto.promotions = pps.map(
+        (pp): PromotionInfo => ({
+          id: pp.promotionId,
+          name: pp.promotion.name,
+          status: pp.status,
+        }),
+      );
+
+      // 2) tous les groupes de ce projet
+      const groups = await this.prisma.group.findMany({
+        where: { projectId: id },
+        include: { members: true },
+      });
+      dto.groups = groups.map(
+        (g): GroupDto => ({
+          id: g.id,
+          name: g.name,
+          members: g.members.map((m): GroupMemberDto => ({ studentId: m.studentId })),
+        }),
+      );
+    } /* STUDENT */ else {
+      const membership = await this.prisma.groupMember.findFirst({
+        where: {
+          studentId: user.sub,
+          group: { projectId: id },
+        },
+        include: {
+          group: {
+            include: { members: true },
+          },
+        },
+      });
+      if (membership) {
+        const g = membership.group;
+        dto.groups = [
+          {
+            id: g.id,
+            name: g.name,
+            members: g.members.map((m) => ({ studentId: m.studentId })),
+          },
+        ];
+      } else {
+        dto.groups = [];
+      }
+    }
+
+    return dto;
   }
 
   async findByPromotions(promotionIds: number[]) {

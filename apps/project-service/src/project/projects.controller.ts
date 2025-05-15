@@ -10,8 +10,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { AuthGuard } from "@nestjs/passport";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator";
+import { ProjectDetailedDto } from "@/project/dto/project-detailed.dto";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto, UpdateProjectStatusDto } from "./dto/update-project.dto";
 import { ProjectService, ProjectsByPromotion } from "./projects.service";
@@ -52,6 +56,18 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: "Project not found." })
   async findOne(@Param("id", ParseIntPipe) id: number) {
     return this.projectService.findOne(id);
+  }
+
+  @Get(":id/detailed")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Retrieve a project with detailed info (role-based)" })
+  @ApiParam({ name: "id", type: Number, description: "Project ID" })
+  @ApiResponse({ status: 200, description: "Detailed project info", type: ProjectDetailedDto })
+  @ApiResponse({ status: 404, description: "Project not found" })
+  async findOneDetailed(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser): Promise<ProjectDetailedDto> {
+    return this.projectService.findOneDetailed(id, user);
   }
 
   @Patch(":id")
