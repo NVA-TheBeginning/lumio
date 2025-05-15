@@ -20,7 +20,7 @@ interface CreateProjectData {
   description: string;
   creatorId: number;
   promotionIds: number[];
-  groupSettings: {
+  groupSettings?: {
     promotionId: number;
     minMembers: number;
     maxMembers: number;

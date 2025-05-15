@@ -1,7 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { GroupMode } from "@prisma-project/client";
 import { Type } from "class-transformer";
-import { IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsString, ValidateNested } from "class-validator";
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from "class-validator";
 
 export class GroupSettingDto {
   @ApiProperty({ description: "Promotion ID", example: 1, type: Number })
@@ -62,6 +71,7 @@ export class CreateProjectDto {
 
   @ApiProperty({ description: "Group settings per promotion", type: [GroupSettingDto] })
   @IsArray()
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => GroupSettingDto)
   groupSettings!: GroupSettingDto[];
