@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, ProjectStatus } from "@prisma-project/client";
+import { GroupMode } from "@/groups/dto/group.dto";
 import { Paginated, PaginationMeta } from "@/interfaces/pagination.interface";
 import { PrismaService } from "@/prisma.service";
-import { CreateProjectDto } from "./dto/create-project.dto";
+import { CreateProjectDto, GroupSettingDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
 
 export type GroupStatus = "no_groups" | "not_in_group" | "in_group";
@@ -47,63 +48,26 @@ export type ProjectsByPromotion = Record<number, Paginated<ProjectWithGroupStatu
 export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createProjectDto: CreateProjectDto) {
-    const { name, description, creatorId, promotionIds = [], groupSettings = [] } = createProjectDto;
+  async create(createDto: CreateProjectDto) {
+    const { name, description, creatorId, promotionIds = [], groupSettings = [] } = createDto;
 
-    const promotions = promotionIds?.length
-      ? await this.prisma.promotion.findMany({ where: { id: { in: promotionIds } } })
-      : [];
+    this.validateBasics(name, description, creatorId);
+    await this.validatePromotions(promotionIds);
+    this.validateGroupSettings(promotionIds, groupSettings);
 
-    if (!(name && description && creatorId)) {
-      throw new BadRequestException("name, description, and creatorId are required");
-    }
+    return this.prisma.$transaction(async (tx) => {
+      const project = await this.createProject(tx, name, description, creatorId);
 
-    if (promotions.length !== promotionIds.length) {
-      throw new BadRequestException("One or more promotions do not exist");
-    }
+      await this.createProjectPromotions(tx, project.id, promotionIds);
+      await this.createGroupSettings(tx, project.id, groupSettings);
 
-    const gsIds = groupSettings.map((gs) => gs.promotionId);
-    const invalid = gsIds.filter((id) => !promotionIds.includes(id));
-    if (invalid.length) {
-      throw new BadRequestException(`Group settings contain invalid promotion ids: ${invalid.join(", ")}`);
-    }
+      const tasks = groupSettings.map((gs) =>
+        gs.mode === GroupMode.RANDOM
+          ? this.generateRandomGroups(tx, project.id, gs)
+          : this.generateSkeletonGroups(tx, project.id, gs),
+      );
 
-    for (const gs of groupSettings) {
-      if (gs.minMembers > gs.maxMembers) {
-        throw new BadRequestException("minMembers cannot be greater than maxMembers");
-      }
-      if (new Date(gs.deadline) < new Date()) {
-        throw new BadRequestException("Deadline must be in the future");
-      }
-    }
-
-    return this.prisma.$transaction(async (prisma) => {
-      const project = await prisma.project.create({
-        data: { name, description, creatorId },
-      });
-
-      if (promotionIds?.length) {
-        await prisma.projectPromotion.createMany({
-          data: promotionIds.map((promotionId) => ({
-            projectId: project.id,
-            promotionId,
-            status: ProjectStatus.DRAFT,
-          })),
-        });
-      }
-
-      if (groupSettings?.length) {
-        await prisma.groupSettings.createMany({
-          data: groupSettings.map((gs) => ({
-            projectId: project.id,
-            promotionId: gs.promotionId,
-            minMembers: gs.minMembers,
-            maxMembers: gs.maxMembers,
-            mode: gs.mode,
-            deadline: new Date(gs.deadline),
-          })),
-        });
-      }
+      await Promise.all(tasks);
 
       return project;
     });
@@ -352,5 +316,150 @@ export class ProjectService {
 
     await this.prisma.project.update({ where: { id }, data: { deletedAt: new Date() } });
     return { deleted: true };
+  }
+
+  // ─── Private helpers ─────────────────────────────────────────────────
+
+  private validateBasics(name: string, description: string, creatorId: number) {
+    if (!(name && description && creatorId)) {
+      throw new BadRequestException("name, description et creatorId sont requis");
+    }
+  }
+
+  private async validatePromotions(promotionIds: number[]) {
+    if (promotionIds.length === 0) return;
+    const found = await this.prisma.promotion.findMany({
+      where: { id: { in: promotionIds } },
+      select: { id: true },
+    });
+    const foundIds = found.map((p) => p.id);
+    const missing = promotionIds.filter((id) => !foundIds.includes(id));
+    if (missing.length) {
+      throw new BadRequestException(`Promotions introuvables : ${missing.join(", ")}`);
+    }
+  }
+
+  private validateGroupSettings(promotionIds: number[], groupSettings: GroupSettingDto[]) {
+    if (groupSettings.length === 0) return;
+    const invalid = groupSettings.map((gs) => gs.promotionId).filter((pid) => !promotionIds.includes(pid));
+    if (invalid.length) {
+      throw new BadRequestException(`GroupSettings invalides pour promotions : ${invalid.join(", ")}`);
+    }
+    for (const { minMembers, maxMembers, deadline } of groupSettings) {
+      if (minMembers > maxMembers) {
+        throw new BadRequestException("minMembers ne peut pas être supérieur à maxMembers");
+      }
+      if (new Date(deadline) < new Date()) {
+        throw new BadRequestException("Deadline doit être postérieure à la date courante");
+      }
+    }
+  }
+
+  private createProject(tx: Prisma.TransactionClient, name: string, description: string, creatorId: number) {
+    return tx.project.create({
+      data: { name, description, creatorId },
+    });
+  }
+
+  private createProjectPromotions(tx: Prisma.TransactionClient, projectId: number, promotionIds: number[]) {
+    if (!promotionIds.length) return Promise.resolve();
+    return tx.projectPromotion.createMany({
+      data: promotionIds.map((promotionId) => ({
+        projectId,
+        promotionId,
+        status: ProjectStatus.DRAFT,
+      })),
+    });
+  }
+
+  private createGroupSettings(tx: Prisma.TransactionClient, projectId: number, groupSettings: GroupSettingDto[]) {
+    if (!groupSettings.length) return Promise.resolve();
+    return tx.groupSettings.createMany({
+      data: groupSettings.map((gs) => ({
+        projectId,
+        promotionId: gs.promotionId,
+        minMembers: gs.minMembers,
+        maxMembers: gs.maxMembers,
+        mode: gs.mode,
+        deadline: new Date(gs.deadline),
+      })),
+    });
+  }
+
+  /**
+   * RANDOM mode:
+   *  - fetch all student IDs for the promotion
+   *  - shuffle them
+   *  - compute number of groups = ceil(count/maxMembers), at least 1
+   *  - create each group, then assign the slice of student IDs to that group
+   */
+  private async generateRandomGroups(tx: Prisma.TransactionClient, projectId: number, gs: GroupSettingDto) {
+    const students = await tx.studentPromotion.findMany({
+      where: { promotionId: gs.promotionId },
+      select: { userId: true },
+    });
+    const ids = students.map((s) => s.userId);
+
+    // Fisher-Yates shuffle
+    for (let i = ids.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+    }
+
+    const count = ids.length;
+    const numGroups = Math.max(1, Math.ceil(count / gs.maxMembers));
+    const chunkSize = Math.ceil(count / numGroups) || count || 1;
+
+    const createGroupPromises = Array.from({ length: numGroups }, (_, idx) =>
+      tx.group.create({
+        data: {
+          projectId,
+          promotionId: gs.promotionId,
+          name: `Groupe ${idx + 1}`,
+        },
+      }),
+    );
+    const createdGroups = await Promise.all(createGroupPromises);
+
+    const memberPromises = createdGroups.map((group, idx) => {
+      const slice = ids.slice(idx * chunkSize, (idx + 1) * chunkSize);
+      if (slice.length === 0) {
+        return Promise.resolve();
+      }
+      return tx.groupMember.createMany({
+        data: slice.map((studentId) => ({
+          groupId: group.id,
+          studentId,
+        })),
+      });
+    });
+    await Promise.all(memberPromises);
+  }
+
+  /**
+   * MANUAL & FREE modes:
+   *  - compute number of skeleton groups
+   *    – FREE → ceil(studentCount/minMembers)
+   *    – MANUAL → ceil(studentCount/maxMembers)
+   *  - create empty groups, students will join later
+   */
+  private async generateSkeletonGroups(tx: Prisma.TransactionClient, projectId: number, gs: GroupSettingDto) {
+    const studentCount = await tx.studentPromotion.count({
+      where: { promotionId: gs.promotionId },
+    });
+
+    let numGroups: number;
+    if (gs.mode === GroupMode.FREE) {
+      numGroups = Math.max(1, Math.ceil(studentCount / gs.minMembers));
+    } else {
+      numGroups = Math.max(1, Math.ceil(studentCount / gs.maxMembers));
+    }
+
+    const skeletons = Array.from({ length: numGroups }, (_, i) => ({
+      projectId,
+      promotionId: gs.promotionId,
+      name: `Groupe ${i + 1}`,
+    }));
+    await tx.group.createMany({ data: skeletons });
   }
 }
