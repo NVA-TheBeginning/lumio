@@ -115,7 +115,19 @@ describe("ProjectsController.findByStudentDetailed", () => {
   it("calls proxy.forwardRequest with the correct route and numeric pagination", async () => {
     const mockMap: ProjectsByPromotion = {
       1: {
-        data: [{ project: { id: 5 } } as any /* … */],
+        data: [
+          {
+            project: {
+              id: 5,
+              name: "Project A",
+              description: "Description A",
+              creatorId: 1,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            groupStatus: "in_group",
+          },
+        ],
         pagination: {
           totalRecords: 1,
           currentPage: 2,
