@@ -220,11 +220,31 @@ describe("Projects", () => {
 
   afterAll(async () => {
     if (projectId) {
-      await prisma.groupSettings.deleteMany({ where: { projectId } });
-      await prisma.projectPromotion.deleteMany({ where: { projectId } });
-      await prisma.project.delete({ where: { id: projectId } });
+      await prisma.groupMember.deleteMany({
+        where: {
+          group: {
+            projectId: projectId,
+          },
+        },
+      });
+      await prisma.group.deleteMany({
+        where: { projectId },
+      });
+      await prisma.groupSettings.deleteMany({
+        where: { projectId },
+      });
+      await prisma.projectPromotion.deleteMany({
+        where: { projectId },
+      });
+      await prisma.project.delete({
+        where: { id: projectId },
+      });
     }
-    await prisma.promotion.deleteMany({ where: { id: { in: promotionIds } } });
+    if (promotionIds.length) {
+      await prisma.promotion.deleteMany({
+        where: { id: { in: promotionIds } },
+      });
+    }
     await app.close();
   });
 });
