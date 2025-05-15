@@ -25,13 +25,12 @@ import {
 } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
-  ArrayMinSize,
-  ArrayNotEmpty,
   IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from "class-validator";
@@ -95,13 +94,12 @@ export class CreateProjectDto {
 
   @ApiProperty({ description: "Array of promotion IDs", type: [Number], example: [1, 2] })
   @IsArray()
-  @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   promotionIds!: number[];
 
   @ApiProperty({ description: "Group settings for each promotion", type: [GroupSettingDto] })
   @IsArray()
-  @ArrayMinSize(1)
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => GroupSettingDto)
   groupSettings!: GroupSettingDto[];

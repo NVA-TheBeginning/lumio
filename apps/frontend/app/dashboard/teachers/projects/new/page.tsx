@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon, FilePlus, Trash } from "lucide-react";
+import { CalendarIcon, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -21,7 +21,7 @@ import { formatDate } from "@/lib/utils";
 import { createProject } from "../actions";
 
 const groupSettingSchema = z.object({
-  promotionId: z.number().positive("L'ID de promotion est requis"),
+  promotionId: z.number().positive(),
   minMembers: z.number().min(1, "Minimum 1 membre requis"),
   maxMembers: z.number().min(1, "Minimum 1 membre requis"),
   mode: z.string().refine((val) => ["AUTO", "FREE", "MANUAL"].includes(val), {
@@ -34,10 +34,8 @@ const createProjectSchema = z.object({
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères"),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
   creatorId: z.number().positive("L'ID du créateur est requis"),
-  promotionIds: z.array(z.number()).min(1, "Au moins une promotion est requise"),
-  groupSettings: z.array(groupSettingSchema).refine((settings) => settings.length > 0, {
-    message: "Au moins un paramètre de groupe est requis",
-  }),
+  promotionIds: z.array(z.number()),
+  groupSettings: z.array(groupSettingSchema).optional(),
 });
 
 type CreateProjectFormValues = z.infer<typeof createProjectSchema>;
@@ -90,6 +88,11 @@ export default function CreateProjectForm() {
     const currentGroupSettings = getValues("groupSettings") || [];
     const existingSettingsMap = new Map(currentGroupSettings.map((setting) => [setting.promotionId, setting]));
 
+    if (currentPromotionIds.length === 0) {
+      setValue("groupSettings", [], { shouldDirty: true, shouldValidate: true });
+      return;
+    }
+
     const newGroupSettings = currentPromotionIds
       .map((promotionId) => {
         const existingSetting = existingSettingsMap.get(promotionId);
@@ -119,27 +122,6 @@ export default function CreateProjectForm() {
         <div className="text-center py-12 border rounded-lg bg-red-50 text-red-800">
           <h2 className="text-2xl font-bold">Erreur</h2>
           <p className="mt-4">Impossible de charger les promotions. Veuillez réessayer plus tard.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (promotions.length === 0 && !isLoadingPromotions) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="text-center py-12 border rounded-lg bg-yellow-50 text-yellow-800">
-          <h2 className="text-2xl font-bold">Aucune promotion disponible</h2>
-          <p className="mt-4">Vous devez créer une promotion avant de pouvoir créer un projet.</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => {
-              router.push("/dashboard/teachers/promotions/new");
-            }}
-          >
-            <FilePlus className="mr-2 h-4 w-4" />
-            Créer une promotion
-          </Button>
         </div>
       </div>
     );
@@ -199,7 +181,7 @@ export default function CreateProjectForm() {
                 name="promotionIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Promotions concernées</FormLabel>
+                    <FormLabel>Promotions concernées (optionnel)</FormLabel>
                     {isLoadingPromotions ? (
                       <FormControl>
                         <Select disabled>
@@ -229,11 +211,17 @@ export default function CreateProjectForm() {
                             <SelectValue placeholder="Sélectionner des promotions" />
                           </SelectTrigger>
                           <SelectContent>
-                            {promotions.map((promotion) => (
-                              <SelectItem key={promotion.id} value={promotion.id.toString()}>
-                                {promotion.name}
+                            {promotions.length > 0 ? (
+                              promotions.map((promotion) => (
+                                <SelectItem key={promotion.id} value={promotion.id.toString()}>
+                                  {promotion.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-promotions" disabled>
+                                Aucune promotion disponible
                               </SelectItem>
-                            ))}
+                            )}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -253,7 +241,7 @@ export default function CreateProjectForm() {
                               size="icon"
                               className="h-4 w-4"
                               onClick={() => {
-                                field.onChange(field.value.filter((id) => id !== promotion.id));
+                                field.onChange(field.value?.filter((id) => id !== promotion.id));
                               }}
                             >
                               <Trash className="h-3 w-3" />
@@ -263,7 +251,7 @@ export default function CreateProjectForm() {
                         ) : null;
                       })}
                     </div>
-                    <FormDescription>Les promotions qui auront accès à ce projet</FormDescription>
+                    <FormDescription>Les promotions qui auront accès à ce projet (facultatif)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -278,7 +266,7 @@ export default function CreateProjectForm() {
                 <CardDescription>Définissez comment les groupes seront formés pour chaque promotion</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {groupSettings?.map((groupSetting, index) => (
+                {groupSettings.map((groupSetting, index) => (
                   <div key={groupSetting.promotionId} className="border rounded-lg p-4 space-y-4 relative">
                     <h3 className="text-lg font-semibold">
                       {promotions.find((p) => p.id === groupSetting.promotionId)?.name}
