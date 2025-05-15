@@ -37,7 +37,7 @@ export class ProjectService {
   async create(createProjectDto: CreateProjectDto) {
     const { name, description, creatorId, promotionIds = [], groupSettings = [] } = createProjectDto;
 
-    if (promotionIds.length > 0) {
+    if (promotionIds.length > 0 && groupSettings.length > 0) {
       const promotions = await this.prisma.promotion.findMany({
         where: { id: { in: promotionIds } },
       });
@@ -45,17 +45,11 @@ export class ProjectService {
       if (promotions.length !== promotionIds.length) {
         throw new BadRequestException("One or more promotions do not exist");
       }
-    }
 
-    if (groupSettings.length > 0) {
-      if (promotionIds.length > 0) {
-        const gsIds = groupSettings.map((gs) => gs.promotionId);
-        const invalid = gsIds.filter((id) => !promotionIds.includes(id));
-        if (invalid.length) {
-          throw new BadRequestException(`Group settings contain invalid promotion ids: ${invalid.join(", ")}`);
-        }
-      } else {
-        throw new BadRequestException("Cannot have group settings without specifying promotions");
+      const gsIds = groupSettings.map((gs) => gs.promotionId);
+      const invalid = gsIds.filter((id) => !promotionIds.includes(id));
+      if (invalid.length) {
+        throw new BadRequestException(`Group settings contain invalid promotion ids: ${invalid.join(", ")}`);
       }
 
       for (const gs of groupSettings) {
