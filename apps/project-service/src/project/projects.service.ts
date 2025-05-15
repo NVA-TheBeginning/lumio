@@ -48,11 +48,19 @@ export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createProjectDto: CreateProjectDto) {
-    const { name, description, creatorId, promotionIds, groupSettings } = createProjectDto;
+    const {
+      name,
+      description,
+      creatorId,
+      promotionIds = [],
+      groupSettings = []
+    } = createProjectDto;
 
-    const promotions = await this.prisma.promotion.findMany({
-      where: { id: { in: promotionIds } },
-    });
+    const promotions = promotionIds?.length ? await this.prisma.promotion.findMany({ where: { id: { in: promotionIds } } }) : [];
+
+    if (!name || !description || !creatorId) {
+      throw new BadRequestException("name, description, and creatorId are required");
+    }
 
     if (promotions.length !== promotionIds.length) {
       throw new BadRequestException("One or more promotions do not exist");
@@ -78,24 +86,28 @@ export class ProjectService {
         data: { name, description, creatorId },
       });
 
-      await prisma.projectPromotion.createMany({
-        data: promotionIds.map((promotionId) => ({
-          projectId: project.id,
-          promotionId,
-          status: ProjectStatus.DRAFT,
-        })),
-      });
+      if (promotionIds?.length) {
+        await prisma.projectPromotion.createMany({
+          data: promotionIds.map((promotionId) => ({
+            projectId: project.id,
+            promotionId,
+            status: ProjectStatus.DRAFT,
+          })),
+        });
+      }
 
-      await prisma.groupSettings.createMany({
-        data: groupSettings.map((gs) => ({
-          projectId: project.id,
-          promotionId: gs.promotionId,
-          minMembers: gs.minMembers,
-          maxMembers: gs.maxMembers,
-          mode: gs.mode,
-          deadline: new Date(gs.deadline),
-        })),
-      });
+      if (groupSettings?.length) {
+        await prisma.groupSettings.createMany({
+          data: groupSettings.map((gs) => ({
+            projectId: project.id,
+            promotionId: gs.promotionId,
+            minMembers: gs.minMembers,
+            maxMembers: gs.maxMembers,
+            mode: gs.mode,
+            deadline: new Date(gs.deadline),
+          })),
+        });
+      }
 
       return project;
     });
