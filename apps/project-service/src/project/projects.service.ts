@@ -335,7 +335,7 @@ export class ProjectService {
     const foundIds = found.map((p) => p.id);
     const missing = promotionIds.filter((id) => !foundIds.includes(id));
     if (missing.length) {
-      throw new BadRequestException(`Promotions introuvables : ${missing.join(", ")}`);
+      throw new BadRequestException(`Promotions not found : ${missing.join(", ")}`);
     }
   }
 
@@ -347,10 +347,10 @@ export class ProjectService {
     }
     for (const { minMembers, maxMembers, deadline } of groupSettings) {
       if (minMembers > maxMembers) {
-        throw new BadRequestException("minMembers ne peut pas être supérieur à maxMembers");
+        throw new BadRequestException("minMembers cannot be greater than maxMembers");
       }
       if (new Date(deadline) < new Date()) {
-        throw new BadRequestException("Deadline doit être postérieure à la date courante");
+        throw new BadRequestException("Deadline must be in the future");
       }
     }
   }

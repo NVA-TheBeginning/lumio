@@ -81,7 +81,7 @@ describe("Projects", () => {
     const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
-    expect(body.message).toContain("One or more promotions do not exist");
+    expect(body.message).toContain("Promotions not found : 999999");
   });
 
   test("/projects (POST) - invalid groupSettings (min>max)", async () => {
