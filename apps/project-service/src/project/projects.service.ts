@@ -48,17 +48,13 @@ export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createProjectDto: CreateProjectDto) {
-    const {
-      name,
-      description,
-      creatorId,
-      promotionIds = [],
-      groupSettings = []
-    } = createProjectDto;
+    const { name, description, creatorId, promotionIds = [], groupSettings = [] } = createProjectDto;
 
-    const promotions = promotionIds?.length ? await this.prisma.promotion.findMany({ where: { id: { in: promotionIds } } }) : [];
+    const promotions = promotionIds?.length
+      ? await this.prisma.promotion.findMany({ where: { id: { in: promotionIds } } })
+      : [];
 
-    if (!name || !description || !creatorId) {
+    if (!(name && description && creatorId)) {
       throw new BadRequestException("name, description, and creatorId are required");
     }
 
