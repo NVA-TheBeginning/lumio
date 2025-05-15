@@ -241,7 +241,7 @@ export default function CreateProjectForm() {
                               size="icon"
                               className="h-4 w-4"
                               onClick={() => {
-                                field.onChange(field.value?.filter((id) => id !== promotion.id));
+                                field.onChange((Array.isArray(field.value) ? field.value : []).filter((id) => id !== promotion.id));
                               }}
                             >
                               <Trash className="h-3 w-3" />
