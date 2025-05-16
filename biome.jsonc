@@ -55,13 +55,18 @@
         "useDefaultParameterLast": "error",
         "noArguments": "error",
         "useExportType": "error",
-        "useShorthandFunctionType": "error"
+        "useShorthandFunctionType": "error",
+        "noUselessElse": "error",
+        "noSubstr": "error",
+        "useImportType": "off" // Not working good with NestJS
       },
       "nursery": {
         "noAwaitInLoop": "error",
+        "noFloatingPromises": "error"
+      },
+      "suspicious": {
         "noDuplicateElseIf": "error",
-        "noFloatingPromises": "error",
-        "noSubstr": "error"
+        "noDocumentCookie": "off" // Can't use async in client components in Next.js
       }
     }
   },

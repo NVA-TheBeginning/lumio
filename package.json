@@ -14,8 +14,8 @@
     "prisma": "turbo run prisma"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.0-beta.2",
-    "turbo": "^2.5.2"
+    "@biomejs/biome": "2.0.0-beta.4",
+    "turbo": "^2.5.3"
   },
   "workspaces": [
     "apps/*"

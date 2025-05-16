@@ -25,17 +25,15 @@ import {
 } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
-  ArrayMinSize,
-  ArrayNotEmpty,
   IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from "class-validator";
-import { PaginationQueryDto } from "@/common/dto/pagination-query.dto.js";
 import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { UpdateProjectStatusDto } from "../dto/project.dto.js";
@@ -96,13 +94,12 @@ export class CreateProjectDto {
 
   @ApiProperty({ description: "Array of promotion IDs", type: [Number], example: [1, 2] })
   @IsArray()
-  @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   promotionIds!: number[];
 
   @ApiProperty({ description: "Group settings for each promotion", type: [GroupSettingDto] })
   @IsArray()
-  @ArrayMinSize(1)
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => GroupSettingDto)
   groupSettings!: GroupSettingDto[];
@@ -259,8 +256,12 @@ export class ProjectsController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async findByStudentDetailed(
     @Param("studentId", ParseIntPipe) studentId: number,
-    @Query() pagination: PaginationQueryDto,
+    @Query("page") page?: number,
+    @Query("size") size?: number,
   ): Promise<ProjectsByPromotion> {
-    return this.projectsService.findProjectsForStudent(studentId, pagination.page, pagination.size);
+    return this.proxy.forwardRequest("project", `/projects/student/${studentId}/detailed`, "GET", undefined, {
+      page,
+      size,
+    });
   }
 }

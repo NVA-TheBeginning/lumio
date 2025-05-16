@@ -118,9 +118,11 @@ export default function ProjectList() {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-      } else if (sortBy === "title") {
+      }
+      if (sortBy === "title") {
         return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      } else if (sortBy === "status") {
+      }
+      if (sortBy === "status") {
         return sortOrder === "asc" ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status);
       }
       return 0;
@@ -415,7 +417,7 @@ export default function ProjectList() {
                   <Skeleton className="h-6 w-1/5" />
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow pb-3">
+              <CardContent className="grow pb-3">
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-3/4 mb-4" />
@@ -444,7 +446,7 @@ export default function ProjectList() {
                   <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow pb-3">
+              <CardContent className="grow pb-3">
                 <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
 
                 <div className="mt-2 flex flex-wrap gap-2">

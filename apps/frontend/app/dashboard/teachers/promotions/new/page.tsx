@@ -281,7 +281,7 @@ export default function CreatePromotionForm() {
                           type="button"
                           variant="outline"
                           onClick={() => document.getElementById("csv-upload")?.click()}
-                          className="flex-shrink-0"
+                          className="shrink-0"
                         >
                           <Upload className="mr-2 h-4 w-4" />
                           Importer un CSV

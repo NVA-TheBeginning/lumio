@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -23,6 +24,7 @@ import { MembersTable } from "./table";
 
 export default function PromotionsPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [selectedPromotionId, setSelectedPromotionId] = useState<number | null>(null);
   const { data: promotions, isLoading, isError } = usePromotions();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -98,7 +100,16 @@ export default function PromotionsPage() {
             <CardDescription>Liste des étudiants de cette promotion</CardDescription>
           </CardHeader>
           <CardContent>
-            <MembersTable promotionId={selectedPromotionId} />
+            {!selectedPromotion && (
+              <div className="text-center py-12 border rounded-lg bg-gray-50">
+                <h3 className="text-lg font-medium">Aucune promotion sélectionnée</h3>
+                <p className="text-gray-500 mt-2">Sélectionnez ou créez une promotion pour afficher les membres.</p>
+                <Button className="mt-4" size="sm" onClick={() => router.push("/dashboard/teachers/promotions/new")}>
+                  Créer une promotion
+                </Button>
+              </div>
+            )}
+            {selectedPromotion && <MembersTable promotionId={selectedPromotionId} />}
           </CardContent>
         </Card>
       </div>

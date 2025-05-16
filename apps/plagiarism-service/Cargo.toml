@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-actix-web = { version = "4.10.2" }
+actix-web = { version = "4.11.0" }
 schemars = { package = "apistos-schemars", version = "0.8.22" }
 apistos = { version = "0.5.1", features = ["extras", "qs_query", "swagger-ui"] }
 serde = { version = "1.0.219", features = ["derive"] }
