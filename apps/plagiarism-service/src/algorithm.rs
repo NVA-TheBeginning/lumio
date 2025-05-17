@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sha1::Digest;
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::fmt;
@@ -847,36 +846,9 @@ mod tests {
 
     #[test]
     fn test_debug_specific_concatenated_strings() {
-        let doc_a_concatenated = "def func1():\n    print('hello')\n    for i in range(10):\n        print(i)\ndef func2():\n    print('world')\n    return i * 2\n";
-        let doc_b_concatenated = "def func1():\n    print('hello')\n    for i in range(10):\n        print(i)\ndef func2():\n    print('world')\n    return i * 2\n";
-
-        let k = 4;
-        let w = 5;
-
-        let tokens1 = tokenize(doc_a_concatenated);
-        let tokens2 = tokenize(doc_b_concatenated);
-        println!("DEBUG: Tokens doc1: {:?}", tokens1);
-        println!("DEBUG: Tokens doc2: {:?}", tokens2);
-
-        let result = compare_documents_moss_like(doc_a_concatenated, doc_b_concatenated);
-        println!("DEBUG TEST MOSS score: {}", result.score);
-        println!(
-            "DEBUG TEST MOSS fingerprints matched: {}",
-            result.fingerprints_matched
-        );
-        println!(
-            "DEBUG TEST MOSS fingerprints doc1: {}",
-            result.fingerprints_doc1
-        );
-        println!(
-            "DEBUG TEST MOSS fingerprints doc2: {}",
-            result.fingerprints_doc2
-        );
-
-        assert!(
-            result.score > 0.7,
-            "Expected high score for these debug strings, got {}",
-            result.score
-        );
+        let doc1 = "fn main() { println!(\"Hello, world!\"); }";
+        let doc2 = "fn main() { println!(\"Hello, world!\"); }";
+        let result = compare_documents_moss_like(doc1, doc2);
+        assert_eq!(result.score, 1.0);
     }
 }

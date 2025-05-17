@@ -200,10 +200,6 @@ pub fn compare_normalized_projects(
     }
 }
 
-pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossComparisonResult {
-    algorithm_compare_documents_moss_like(doc1, doc2)
-}
-
 #[cfg(test)]
 mod project_comparison_logic_tests {
 

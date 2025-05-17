@@ -1,6 +1,6 @@
 use actix_web::{App, test, web, web::Data};
 use plagiarism_service::api::{
-    AppState, BodyRequest, FinalPlagiarismCheckResponse, checks_projects,
+    AppState, BodyRequest, ComprehensivePlagiarismResponse, checks_projects,
 };
 use std::fs::{self, File};
 use std::io::Write;
@@ -76,16 +76,16 @@ async fn test_checks_projects_api_less_than_two_projects() {
         .uri("/plagiarism/checks")
         .set_json(&req_body)
         .to_request();
-    let resp: FinalPlagiarismCheckResponse = test::call_and_read_body_json(&app, req).await;
+    let resp: ComprehensivePlagiarismResponse = test::call_and_read_body_json(&app, req).await;
 
     assert_eq!(resp.project_id, "test_single_proj");
     assert_eq!(resp.promotion_id, "test_single_promo");
-    assert_eq!(resp.analysis_results.len(), 1);
+    assert_eq!(resp.folder_results.len(), 1);
 
-    let result = &resp.analysis_results[0];
+    let result = &resp.folder_results[0];
     assert_eq!(result.folder_name, "student_single");
     assert!(result.matches.is_empty());
-    assert_eq!(result.overall_plagiarism_percentage, 0.0);
+    assert_eq!(result.plagiarism_percentage, 0.0);
 }
 
 #[actix_web::test]
@@ -115,13 +115,13 @@ async fn test_checks_projects_api_with_comparisons() {
         .uri("/plagiarism/checks")
         .set_json(&req_body)
         .to_request();
-    let resp: FinalPlagiarismCheckResponse = test::call_and_read_body_json(&app, req).await;
+    let resp: ComprehensivePlagiarismResponse = test::call_and_read_body_json(&app, req).await;
 
     assert_eq!(resp.project_id, "multi_proj");
     assert_eq!(resp.promotion_id, "multi_promo");
-    assert_eq!(resp.analysis_results.len(), 3);
+    assert_eq!(resp.folder_results.len(), 3);
 
-    for result in &resp.analysis_results {
+    for result in &resp.folder_results {
         assert_eq!(
             result.matches.len(),
             2,
@@ -130,7 +130,7 @@ async fn test_checks_projects_api_with_comparisons() {
     }
 
     let project_ids: Vec<&str> = resp
-        .analysis_results
+        .folder_results
         .iter()
         .map(|r| r.folder_name.as_str())
         .collect();
@@ -185,24 +185,24 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .uri("/plagiarism/checks")
         .set_json(&req_body)
         .to_request();
-    let resp: FinalPlagiarismCheckResponse = test::call_and_read_body_json(&app, req).await;
+    let resp: ComprehensivePlagiarismResponse = test::call_and_read_body_json(&app, req).await;
 
     assert_eq!(resp.project_id, "final_proj");
     assert_eq!(resp.promotion_id, "final_promo");
-    assert_eq!(resp.analysis_results.len(), 3);
+    assert_eq!(resp.folder_results.len(), 3);
 
     let result_a = resp
-        .analysis_results
+        .folder_results
         .iter()
         .find(|r| r.folder_name == "student_A")
         .unwrap();
     let result_b = resp
-        .analysis_results
+        .folder_results
         .iter()
         .find(|r| r.folder_name == "student_B")
         .unwrap();
     let result_c = resp
-        .analysis_results
+        .folder_results
         .iter()
         .find(|r| r.folder_name == "student_C")
         .unwrap();
@@ -213,13 +213,13 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .find(|m| m.matched_folder == "student_B")
         .unwrap();
     assert!(
-        match_a_to_b.match_percentage > 70.0,
+        match_a_to_b.overall_match_percentage > 70.0,
         "Expected high MOSS match between A and B, got {}",
-        match_a_to_b.match_percentage
+        match_a_to_b.overall_match_percentage
     );
     assert_eq!(
-        result_a.overall_plagiarism_percentage,
-        match_a_to_b.match_percentage
+        result_a.plagiarism_percentage,
+        match_a_to_b.overall_match_percentage
     );
 
     let match_b_to_a = result_b
@@ -227,10 +227,10 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .iter()
         .find(|m| m.matched_folder == "student_A")
         .unwrap();
-    assert_eq!(match_b_to_a.match_percentage, match_a_to_b.match_percentage);
+    assert_eq!(match_b_to_a.overall_match_percentage, match_a_to_b.overall_match_percentage);
     assert_eq!(
-        result_b.overall_plagiarism_percentage,
-        match_b_to_a.match_percentage
+        result_b.plagiarism_percentage,
+        match_b_to_a.overall_match_percentage
     );
 
     let match_c_to_a = result_c
@@ -239,11 +239,11 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .find(|m| m.matched_folder == "student_A")
         .unwrap();
     assert!(
-        match_c_to_a.match_percentage < 30.0,
+        match_c_to_a.overall_match_percentage < 30.0,
         "Expected low MOSS match between C and A, got {}",
-        match_c_to_a.match_percentage
+        match_c_to_a.overall_match_percentage
     );
-    assert!(result_c.overall_plagiarism_percentage < 30.0);
+    assert!(result_c.plagiarism_percentage < 30.0);
 
     assert!(result_a.sha1.is_some());
     assert!(result_b.sha1.is_some());
