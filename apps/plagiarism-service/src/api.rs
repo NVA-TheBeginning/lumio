@@ -83,27 +83,6 @@ pub struct ApiPlagiarismMatch {
     pub match_percentage: f64,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, ApiComponent, Clone)]
-pub struct ApiFolderResult {
-    #[serde(rename = "folderName")]
-    pub folder_name: String,
-    #[serde(rename = "sha1")]
-    pub sha1: Option<String>,
-    #[serde(rename = "overallPlagiarismPercentage")]
-    pub overall_plagiarism_percentage: f64,
-    pub matches: Vec<ApiPlagiarismMatch>,
-}
-
-#[derive(Serialize, Deserialize, JsonSchema, ApiComponent)]
-pub struct FinalPlagiarismCheckResponse {
-    #[serde(rename = "projectId")]
-    pub project_id: String,
-    #[serde(rename = "promotionId")]
-    pub promotion_id: String,
-    #[serde(rename = "analysisResults")]
-    pub analysis_results: Vec<ApiFolderResult>,
-}
-
 #[derive(Serialize, Deserialize, JsonSchema, ApiComponent)]
 pub struct TempPlagiarismCheckResponse {
     pub status: String,

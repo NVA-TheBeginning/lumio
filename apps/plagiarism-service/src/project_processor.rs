@@ -216,6 +216,9 @@ mod tests {
             processed_file2.char_length, 0,
             "Character count for empty.py should be 0"
         );
-        assert_eq!(processed_file2.line_count, 0, "Line count for empty.py should be 0");
+        assert_eq!(
+            processed_file2.line_count, 0,
+            "Line count for empty.py should be 0"
+        );
     }
 }

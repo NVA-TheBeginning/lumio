@@ -98,7 +98,8 @@ pub fn compare_normalized_projects(
         for (path_b, file_b) in &project_b.files {
             // Skip if files are too different in size
             let length_ratio = file_a.char_length as f64 / file_b.char_length as f64;
-            if !(1.0 / MAX_LENGTH_RATIO_DIFFERENCE..=MAX_LENGTH_RATIO_DIFFERENCE).contains(&length_ratio)
+            if !(1.0 / MAX_LENGTH_RATIO_DIFFERENCE..=MAX_LENGTH_RATIO_DIFFERENCE)
+                .contains(&length_ratio)
             {
                 continue;
             }

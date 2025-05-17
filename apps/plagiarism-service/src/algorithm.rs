@@ -159,7 +159,7 @@ pub fn winnow_hashes(
             .min_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
         {
             selected_fingerprints.insert(*min_in_window);
-        } 
+        }
     }
     selected_fingerprints
 }

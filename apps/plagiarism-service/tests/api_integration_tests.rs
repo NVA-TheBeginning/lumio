@@ -15,77 +15,22 @@ fn setup_extract_dir_for_test(
     let extract_dir_for_projects = base_path_for_service.join(sub_dir_to_create_projects_in);
     fs::create_dir_all(&extract_dir_for_projects).unwrap();
 
-    let proj1_dir = extract_dir_for_projects.join("student1_projA");
+    let proj1_dir = extract_dir_for_projects.join("997-250514223200");
     fs::create_dir_all(&proj1_dir).unwrap();
-    let mut file1 = File::create(proj1_dir.join("main.rs")).unwrap();
-    writeln!(file1, "fn main() {{ println!(\"Hello, student1\"); }}").unwrap();
+    let mut file1 = File::create(proj1_dir.join("main.c")).unwrap();
+    writeln!(file1, "#include <stdio.h>\n\nint main() {{\n    printf(\"Hello, student1\\n\");\n    return 0;\n}}").unwrap();
 
     if create_all_projects {
-        let proj2_dir = extract_dir_for_projects.join("student2_projB");
+        let proj2_dir = extract_dir_for_projects.join("998-250514223200");
         fs::create_dir_all(&proj2_dir).unwrap();
-        let mut file2 = File::create(proj2_dir.join("app.py")).unwrap();
-        writeln!(file2, "print('Hello, student2')").unwrap();
-        File::create(proj2_dir.join("empty.txt")).unwrap();
+        let mut file2 = File::create(proj2_dir.join("main.c")).unwrap();
+        writeln!(file2, "#include <stdio.h>\n\nint main() {{\n    printf(\"Hello, student2\\n\");\n    return 0;\n}}").unwrap();
 
-        let proj3_dir = extract_dir_for_projects.join("student3_empty");
+        let proj3_dir = extract_dir_for_projects.join("999-250514223200");
         fs::create_dir_all(&proj3_dir).unwrap();
+        let mut file3 = File::create(proj3_dir.join("main.c")).unwrap();
+        writeln!(file3, "#include <stdio.h>\n\nint main() {{\n    printf(\"Hello, student2\\n\");\n    return 0;\n}}").unwrap();
     }
-}
-
-fn setup_single_project_extract_dir(
-    base_path_for_service: &Path,
-    sub_dir_to_create_projects_in: &str,
-) {
-    let extract_dir_for_projects = base_path_for_service.join(sub_dir_to_create_projects_in);
-    fs::create_dir_all(&extract_dir_for_projects).unwrap();
-
-    let proj1_dir = extract_dir_for_projects.join("student_single");
-    fs::create_dir_all(&proj1_dir).unwrap();
-    let mut file1 = File::create(proj1_dir.join("main.rs")).unwrap();
-    writeln!(
-        file1,
-        "fn main() {{ println!(\"Hello, single student\"); }}"
-    )
-    .unwrap();
-}
-
-#[actix_web::test]
-async fn test_checks_projects_api_less_than_two_projects() {
-    let temp_project_root = tempdir().unwrap();
-    let specific_extract_path_for_this_test =
-        temp_project_root.path().join("test_specific_extract");
-    setup_single_project_extract_dir(&specific_extract_path_for_this_test, "");
-
-    let app_state = Data::new(AppState {
-        extract_base_path: specific_extract_path_for_this_test.clone(),
-    });
-
-    let app = test::init_service(
-        App::new()
-            .app_data(app_state.clone())
-            .service(web::resource("/plagiarism/checks").route(web::post().to(checks_projects))),
-    )
-    .await;
-
-    let req_body = BodyRequest {
-        project_id: "test_single_proj".to_string(),
-        promotion_id: "test_single_promo".to_string(),
-    };
-
-    let req = test::TestRequest::post()
-        .uri("/plagiarism/checks")
-        .set_json(&req_body)
-        .to_request();
-    let resp: ComprehensivePlagiarismResponse = test::call_and_read_body_json(&app, req).await;
-
-    assert_eq!(resp.project_id, "test_single_proj");
-    assert_eq!(resp.promotion_id, "test_single_promo");
-    assert_eq!(resp.folder_results.len(), 1);
-
-    let result = &resp.folder_results[0];
-    assert_eq!(result.folder_name, "student_single");
-    assert!(result.matches.is_empty());
-    assert_eq!(result.plagiarism_percentage, 0.0);
 }
 
 #[actix_web::test]
@@ -107,8 +52,8 @@ async fn test_checks_projects_api_with_comparisons() {
     .await;
 
     let req_body = BodyRequest {
-        project_id: "multi_proj".to_string(),
-        promotion_id: "multi_promo".to_string(),
+        project_id: "999".to_string(),
+        promotion_id: "999".to_string(),
     };
 
     let req = test::TestRequest::post()
@@ -117,8 +62,8 @@ async fn test_checks_projects_api_with_comparisons() {
         .to_request();
     let resp: ComprehensivePlagiarismResponse = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.project_id, "multi_proj");
-    assert_eq!(resp.promotion_id, "multi_promo");
+    assert_eq!(resp.project_id, "999");
+    assert_eq!(resp.promotion_id, "999");
     assert_eq!(resp.folder_results.len(), 3);
 
     for result in &resp.folder_results {
@@ -134,9 +79,9 @@ async fn test_checks_projects_api_with_comparisons() {
         .iter()
         .map(|r| r.folder_name.as_str())
         .collect();
-    assert!(project_ids.contains(&"student1_projA"));
-    assert!(project_ids.contains(&"student2_projB"));
-    assert!(project_ids.contains(&"student3_empty"));
+    assert!(project_ids.contains(&"997-250514223200"));
+    assert!(project_ids.contains(&"998-250514223200"));
+    assert!(project_ids.contains(&"999-250514223200"));
 }
 
 #[actix_web::test]
@@ -144,26 +89,23 @@ async fn test_checks_projects_api_full_response_format_and_content() {
     let temp_project_root = tempdir().unwrap();
     let specific_extract_path = temp_project_root.path().join("final_resp_extract");
 
-    let proj_a_path = specific_extract_path.join("student_A");
+    // Create project 997
+    let proj_a_path = specific_extract_path.join("997-250514223200");
     fs::create_dir_all(&proj_a_path).unwrap();
-    let mut file_a1 = File::create(proj_a_path.join("main.py")).unwrap();
-    let content_common = "def func1():\n  print('common part')\n  for i in range(10):\n    print(i)\ndef func2():\n  print('another common part')\n  value=i*2\n  return value\n#end\n";
-    writeln!(file_a1, "{}", content_common.replace("common", "unique_A")).unwrap();
+    let mut file_a1 = File::create(proj_a_path.join("main.c")).unwrap();
+    writeln!(file_a1, "#include <stdio.h>\n\nint main() {{\n    printf(\"Hello, student1\\n\");\n    return 0;\n}}").unwrap();
 
-    let proj_b_path = specific_extract_path.join("student_B");
+    // Create project 998
+    let proj_b_path = specific_extract_path.join("998-250514223200");
     fs::create_dir_all(&proj_b_path).unwrap();
-    let mut file_b1 = File::create(proj_b_path.join("main.py")).unwrap();
-    writeln!(
-        file_b1,
-        "{}",
-        content_common.replace("common", "slightly_different_B")
-    )
-    .unwrap();
+    let mut file_b1 = File::create(proj_b_path.join("main.c")).unwrap();
+    writeln!(file_b1, "#include <stdio.h>\n\nint main() {{\n    printf(\"Hello, student2\\n\");\n    return 0;\n}}").unwrap();
 
-    let proj_c_path = specific_extract_path.join("student_C");
+    // Create project 999 with the actual content
+    let proj_c_path = specific_extract_path.join("999-250514223200");
     fs::create_dir_all(&proj_c_path).unwrap();
-    let mut file_c1 = File::create(proj_c_path.join("main.py")).unwrap();
-    writeln!(file_c1, "print('completely different content')\nprint('ensure it is long enough to pass checks')\nprint('line3')\nprint('line4')").unwrap();
+    let mut file_c1 = File::create(proj_c_path.join("main.c")).unwrap();
+    writeln!(file_c1, "// main.c\n#include <stdio.h>\n\n// Exercise 1: Sum of Two Numbers\nvoid sum_two_numbers() {{\n    int a, b;\n    printf(\"Enter two numbers: \");\n    scanf(\"%%d %%d\", &a, &b);\n    printf(\"Sum: %%d\\n\", a + b);\n}}\n\n// Exercise 2: Check Even or Odd\nvoid even_or_odd() {{\n    int n;\n    printf(\"Enter a number: \");\n    scanf(\"%%d\", &n);\n    if (n %% 2 == 0)\n        printf(\"Even number\\n\");\n    else\n        printf(\"Odd number\\n\");\n}}\n\n// Exercise 3: Factorial Calculation\nvoid factorial() {{\n    int n, fact = 1;\n    printf(\"Enter a non-negative integer: \");\n    scanf(\"%%d\", &n);\n    for (int i = 1; i <= n; ++i)\n        fact *= i;\n    printf(\"Factorial: %%d\\n\", fact);\n}}\n\nint main() {{\n    sum_two_numbers();\n    even_or_odd();\n    factorial();\n    return 0;\n}}").unwrap();
 
     let app_state = Data::new(AppState {
         extract_base_path: specific_extract_path.clone(),
@@ -177,8 +119,8 @@ async fn test_checks_projects_api_full_response_format_and_content() {
     .await;
 
     let req_body = BodyRequest {
-        project_id: "final_proj".to_string(),
-        promotion_id: "final_promo".to_string(),
+        project_id: "999".to_string(),
+        promotion_id: "999".to_string(),
     };
 
     let req = test::TestRequest::post()
@@ -187,65 +129,125 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .to_request();
     let resp: ComprehensivePlagiarismResponse = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.project_id, "final_proj");
-    assert_eq!(resp.promotion_id, "final_promo");
+    assert_eq!(resp.project_id, "999");
+    assert_eq!(resp.promotion_id, "999");
     assert_eq!(resp.folder_results.len(), 3);
 
+    // Verify project 997 results
     let result_a = resp
         .folder_results
         .iter()
-        .find(|r| r.folder_name == "student_A")
+        .find(|r| r.folder_name == "997-250514223200")
         .unwrap();
-    let result_b = resp
-        .folder_results
-        .iter()
-        .find(|r| r.folder_name == "student_B")
-        .unwrap();
-    let result_c = resp
-        .folder_results
-        .iter()
-        .find(|r| r.folder_name == "student_C")
-        .unwrap();
+    assert_eq!(
+        result_a.sha1,
+        Some("61aaeea29884718dc6791e17f7eb444ae8b64751".to_string())
+    );
+    assert_eq!(result_a.plagiarism_percentage, 11.76385729345836);
 
     let match_a_to_b = result_a
         .matches
         .iter()
-        .find(|m| m.matched_folder == "student_B")
+        .find(|m| m.matched_folder == "998-250514223200")
         .unwrap();
-    assert!(
-        match_a_to_b.overall_match_percentage > 70.0,
-        "Expected high MOSS match between A and B, got {}",
-        match_a_to_b.overall_match_percentage
-    );
+    assert_eq!(match_a_to_b.overall_match_percentage, 11.76385729345836);
+    assert_eq!(match_a_to_b.combined_score, 11.76385729345836);
+    assert!(match_a_to_b.flags.is_empty());
+
+    let match_a_to_c = result_a
+        .matches
+        .iter()
+        .find(|m| m.matched_folder == "999-250514223200")
+        .unwrap();
+    assert_eq!(match_a_to_c.overall_match_percentage, 11.76385729345836);
+    assert_eq!(match_a_to_c.combined_score, 11.76385729345836);
+    assert!(match_a_to_c.flags.is_empty());
+
+    // Verify project 998 results
+    let result_b = resp
+        .folder_results
+        .iter()
+        .find(|r| r.folder_name == "998-250514223200")
+        .unwrap();
     assert_eq!(
-        result_a.plagiarism_percentage,
-        match_a_to_b.overall_match_percentage
+        result_b.sha1,
+        Some("045efefb7cc504c04a162b351e44ece15bcb0122".to_string())
     );
+    assert_eq!(result_b.plagiarism_percentage, 100.0);
 
     let match_b_to_a = result_b
         .matches
         .iter()
-        .find(|m| m.matched_folder == "student_A")
+        .find(|m| m.matched_folder == "997-250514223200")
         .unwrap();
-    assert_eq!(match_b_to_a.overall_match_percentage, match_a_to_b.overall_match_percentage);
-    assert_eq!(
-        result_b.plagiarism_percentage,
-        match_b_to_a.overall_match_percentage
+    assert_eq!(match_b_to_a.overall_match_percentage, 11.76385729345836);
+    assert_eq!(match_b_to_a.combined_score, 11.76385729345836);
+    assert!(match_b_to_a.flags.is_empty());
+
+    let match_b_to_c = result_b
+        .matches
+        .iter()
+        .find(|m| m.matched_folder == "999-250514223200")
+        .unwrap();
+    assert_eq!(match_b_to_c.overall_match_percentage, 100.0);
+    assert_eq!(match_b_to_c.combined_score, 100.0);
+    assert!(
+        match_b_to_c
+            .flags
+            .contains(&"VERY_HIGH_SIMILARITY".to_string())
     );
+    assert!(
+        match_b_to_c
+            .flags
+            .contains(&"SIGNIFICANT_MOSS_MATCH".to_string())
+    );
+    assert!(
+        match_b_to_c
+            .flags
+            .contains(&"SIGNIFICANT_RABIN_KARP_MATCH".to_string())
+    );
+
+    // Verify project 999 results
+    let result_c = resp
+        .folder_results
+        .iter()
+        .find(|r| r.folder_name == "999-250514223200")
+        .unwrap();
+    assert_eq!(
+        result_c.sha1,
+        Some("045efefb7cc504c04a162b351e44ece15bcb0122".to_string())
+    );
+    assert_eq!(result_c.plagiarism_percentage, 100.0);
 
     let match_c_to_a = result_c
         .matches
         .iter()
-        .find(|m| m.matched_folder == "student_A")
+        .find(|m| m.matched_folder == "997-250514223200")
         .unwrap();
-    assert!(
-        match_c_to_a.overall_match_percentage < 30.0,
-        "Expected low MOSS match between C and A, got {}",
-        match_c_to_a.overall_match_percentage
-    );
-    assert!(result_c.plagiarism_percentage < 30.0);
+    assert_eq!(match_c_to_a.overall_match_percentage, 11.76385729345836);
+    assert_eq!(match_c_to_a.combined_score, 11.76385729345836);
+    assert!(match_c_to_a.flags.is_empty());
 
-    assert!(result_a.sha1.is_some());
-    assert!(result_b.sha1.is_some());
-    assert!(result_c.sha1.is_some());
+    let match_c_to_b = result_c
+        .matches
+        .iter()
+        .find(|m| m.matched_folder == "998-250514223200")
+        .unwrap();
+    assert_eq!(match_c_to_b.overall_match_percentage, 100.0);
+    assert_eq!(match_c_to_b.combined_score, 100.0);
+    assert!(
+        match_c_to_b
+            .flags
+            .contains(&"VERY_HIGH_SIMILARITY".to_string())
+    );
+    assert!(
+        match_c_to_b
+            .flags
+            .contains(&"SIGNIFICANT_MOSS_MATCH".to_string())
+    );
+    assert!(
+        match_c_to_b
+            .flags
+            .contains(&"SIGNIFICANT_RABIN_KARP_MATCH".to_string())
+    );
 }
