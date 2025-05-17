@@ -29,6 +29,7 @@ jobs:
   test:
     name: Build and test
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    environment: LUMIO
     permissions:
       contents: read
 
