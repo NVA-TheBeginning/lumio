@@ -112,24 +112,15 @@ export class ProjectService {
       },
     });
 
-    const projects = projectsWithPromotions.map((project) => {
-      const promotions = project.projectPromotions.map((pp) => ({
-        id: pp.promotion.id,
-        name: pp.promotion.name,
-        status: pp.status,
-      }));
-
-      const { projectPromotions: _, ...projectWithoutJoin } = project;
-
-      return {
-        ...projectWithoutJoin,
-        promotions: promotions,
-      };
-    });
-
-    return projects;
+    return projectsWithPromotions.map(({ projectPromotions, ...projectData }) => ({
+      ...projectData,
+      promotions: projectPromotions.map(({ promotion, status }) => ({
+        id: promotion.id,
+        name: promotion.name,
+        status,
+      })),
+    }));
   }
-
   async findOne(id: number) {
     const project = await this.prisma.project.findUnique({
       where: { id, deletedAt: null },
