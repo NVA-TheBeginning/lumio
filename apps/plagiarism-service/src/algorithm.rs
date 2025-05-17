@@ -194,14 +194,28 @@ pub fn winnow_hashes(
 
     for i in 0..=(hashes_with_indices.len() - window_size) {
         let current_window = &hashes_with_indices[i..i + window_size];
+        println!("DEBUG Winnow: Window #{}: {:?}", i, current_window);
 
         if let Some(min_in_window) = current_window
             .iter()
             .min_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
         {
+            println!(
+                "DEBUG Winnow: Selected for window #{}: {:?}",
+                i, min_in_window
+            );
             selected_fingerprints.insert(*min_in_window);
+        } else {
+            println!(
+                "DEBUG Winnow: No minimum found in window #{} (should not happen if window not empty)",
+                i
+            );
         }
     }
+    println!(
+        "DEBUG Winnow: Final selected_fingerprints: {:?}",
+        selected_fingerprints
+    );
     selected_fingerprints
 }
 
@@ -225,6 +239,7 @@ pub fn calculate_jaccard_index(
 }
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MossResult {
     pub score: f64,
     pub fingerprints_matched: usize,
@@ -232,41 +247,81 @@ pub struct MossResult {
     pub fingerprints_doc2: usize,
 }
 
-#[allow(dead_code)]
-pub fn compare_documents_moss_like(
-    doc1_content: &str,
-    doc2_content: &str,
-    k_token: usize,
-    window_size: usize,
-) -> MossResult {
-    let tokens1 = tokenize(doc1_content);
-    let tokens2 = tokenize(doc2_content);
+pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
+    // Tokenize both documents
+    let tokens1 = tokenize(doc1);
+    let tokens2 = tokenize(doc2);
+    println!("DEBUG: doc1: [{}]", doc1);
+    println!("DEBUG: doc2: [{}]", doc2);
+    println!("DEBUG: tokens1: {:?}", tokens1);
+    println!("DEBUG: tokens2: {:?}", tokens2);
 
-    let kgrams1 = generate_token_kgrams(&tokens1, k_token);
-    let kgrams2 = generate_token_kgrams(&tokens2, k_token);
+    // Generate k-grams
+    let k = 4;
+    let w = 5;
+    let kgrams1 = generate_token_kgrams(&tokens1, k);
+    let kgrams2 = generate_token_kgrams(&tokens2, k);
+    println!("DEBUG: kgrams1: {:?}", kgrams1);
+    println!("DEBUG: kgrams2: {:?}", kgrams2);
 
-    let hashes_with_indices1: Vec<(u64, usize)> = kgrams1
+    // Edge case: both docs empty or both have no k-grams
+    if kgrams1.is_empty() && kgrams2.is_empty() {
+        return MossResult {
+            score: 100.0,
+            fingerprints_matched: 0,
+            fingerprints_doc1: 0,
+            fingerprints_doc2: 0,
+        };
+    }
+    // Edge case: only one has k-grams
+    if kgrams1.is_empty() || kgrams2.is_empty() {
+        return MossResult {
+            score: 0.0,
+            fingerprints_matched: 0,
+            fingerprints_doc1: kgrams1.len(),
+            fingerprints_doc2: kgrams2.len(),
+        };
+    }
+
+    // Compute hashes for each k-gram
+    let hashes1: Vec<(u64, usize)> = kgrams1
         .iter()
         .enumerate()
-        .map(|(idx, kg)| (hash_token_kgram(kg), idx))
+        .map(|(i, kgram)| (hash_token_kgram(kgram), i))
         .collect();
-
-    let hashes_with_indices2: Vec<(u64, usize)> = kgrams2
+    let hashes2: Vec<(u64, usize)> = kgrams2
         .iter()
         .enumerate()
-        .map(|(idx, kg)| (hash_token_kgram(kg), idx))
+        .map(|(i, kgram)| (hash_token_kgram(kgram), i))
         .collect();
 
-    let fingerprints1 = winnow_hashes(&hashes_with_indices1, window_size);
-    let fingerprints2 = winnow_hashes(&hashes_with_indices2, window_size);
+    // Apply winnowing to select fingerprints
+    let fingerprints1 = winnow_hashes(&hashes1, w);
+    let fingerprints2 = winnow_hashes(&hashes2, w);
+    println!("DEBUG: fingerprints1: {:?}", fingerprints1);
+    println!("DEBUG: fingerprints2: {:?}", fingerprints2);
 
-    let score = calculate_jaccard_index(&fingerprints1, &fingerprints2);
+    // Extract just the hash values for comparison
+    let hash_set1: HashSet<u64> = fingerprints1.iter().map(|&(hash, _)| hash).collect();
+    let hash_set2: HashSet<u64> = fingerprints2.iter().map(|&(hash, _)| hash).collect();
+
+    // Calculate intersection and union sizes
+    let intersection_size = hash_set1.intersection(&hash_set2).count();
+    let union_size = hash_set1.union(&hash_set2).count();
+
+    // Calculate Jaccard index as percentage
+    let score = if union_size > 0 {
+        (intersection_size as f64 / union_size as f64) * 100.0
+    } else {
+        0.0
+    };
+    println!("DEBUG: score: {}", score);
 
     MossResult {
         score,
-        fingerprints_matched: fingerprints1.intersection(&fingerprints2).count(),
-        fingerprints_doc1: fingerprints1.len(),
-        fingerprints_doc2: fingerprints2.len(),
+        fingerprints_matched: intersection_size,
+        fingerprints_doc1: hash_set1.len(),
+        fingerprints_doc2: hash_set2.len(),
     }
 }
 
@@ -881,10 +936,10 @@ mod tests {
     fn test_compare_documents_moss_like_identical_simple() {
         let doc1 = "The quick brown fox jumps over the lazy dog.";
         let doc2 = "The quick brown fox jumps over the lazy dog.";
-        let k = 4;
-        let w = 5;
-        let result = compare_documents_moss_like(doc1, doc2, k, w);
-        assert_eq!(result.score, 1.0);
+        let _k = 4;
+        let _w = 5;
+        let result = compare_documents_moss_like(doc1, doc2);
+        assert_eq!(result.score, 100.0);
         assert!(result.fingerprints_doc1 > 0);
         assert_eq!(result.fingerprints_doc1, result.fingerprints_doc2);
         assert_eq!(result.fingerprints_matched, result.fingerprints_doc1);
@@ -894,11 +949,11 @@ mod tests {
     fn test_compare_documents_moss_like_completely_different_simple() {
         let doc1 = "Hello world, this is document one.";
         let doc2 = "Another document, completely unrelated content here.";
-        let k = 4;
-        let w = 5;
-        let result = compare_documents_moss_like(doc1, doc2, k, w);
+        let _k = 4;
+        let _w = 5;
+        let result = compare_documents_moss_like(doc1, doc2);
         assert!(
-            result.score < 0.1,
+            result.score < 1.0,
             "Expected very low score for different docs, got {}",
             result.score
         );
@@ -913,9 +968,9 @@ mod tests {
     fn test_compare_documents_moss_like_one_empty() {
         let doc1 = "This document has enough content for kgrams.";
         let doc2 = "";
-        let k = 4;
-        let w = 5;
-        let result1 = compare_documents_moss_like(doc1, doc2, k, w);
+        let _k = 4;
+        let _w = 5;
+        let result1 = compare_documents_moss_like(doc1, doc2);
         assert_eq!(result1.score, 0.0);
         assert!(
             result1.fingerprints_doc1 > 0,
@@ -924,7 +979,7 @@ mod tests {
         assert_eq!(result1.fingerprints_doc2, 0);
         assert_eq!(result1.fingerprints_matched, 0);
 
-        let result2 = compare_documents_moss_like(doc2, doc1, k, w);
+        let result2 = compare_documents_moss_like(doc2, doc1);
         assert_eq!(result2.score, 0.0);
         assert_eq!(result2.fingerprints_doc1, 0);
         assert!(
@@ -938,10 +993,10 @@ mod tests {
     fn test_compare_documents_moss_like_both_empty() {
         let doc1 = "";
         let doc2 = "";
-        let k = 4;
-        let w = 5;
-        let result = compare_documents_moss_like(doc1, doc2, k, w);
-        assert_eq!(result.score, 1.0);
+        let _k = 4;
+        let _w = 5;
+        let result = compare_documents_moss_like(doc1, doc2);
+        assert_eq!(result.score, 100.0);
         assert_eq!(result.fingerprints_doc1, 0);
         assert_eq!(result.fingerprints_doc2, 0);
         assert_eq!(result.fingerprints_matched, 0);
@@ -951,18 +1006,18 @@ mod tests {
     fn test_compare_documents_moss_like_small_content_less_than_k() {
         let doc1 = "hi";
         let doc2 = "hi";
-        let k = 4;
-        let w = 5;
-        let result = compare_documents_moss_like(doc1, doc2, k, w);
+        let _k = 4;
+        let _w = 5;
+        let result = compare_documents_moss_like(doc1, doc2);
 
-        assert_eq!(result.score, 1.0);
+        assert_eq!(result.score, 100.0);
         assert_eq!(result.fingerprints_doc1, 0);
         assert_eq!(result.fingerprints_doc2, 0);
         assert_eq!(result.fingerprints_matched, 0);
 
         let doc3 = "bye";
-        let result2 = compare_documents_moss_like(doc1, doc3, k, w);
-        assert_eq!(result2.score, 1.0);
+        let result2 = compare_documents_moss_like(doc1, doc3);
+        assert_eq!(result2.score, 100.0);
         assert_eq!(result2.fingerprints_doc1, 0);
         assert_eq!(result2.fingerprints_doc2, 0);
         assert_eq!(result2.fingerprints_matched, 0);
@@ -972,10 +1027,10 @@ mod tests {
     fn test_compare_documents_moss_like_content_just_k() {
         let doc1 = "word word word word";
         let doc2 = "word word word word";
-        let k = 4;
-        let w = 1;
-        let result = compare_documents_moss_like(doc1, doc2, k, w);
-        assert_eq!(result.score, 1.0);
+        let _k = 4;
+        let _w = 1;
+        let result = compare_documents_moss_like(doc1, doc2);
+        assert_eq!(result.score, 100.0);
         assert_eq!(
             result.fingerprints_doc1, 1,
             "Should have 1 fingerprint for doc1"
@@ -987,10 +1042,46 @@ mod tests {
         assert_eq!(result.fingerprints_matched, 1);
 
         let doc3 = "diff diff diff diff";
-        let result2 = compare_documents_moss_like(doc1, doc3, k, w);
+        let result2 = compare_documents_moss_like(doc1, doc3);
         assert_eq!(result2.score, 0.0);
         assert_eq!(result2.fingerprints_doc1, 1);
         assert_eq!(result2.fingerprints_doc2, 1);
         assert_eq!(result2.fingerprints_matched, 0);
+    }
+
+    #[test]
+    fn test_debug_specific_concatenated_strings() {
+        let doc_a_concatenated = "def func1():\n    print('hello')\n    for i in range(10):\n        print(i)\ndef func2():\n    print('world')\n    return i * 2\n";
+        let doc_b_concatenated = "def func1():\n    print('hello')\n    for i in range(10):\n        print(i)\ndef func2():\n    print('world')\n    return i * 2\n";
+
+        let k = 4; // DEFAULT_MOSS_K_TOKEN
+        let w = 5; // DEFAULT_MOSS_WINDOW_SIZE
+
+        // Debug tokenization
+        let tokens1 = tokenize(doc_a_concatenated);
+        let tokens2 = tokenize(doc_b_concatenated);
+        println!("DEBUG: Tokens doc1: {:?}", tokens1);
+        println!("DEBUG: Tokens doc2: {:?}", tokens2);
+
+        let result = compare_documents_moss_like(doc_a_concatenated, doc_b_concatenated);
+        println!("DEBUG TEST MOSS score: {}", result.score);
+        println!(
+            "DEBUG TEST MOSS fingerprints matched: {}",
+            result.fingerprints_matched
+        );
+        println!(
+            "DEBUG TEST MOSS fingerprints doc1: {}",
+            result.fingerprints_doc1
+        );
+        println!(
+            "DEBUG TEST MOSS fingerprints doc2: {}",
+            result.fingerprints_doc2
+        );
+
+        assert!(
+            result.score > 0.7,
+            "Expected high score for these debug strings, got {}",
+            result.score
+        );
     }
 }
