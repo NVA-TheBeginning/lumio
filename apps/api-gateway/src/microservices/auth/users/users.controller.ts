@@ -9,21 +9,8 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { IsEmail, IsOptional, IsString } from "class-validator";
+import { CreateStudentDto } from "@/microservices/projects-groups/dto/promotions.dto.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-
-export class CreateStudentDto {
-  @IsString()
-  @ApiProperty({ description: "User first name", type: String, example: "John" })
-  firstname!: string;
-
-  @IsString()
-  @ApiProperty({ description: "User last name", type: String, example: "Doe" })
-  lastname!: string;
-
-  @IsEmail()
-  @ApiProperty({ description: "User email", type: String, example: "johndoe@gmail.com" })
-  email!: string;
-}
 
 export class UpdateStudentDto {
   @IsOptional()

@@ -94,12 +94,40 @@ export class ProjectService {
     });
   }
 
-  async findByCreator(creatorId: number) {
-    return this.prisma.project.findMany({ where: { creatorId, deletedAt: null } });
-  }
+  async findAll(creatorId?: number) {
+    const projectsWithPromotions = await this.prisma.project.findMany({
+      where: { deletedAt: null, creatorId },
+      include: {
+        projectPromotions: {
+          select: {
+            status: true,
+            promotion: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-  async findAll() {
-    return this.prisma.project.findMany({ where: { deletedAt: null } });
+    const projects = projectsWithPromotions.map((project) => {
+      const promotions = project.projectPromotions.map((pp) => ({
+        id: pp.promotion.id,
+        name: pp.promotion.name,
+        status: pp.status,
+      }));
+
+      const { projectPromotions: _, ...projectWithoutJoin } = project;
+
+      return {
+        ...projectWithoutJoin,
+        promotions: promotions,
+      };
+    });
+
+    return projects;
   }
 
   async findOne(id: number) {
