@@ -15,6 +15,7 @@ mod algorithm;
 mod api;
 mod comparison_orchestrator;
 mod project_processor;
+mod s3;
 
 #[actix_web::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -26,13 +27,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ..Default::default()
         },
         servers: vec![Server {
-            url: "/api/v3".to_string(),
+            url: "/".to_string(),
             ..Default::default()
         }],
         ..Default::default()
     };
 
     let extract_path = PathBuf::from("./extract");
+    println!("Starting plagiarism service on http://localhost:3008");
+    println!("Available endpoints:");
+    println!("  POST /plagiarism/checks - Run plagiarism check");
 
     HttpServer::new(move || {
         App::new()
@@ -42,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 extract_base_path: extract_path.clone(),
             }))
             .service(
-                scope("/api/v3/plagiarism").service(
+                scope("/plagiarism").service(
                     scope("/checks").service(resource("").route(post().to(checks_projects))),
                 ),
             )

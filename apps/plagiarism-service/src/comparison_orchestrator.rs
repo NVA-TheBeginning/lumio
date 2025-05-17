@@ -1,6 +1,6 @@
 use crate::algorithm::{
-    MossResult as MossComparisonResult,
-    compare_documents_moss_like as algorithm_compare_documents_moss_like,
+    MossResult as MossComparisonResult, RK_PRIME_Q, RK_RADIX,
+    compare_documents_moss_like as algorithm_compare_documents_moss_like, rabin_karp_search,
 };
 use crate::project_processor::NormalizedProject;
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,7 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileComparisonResult {
     pub file1_path: PathBuf,
+    pub file2_path: PathBuf,
     pub moss_result: Option<MossComparisonResult>,
     pub rabin_karp_result: Option<RabinKarpComparisonResult>,
 }
@@ -25,25 +26,51 @@ pub struct ProjectComparisonReport {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RabinKarpComparisonResult {
     pub similarity_score: f64,
-
     pub kgrams_doc1_found: usize,
     pub total_kgrams_doc1: usize,
 }
 
-#[allow(unused_variables)]
 pub fn compare_documents_rabin_karp(
     doc1_content: &str,
     doc2_content: &str,
     k_char: usize,
 ) -> RabinKarpComparisonResult {
-    println!(
-        "Placeholder: compare_documents_rabin_karp called for k_char: {}",
-        k_char
-    );
+    let doc1_bytes = doc1_content.as_bytes();
+    let doc2_bytes = doc2_content.as_bytes();
+
+    if doc1_bytes.is_empty() || doc2_bytes.is_empty() || k_char == 0 {
+        return RabinKarpComparisonResult {
+            similarity_score: 0.0,
+            kgrams_doc1_found: 0,
+            total_kgrams_doc1: 0,
+        };
+    }
+
+    let mut total_matches = 0;
+    let total_possible_matches = if doc1_bytes.len() >= k_char {
+        doc1_bytes.len() - k_char + 1
+    } else {
+        0
+    };
+
+    for i in 0..total_possible_matches {
+        let kgram = &doc1_bytes[i..i + k_char];
+        let matches = rabin_karp_search(doc2_bytes, kgram, RK_RADIX, RK_PRIME_Q);
+        if !matches.is_empty() {
+            total_matches += 1;
+        }
+    }
+
+    let similarity_score = if total_possible_matches > 0 {
+        total_matches as f64 / total_possible_matches as f64
+    } else {
+        0.0
+    };
+
     RabinKarpComparisonResult {
-        similarity_score: 0.0,
-        kgrams_doc1_found: 0,
-        total_kgrams_doc1: 0,
+        similarity_score,
+        kgrams_doc1_found: total_matches,
+        total_kgrams_doc1: total_possible_matches,
     }
 }
 
@@ -61,8 +88,18 @@ pub fn compare_normalized_projects(
 ) -> ProjectComparisonReport {
     let mut file_comparisons = Vec::new();
 
-    for (relative_path_a, file_a) in &project_a.files {
-        if let Some(file_b) = project_b.files.get(relative_path_a) {
+    // Compare individual files
+    for (path_a, file_a) in &project_a.files {
+        for (path_b, file_b) in &project_b.files {
+            // Skip if files are too different in size
+            let length_ratio = file_a.char_length as f64 / file_b.char_length as f64;
+            if length_ratio > MAX_LENGTH_RATIO_DIFFERENCE
+                || length_ratio < 1.0 / MAX_LENGTH_RATIO_DIFFERENCE
+            {
+                continue;
+            }
+
+            // Skip if files are too small
             if file_a.char_length < MIN_CHAR_LENGTH_FOR_COMPARISON
                 || file_b.char_length < MIN_CHAR_LENGTH_FOR_COMPARISON
                 || file_a.line_count < MIN_LINE_COUNT_FOR_COMPARISON
@@ -71,80 +108,62 @@ pub fn compare_normalized_projects(
                 continue;
             }
 
-            let len_a = file_a.char_length as f64;
-            let len_b = file_b.char_length as f64;
-            if len_a > 0.0 && len_b > 0.0 {
-                let ratio = if len_a > len_b {
-                    len_a / len_b
-                } else {
-                    len_b / len_a
-                };
-                if ratio > MAX_LENGTH_RATIO_DIFFERENCE {
-                    continue;
-                }
-            }
-
-            let moss_res = compare_documents_moss_like(&file_a.content, &file_b.content);
-            let rk_res = compare_documents_rabin_karp(
+            let moss_result = Some(algorithm_compare_documents_moss_like(
+                &file_a.content,
+                &file_b.content,
+            ));
+            let rabin_karp_result = Some(compare_documents_rabin_karp(
                 &file_a.content,
                 &file_b.content,
                 DEFAULT_RABIN_KARP_K_CHAR,
-            );
+            ));
 
             file_comparisons.push(FileComparisonResult {
-                file1_path: relative_path_a.clone(),
-                moss_result: Some(moss_res),
-                rabin_karp_result: Some(rk_res),
+                file1_path: path_a.clone(),
+                file2_path: path_b.clone(),
+                moss_result,
+                rabin_karp_result,
             });
         }
     }
 
-    let mut whole_project_moss_res: Option<MossComparisonResult> = None;
-    let mut whole_project_rk_res: Option<RabinKarpComparisonResult> = None;
+    // Compare whole projects if concatenated source is available
+    let mut whole_project_moss_result = None;
+    let mut whole_project_rabin_karp_result = None;
 
     if let (Some(src_a), Some(src_b)) = (
         &project_a.concatenated_source_code,
         &project_b.concatenated_source_code,
     ) {
-        println!(
-            "DEBUG: Concatenated A (len {}): [{}]",
-            src_a.chars().count(),
-            src_a
-        );
-        println!(
-            "DEBUG: Concatenated B (len {}): [{}]",
-            src_b.chars().count(),
-            src_b
-        );
+        println!("DEBUG: Concatenated A (len {}): [{}]", src_a.chars().count(), src_a);
+        println!("DEBUG: Concatenated B (len {}): [{}]", src_b.chars().count(), src_b);
 
         if src_a.chars().count() >= MIN_CHAR_LENGTH_FOR_COMPARISON
             && src_b.chars().count() >= MIN_CHAR_LENGTH_FOR_COMPARISON
         {
-            println!(
-                "DEBUG: Concatenated strings passed length check for whole project comparison."
-            );
-            whole_project_moss_res = Some(compare_documents_moss_like(src_a, src_b));
-            whole_project_rk_res = Some(compare_documents_rabin_karp(
-                src_a,
-                src_b,
-                DEFAULT_RABIN_KARP_K_CHAR,
-            ));
+            let moss_result = algorithm_compare_documents_moss_like(src_a, src_b);
+            println!("DEBUG: Whole project MOSS score: {}", moss_result.score);
+            whole_project_moss_result = Some(moss_result);
+
+            // TODO: Implement Rabin-Karp for whole project comparison
+            whole_project_rabin_karp_result = Some(RabinKarpComparisonResult {
+                similarity_score: 0.0,
+                kgrams_doc1_found: 0,
+                total_kgrams_doc1: 0,
+            });
         } else {
-            println!(
-                "DEBUG: Concatenated strings SKIPPED length check. A_len: {}, B_len: {}, Min_len: {}",
-                src_a.chars().count(),
-                src_b.chars().count(),
-                MIN_CHAR_LENGTH_FOR_COMPARISON
-            );
+            println!("DEBUG: Concatenated strings too short for comparison (min: {})", MIN_CHAR_LENGTH_FOR_COMPARISON);
         }
+    } else {
+        println!("DEBUG: Missing concatenated source for one or both projects");
     }
 
     ProjectComparisonReport {
         project1_id: project_a.project_id.clone(),
         project2_id: project_b.project_id.clone(),
         file_to_file_comparisons: file_comparisons,
-        whole_project_moss_result: whole_project_moss_res,
-        whole_project_rabin_karp_result: whole_project_rk_res,
+        whole_project_moss_result,
+        whole_project_rabin_karp_result,
     }
 }
 

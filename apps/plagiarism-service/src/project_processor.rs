@@ -129,9 +129,12 @@ pub fn process_project_folder(
                 .collect::<Vec<String>>()
                 .join("\n\n---FILE_SEPARATOR---\n\n");
 
+            println!("DEBUG: Concatenated string length: {}", concatenated_string.len());
             let hash = calculate_file_sha1(&concatenated_string);
+            println!("DEBUG: Generated SHA1 hash: {}", hash);
             (Some(concatenated_string), Some(hash))
         } else {
+            println!("DEBUG: No source files for concatenation");
             (None, None)
         };
 

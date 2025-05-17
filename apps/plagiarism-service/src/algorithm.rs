@@ -63,10 +63,8 @@ pub struct PlagiarismAlgorithmResponse {
     pub folder_results: Vec<FolderPlagiarismDetail>,
 }
 
-#[allow(dead_code)]
-const RK_RADIX: u64 = 256;
-#[allow(dead_code)]
-const RK_PRIME_Q: u64 = 101;
+pub const RK_RADIX: u64 = 256;
+pub const RK_PRIME_Q: u64 = 101;
 
 #[allow(dead_code)]
 pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
@@ -264,7 +262,7 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
 
     if kgrams1.is_empty() && kgrams2.is_empty() {
         return MossResult {
-            score: 100.0,
+            score: 1.0,
             fingerprints_matched: 0,
             fingerprints_doc1: 0,
             fingerprints_doc2: 0,
@@ -303,7 +301,7 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
     let union_size = hash_set1.union(&hash_set2).count();
 
     let score = if union_size > 0 {
-        (intersection_size as f64 / union_size as f64) * 100.0
+        intersection_size as f64 / union_size as f64
     } else {
         0.0
     };
@@ -931,7 +929,7 @@ mod tests {
         let _k = 4;
         let _w = 5;
         let result = compare_documents_moss_like(doc1, doc2);
-        assert_eq!(result.score, 100.0);
+        assert_eq!(result.score, 1.0);
         assert!(result.fingerprints_doc1 > 0);
         assert_eq!(result.fingerprints_doc1, result.fingerprints_doc2);
         assert_eq!(result.fingerprints_matched, result.fingerprints_doc1);
@@ -988,7 +986,7 @@ mod tests {
         let _k = 4;
         let _w = 5;
         let result = compare_documents_moss_like(doc1, doc2);
-        assert_eq!(result.score, 100.0);
+        assert_eq!(result.score, 1.0);
         assert_eq!(result.fingerprints_doc1, 0);
         assert_eq!(result.fingerprints_doc2, 0);
         assert_eq!(result.fingerprints_matched, 0);
@@ -1002,14 +1000,14 @@ mod tests {
         let _w = 5;
         let result = compare_documents_moss_like(doc1, doc2);
 
-        assert_eq!(result.score, 100.0);
+        assert_eq!(result.score, 1.0);
         assert_eq!(result.fingerprints_doc1, 0);
         assert_eq!(result.fingerprints_doc2, 0);
         assert_eq!(result.fingerprints_matched, 0);
 
         let doc3 = "bye";
         let result2 = compare_documents_moss_like(doc1, doc3);
-        assert_eq!(result2.score, 100.0);
+        assert_eq!(result2.score, 1.0);
         assert_eq!(result2.fingerprints_doc1, 0);
         assert_eq!(result2.fingerprints_doc2, 0);
         assert_eq!(result2.fingerprints_matched, 0);
@@ -1022,7 +1020,7 @@ mod tests {
         let _k = 4;
         let _w = 1;
         let result = compare_documents_moss_like(doc1, doc2);
-        assert_eq!(result.score, 100.0);
+        assert_eq!(result.score, 1.0);
         assert_eq!(
             result.fingerprints_doc1, 1,
             "Should have 1 fingerprint for doc1"
