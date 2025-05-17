@@ -1,4 +1,3 @@
-// src/comparison_orchestrator.rs
 use crate::algorithm::{
     MossResult as MossComparisonResult,
     compare_documents_moss_like as algorithm_compare_documents_moss_like,
@@ -11,7 +10,7 @@ use std::path::PathBuf;
 pub struct FileComparisonResult {
     pub file1_path: PathBuf,
     pub moss_result: Option<MossComparisonResult>,
-    pub rabin_karp_result: Option<RabinKarpComparisonResult>, // Placeholder struct
+    pub rabin_karp_result: Option<RabinKarpComparisonResult>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,44 +19,38 @@ pub struct ProjectComparisonReport {
     pub project2_id: String,
     pub file_to_file_comparisons: Vec<FileComparisonResult>,
     pub whole_project_moss_result: Option<MossComparisonResult>,
-    pub whole_project_rabin_karp_result: Option<RabinKarpComparisonResult>, // Placeholder struct
+    pub whole_project_rabin_karp_result: Option<RabinKarpComparisonResult>,
 }
 
-// --- Placeholder for RabinKarpComparisonResult ---
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RabinKarpComparisonResult {
     pub similarity_score: f64,
-    // Add other relevant fields based on your actual Rabin-Karp logic
+
     pub kgrams_doc1_found: usize,
     pub total_kgrams_doc1: usize,
 }
 
-// --- Placeholder for compare_documents_rabin_karp ---
 #[allow(unused_variables)]
 pub fn compare_documents_rabin_karp(
     doc1_content: &str,
     doc2_content: &str,
     k_char: usize,
 ) -> RabinKarpComparisonResult {
-    // In a real implementation, this would perform Rabin-Karp comparison
-    // For now, returning a default/mock result
     println!(
         "Placeholder: compare_documents_rabin_karp called for k_char: {}",
         k_char
     );
     RabinKarpComparisonResult {
-        similarity_score: 0.0, // Default placeholder value
+        similarity_score: 0.0,
         kgrams_doc1_found: 0,
         total_kgrams_doc1: 0,
     }
 }
 
-// --- Actual Thresholds ---
 const MIN_CHAR_LENGTH_FOR_COMPARISON: usize = 50;
 const MIN_LINE_COUNT_FOR_COMPARISON: usize = 3;
 const MAX_LENGTH_RATIO_DIFFERENCE: f64 = 10.0;
 
-// --- Default Algorithm Parameters ---
 const DEFAULT_MOSS_K_TOKEN: usize = 4;
 const DEFAULT_MOSS_WINDOW_SIZE: usize = 5;
 const DEFAULT_RABIN_KARP_K_CHAR: usize = 25;
@@ -65,9 +58,6 @@ const DEFAULT_RABIN_KARP_K_CHAR: usize = 25;
 pub fn compare_normalized_projects(
     project_a: &NormalizedProject,
     project_b: &NormalizedProject,
-    // Optional: Pass thresholds and algo params as arguments for more flexibility
-    // min_chars: usize, min_lines: usize, max_ratio: f64,
-    // moss_k: usize, moss_w: usize, rk_k: usize,
 ) -> ProjectComparisonReport {
     let mut file_comparisons = Vec::new();
 
@@ -164,17 +154,15 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossComparisonResu
 
 #[cfg(test)]
 mod project_comparison_logic_tests {
-    // Imports structs and functions from the parent module
+
     use crate::project_processor::{NormalizedProject, ProcessedFile, SourceLanguage};
     use std::collections::HashMap;
     use std::path::PathBuf;
 
-    // --- Thresholds for these specific tests ---
     const TEST_MIN_CHARS: usize = 20;
     const TEST_MIN_LINES: usize = 2;
     const TEST_MAX_RATIO: f64 = 5.0;
 
-    // --- Mocking Utilities ---
     fn mock_file(path_str: &str, content: &str) -> (PathBuf, ProcessedFile) {
         let p = PathBuf::from(path_str);
         (
@@ -182,10 +170,10 @@ mod project_comparison_logic_tests {
             ProcessedFile {
                 relative_path: p,
                 content: content.to_string(),
-                language: SourceLanguage::Text, // Default for mock
+                language: SourceLanguage::Text,
                 sha1_hash: "mock".to_string(),
                 char_length: content.chars().count(),
-                // Consistent line counting: empty string has 0 lines, otherwise count based on .lines()
+
                 line_count: if content.is_empty() {
                     0
                 } else {
@@ -195,8 +183,6 @@ mod project_comparison_logic_tests {
         )
     }
 
-    // Simplified version of the comparison orchestrator for testing skipping logic.
-    // It returns a list of relative paths of files that were *selected* for comparison.
     fn get_selected_files_for_comparison(
         project_a: &NormalizedProject,
         project_b: &NormalizedProject,
@@ -205,7 +191,6 @@ mod project_comparison_logic_tests {
 
         for (path_a, file_a) in &project_a.files {
             if let Some(file_b) = project_b.files.get(path_a) {
-                // Apply skipping logic using TEST constants
                 if file_a.char_length < TEST_MIN_CHARS
                     || file_b.char_length < TEST_MIN_CHARS
                     || file_a.line_count < TEST_MIN_LINES

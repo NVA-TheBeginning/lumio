@@ -248,7 +248,6 @@ pub struct MossResult {
 }
 
 pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
-    // Tokenize both documents
     let tokens1 = tokenize(doc1);
     let tokens2 = tokenize(doc2);
     println!("DEBUG: doc1: [{}]", doc1);
@@ -256,7 +255,6 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
     println!("DEBUG: tokens1: {:?}", tokens1);
     println!("DEBUG: tokens2: {:?}", tokens2);
 
-    // Generate k-grams
     let k = 4;
     let w = 5;
     let kgrams1 = generate_token_kgrams(&tokens1, k);
@@ -264,7 +262,6 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
     println!("DEBUG: kgrams1: {:?}", kgrams1);
     println!("DEBUG: kgrams2: {:?}", kgrams2);
 
-    // Edge case: both docs empty or both have no k-grams
     if kgrams1.is_empty() && kgrams2.is_empty() {
         return MossResult {
             score: 100.0,
@@ -273,7 +270,7 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
             fingerprints_doc2: 0,
         };
     }
-    // Edge case: only one has k-grams
+
     if kgrams1.is_empty() || kgrams2.is_empty() {
         return MossResult {
             score: 0.0,
@@ -283,7 +280,6 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
         };
     }
 
-    // Compute hashes for each k-gram
     let hashes1: Vec<(u64, usize)> = kgrams1
         .iter()
         .enumerate()
@@ -295,21 +291,17 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
         .map(|(i, kgram)| (hash_token_kgram(kgram), i))
         .collect();
 
-    // Apply winnowing to select fingerprints
     let fingerprints1 = winnow_hashes(&hashes1, w);
     let fingerprints2 = winnow_hashes(&hashes2, w);
     println!("DEBUG: fingerprints1: {:?}", fingerprints1);
     println!("DEBUG: fingerprints2: {:?}", fingerprints2);
 
-    // Extract just the hash values for comparison
     let hash_set1: HashSet<u64> = fingerprints1.iter().map(|&(hash, _)| hash).collect();
     let hash_set2: HashSet<u64> = fingerprints2.iter().map(|&(hash, _)| hash).collect();
 
-    // Calculate intersection and union sizes
     let intersection_size = hash_set1.intersection(&hash_set2).count();
     let union_size = hash_set1.union(&hash_set2).count();
 
-    // Calculate Jaccard index as percentage
     let score = if union_size > 0 {
         (intersection_size as f64 / union_size as f64) * 100.0
     } else {
@@ -1054,10 +1046,9 @@ mod tests {
         let doc_a_concatenated = "def func1():\n    print('hello')\n    for i in range(10):\n        print(i)\ndef func2():\n    print('world')\n    return i * 2\n";
         let doc_b_concatenated = "def func1():\n    print('hello')\n    for i in range(10):\n        print(i)\ndef func2():\n    print('world')\n    return i * 2\n";
 
-        let k = 4; // DEFAULT_MOSS_K_TOKEN
-        let w = 5; // DEFAULT_MOSS_WINDOW_SIZE
+        let k = 4;
+        let w = 5;
 
-        // Debug tokenization
         let tokens1 = tokenize(doc_a_concatenated);
         let tokens2 = tokenize(doc_b_concatenated);
         println!("DEBUG: Tokens doc1: {:?}", tokens1);

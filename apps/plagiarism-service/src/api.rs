@@ -72,7 +72,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
     let base_extract_dir = &app_state.extract_base_path;
     println!("Using base extract directory: {:?}", base_extract_dir);
 
-    // Get all project submission paths
     let submission_paths = match get_project_submission_paths(
         base_extract_dir,
         &body.project_id,
@@ -94,7 +93,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         submission_paths.len()
     );
 
-    // Process each submission
     let mut normalized_projects = Vec::new();
     for (path, project_id) in submission_paths {
         println!("Processing submission: {} (path: {:?})", project_id, path);
@@ -119,7 +117,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         normalized_projects.len()
     );
 
-    // Perform pairwise comparisons
     let mut comparison_reports = Vec::new();
     for i in 0..normalized_projects.len() {
         for j in (i + 1)..normalized_projects.len() {
@@ -144,7 +141,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         comparison_reports.len()
     );
 
-    // Initialize map with all processed projects
     let mut final_results_map: HashMap<String, ApiFolderResult> = HashMap::new();
     for np in &normalized_projects {
         final_results_map.insert(
@@ -158,14 +154,12 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         );
     }
 
-    // Process comparison reports and update results
     for report in comparison_reports {
         let pair_match_percentage = report
             .whole_project_moss_result
             .as_ref()
             .map_or(0.0, |moss_res| moss_res.score * 100.0);
 
-        // Update project1's entry
         if let Some(folder_res_a) = final_results_map.get_mut(&report.project1_id) {
             folder_res_a.matches.push(ApiPlagiarismMatch {
                 matched_folder: report.project2_id.clone(),
@@ -176,7 +170,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
             }
         }
 
-        // Update project2's entry
         if let Some(folder_res_b) = final_results_map.get_mut(&report.project2_id) {
             folder_res_b.matches.push(ApiPlagiarismMatch {
                 matched_folder: report.project1_id.clone(),
@@ -188,7 +181,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         }
     }
 
-    // Convert map to Vec and sort for consistent output
     let mut analysis_results_vec: Vec<ApiFolderResult> = final_results_map.into_values().collect();
     analysis_results_vec.sort_by(|a, b| a.folder_name.cmp(&b.folder_name));
 

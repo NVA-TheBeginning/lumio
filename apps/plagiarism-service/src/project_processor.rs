@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1}; // Added for calculate_file_sha1
+use sha1::{Digest, Sha1};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-// Basic SourceLanguage enum
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SourceLanguage {
     Rust,
@@ -14,7 +13,6 @@ pub enum SourceLanguage {
     Unknown,
 }
 
-// ProcessedFile struct with char_length and line_count
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcessedFile {
     pub relative_path: PathBuf,
@@ -25,7 +23,6 @@ pub struct ProcessedFile {
     pub line_count: usize,
 }
 
-// Basic NormalizedProject struct
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NormalizedProject {
     pub project_id: String,
@@ -34,7 +31,6 @@ pub struct NormalizedProject {
     pub concatenated_source_hash: Option<String>,
 }
 
-// Basic Error type for process_project_folder
 #[derive(Debug)]
 pub enum ProjectProcessorError {
     IoError(()),
@@ -53,14 +49,12 @@ impl From<walkdir::Error> for ProjectProcessorError {
     }
 }
 
-// Placeholder for calculate_file_sha1
 fn calculate_file_sha1(content: &str) -> String {
     let mut hasher = Sha1::new();
     hasher.update(content.as_bytes());
     format!("{:x}", hasher.finalize())
 }
 
-// detect_language placeholder
 fn detect_language(path: &Path) -> SourceLanguage {
     match path.extension().and_then(|ext| ext.to_str()) {
         Some("rs") => SourceLanguage::Rust,
@@ -86,7 +80,6 @@ pub fn process_project_folder(
                 Err(_) => continue,
             };
 
-            // Basic ignore for common VCS and build directories
             if relative_path.components().any(|comp| {
                 let s = comp.as_os_str();
                 s == ".git" || s == "target" || s == ".svn" || s == ".hg"
@@ -116,9 +109,7 @@ pub fn process_project_folder(
                         SourceLanguage::Rust | SourceLanguage::Python => {
                             source_files_for_concatenation.push((relative_path, content));
                         }
-                        _ => {
-                            // Skip Text and Unknown files for concatenation
-                        }
+                        _ => {}
                     }
                 }
                 Err(e) => {
@@ -154,8 +145,8 @@ pub fn process_project_folder(
 
 pub fn get_project_submission_paths(
     base_extract_dir: &Path,
-    _project_id: &str, // Not directly used for filtering if base_extract_dir is assumed to be pre-filtered
-    _promotion_id: &str, // Same as above
+    _project_id: &str,
+    _promotion_id: &str,
 ) -> io::Result<Vec<(PathBuf, String)>> {
     let mut submission_paths = Vec::new();
 
@@ -174,12 +165,10 @@ pub fn get_project_submission_paths(
         let path = entry.path();
 
         if path.is_dir() {
-            // Assuming every subdirectory directly under base_extract_dir is a submission folder
             if let Some(folder_name_osstr) = path.file_name() {
                 if let Some(folder_name_str) = folder_name_osstr.to_str() {
                     submission_paths.push((path.clone(), folder_name_str.to_string()));
                 } else {
-                    // Folder name is not valid UTF-8, decide how to handle: skip, error, or use lossy conversion
                     eprintln!(
                         "Warning: Skipping directory with non-UTF-8 name: {:?}",
                         path.display()
@@ -197,7 +186,7 @@ mod tests {
     use std::fs::{self, File};
     use std::io::Write;
     use std::path::PathBuf;
-    use tempfile::tempdir; // Explicit import for clarity
+    use tempfile::tempdir;
 
     fn setup_test_project(base_dir_name: &str) -> (tempfile::TempDir, PathBuf) {
         let dir = tempdir().unwrap();
@@ -212,19 +201,17 @@ mod tests {
 
         let file1_path = project_path.join("file1.txt");
         {
-            // Scope for file1
             let mut file1 = File::create(&file1_path).unwrap();
-            // Use write_all with explicit bytes to ensure content is exactly "Hello\nWorld\nTest\n"
+
             file1.write_all(b"Hello\nWorld\nTest\n").unwrap();
-        } // file1 is dropped, flushed, and closed here
+        }
 
         let src_dir = project_path.join("src");
         fs::create_dir_all(&src_dir).unwrap();
         let file2_path = src_dir.join("empty.py");
         {
-            // Scope for file2
             File::create(&file2_path).unwrap();
-        } // empty.py file is also closed
+        }
 
         let normalized_project = process_project_folder(&project_path, "proj_lengths").unwrap();
 
@@ -258,9 +245,8 @@ mod tests {
     #[test]
     fn test_get_project_submission_paths_finds_subdirectories() {
         let base_temp_dir = tempdir().unwrap();
-        let extract_path = base_temp_dir.path(); // Use the root of tempdir as base_extract_dir
+        let extract_path = base_temp_dir.path();
 
-        // Create some submission folders
         let sub1_path = extract_path.join("student_submission_1");
         fs::create_dir(&sub1_path).unwrap();
         let sub2_path = extract_path.join("another_student_proj");
@@ -268,13 +254,11 @@ mod tests {
         let sub3_path = extract_path.join("12345_project");
         fs::create_dir(&sub3_path).unwrap();
 
-        // Create a file in the base, should be ignored
         File::create(extract_path.join("some_file.txt")).unwrap();
 
         let result_paths =
             get_project_submission_paths(extract_path, "test_proj", "test_promo").unwrap();
 
-        // Collect the found folder names into a set
         let found_names: std::collections::HashSet<_> =
             result_paths.iter().map(|(_, name)| name.as_str()).collect();
         let expected_names: std::collections::HashSet<_> = [
