@@ -12,6 +12,8 @@ pub struct FileComparisonResult {
     pub file2_path: PathBuf,
     pub moss_result: Option<MossComparisonResult>,
     pub rabin_karp_result: Option<RabinKarpComparisonResult>,
+    pub size_bytes_a: usize,
+    pub lines_a: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,12 +76,15 @@ pub fn compare_documents_rabin_karp(
     }
 }
 
-const MIN_CHAR_LENGTH_FOR_COMPARISON: usize = 50;
+#[allow(dead_code)]
+const DEFAULT_MOSS_K_TOKEN: usize = 4;
+#[allow(dead_code)]
+const DEFAULT_MOSS_WINDOW_SIZE: usize = 5;
+
+pub const MIN_CHAR_LENGTH_FOR_COMPARISON: usize = 20;
 const MIN_LINE_COUNT_FOR_COMPARISON: usize = 3;
 const MAX_LENGTH_RATIO_DIFFERENCE: f64 = 10.0;
 
-const DEFAULT_MOSS_K_TOKEN: usize = 4;
-const DEFAULT_MOSS_WINDOW_SIZE: usize = 5;
 const DEFAULT_RABIN_KARP_K_CHAR: usize = 25;
 
 pub fn compare_normalized_projects(
@@ -93,8 +98,7 @@ pub fn compare_normalized_projects(
         for (path_b, file_b) in &project_b.files {
             // Skip if files are too different in size
             let length_ratio = file_a.char_length as f64 / file_b.char_length as f64;
-            if length_ratio > MAX_LENGTH_RATIO_DIFFERENCE
-                || length_ratio < 1.0 / MAX_LENGTH_RATIO_DIFFERENCE
+            if !(1.0 / MAX_LENGTH_RATIO_DIFFERENCE..=MAX_LENGTH_RATIO_DIFFERENCE).contains(&length_ratio)
             {
                 continue;
             }
@@ -123,6 +127,8 @@ pub fn compare_normalized_projects(
                 file2_path: path_b.clone(),
                 moss_result,
                 rabin_karp_result,
+                size_bytes_a: file_a.char_length,
+                lines_a: file_a.line_count,
             });
         }
     }
@@ -135,27 +141,54 @@ pub fn compare_normalized_projects(
         &project_a.concatenated_source_code,
         &project_b.concatenated_source_code,
     ) {
-        println!("DEBUG: Concatenated A (len {}): [{}]", src_a.chars().count(), src_a);
-        println!("DEBUG: Concatenated B (len {}): [{}]", src_b.chars().count(), src_b);
+        println!(
+            "DEBUG orchestrator: Concatenated A (len {}): [{}]",
+            src_a.chars().count(),
+            src_a
+        );
+        println!(
+            "DEBUG orchestrator: Concatenated B (len {}): [{}]",
+            src_b.chars().count(),
+            src_b
+        );
 
         if src_a.chars().count() >= MIN_CHAR_LENGTH_FOR_COMPARISON
             && src_b.chars().count() >= MIN_CHAR_LENGTH_FOR_COMPARISON
         {
+            println!(
+                "DEBUG orchestrator: Concatenated strings passed length check for whole project comparison."
+            );
             let moss_result = algorithm_compare_documents_moss_like(src_a, src_b);
-            println!("DEBUG: Whole project MOSS score: {}", moss_result.score);
+            println!(
+                "DEBUG orchestrator: Whole project MOSS score (0-1): {}",
+                moss_result.score
+            );
             whole_project_moss_result = Some(moss_result);
 
-            // TODO: Implement Rabin-Karp for whole project comparison
-            whole_project_rabin_karp_result = Some(RabinKarpComparisonResult {
-                similarity_score: 0.0,
-                kgrams_doc1_found: 0,
-                total_kgrams_doc1: 0,
-            });
+            whole_project_rabin_karp_result = Some(compare_documents_rabin_karp(
+                src_a,
+                src_b,
+                DEFAULT_RABIN_KARP_K_CHAR,
+            ));
+            if let Some(ref rk_res) = whole_project_rabin_karp_result {
+                println!(
+                    "DEBUG orchestrator: Whole project Rabin-Karp score (0-1): {}",
+                    rk_res.similarity_score
+                );
+            }
         } else {
-            println!("DEBUG: Concatenated strings too short for comparison (min: {})", MIN_CHAR_LENGTH_FOR_COMPARISON);
+            println!(
+                "DEBUG orchestrator: Concatenated strings SKIPPED length check (min: {}). A_len: {}, B_len: {}",
+                MIN_CHAR_LENGTH_FOR_COMPARISON,
+                src_a.chars().count(),
+                src_b.chars().count()
+            );
         }
     } else {
-        println!("DEBUG: Missing concatenated source for one or both projects");
+        println!(
+            "DEBUG orchestrator: Missing concatenated source for one or both projects. Project A: {}, Project B: {}",
+            project_a.project_id, project_b.project_id
+        );
     }
 
     ProjectComparisonReport {

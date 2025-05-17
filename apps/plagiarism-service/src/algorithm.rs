@@ -1,26 +1,20 @@
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
-use std::collections::HashMap;
+use sha1::Digest;
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::fmt;
-use std::fs;
 use std::hash::{Hash, Hasher};
 use std::io;
-use std::path::Path;
 
 #[derive(Debug)]
 pub enum AlgorithmError {
     Io(io::Error),
-    DirectoryListing(String),
 }
 
 impl fmt::Display for AlgorithmError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             AlgorithmError::Io(err) => write!(f, "I/O error: {}", err),
-            AlgorithmError::DirectoryListing(msg) => write!(f, "Directory listing error: {}", msg),
         }
     }
 }
@@ -29,38 +23,6 @@ impl From<io::Error> for AlgorithmError {
     fn from(err: io::Error) -> AlgorithmError {
         AlgorithmError::Io(err)
     }
-}
-
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
-pub struct FolderPlagiarismDetail {
-    #[serde(rename = "folderName")]
-    pub folder_name: String,
-    #[serde(rename = "sha1")]
-    pub sha1: String,
-    #[serde(rename = "plagiarismPercentage")]
-    pub plagiarism_percentage: f64,
-    #[serde(rename = "matches")]
-    pub matches: Vec<PlagiarismMatch>,
-}
-
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
-pub struct PlagiarismMatch {
-    #[serde(rename = "matchedFolder")]
-    pub matched_folder: String,
-    #[serde(rename = "matchPercentage")]
-    pub match_percentage: f64,
-    #[serde(rename = "matchFrequency")]
-    pub match_frequency: f64,
-}
-
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
-pub struct PlagiarismAlgorithmResponse {
-    #[serde(rename = "projectId")]
-    pub project_id: String,
-    #[serde(rename = "promotionId")]
-    pub promotion_id: String,
-    #[serde(rename = "folderResults")]
-    pub folder_results: Vec<FolderPlagiarismDetail>,
 }
 
 pub const RK_RADIX: u64 = 256;
@@ -192,28 +154,14 @@ pub fn winnow_hashes(
 
     for i in 0..=(hashes_with_indices.len() - window_size) {
         let current_window = &hashes_with_indices[i..i + window_size];
-        println!("DEBUG Winnow: Window #{}: {:?}", i, current_window);
 
         if let Some(min_in_window) = current_window
             .iter()
             .min_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
         {
-            println!(
-                "DEBUG Winnow: Selected for window #{}: {:?}",
-                i, min_in_window
-            );
             selected_fingerprints.insert(*min_in_window);
-        } else {
-            println!(
-                "DEBUG Winnow: No minimum found in window #{} (should not happen if window not empty)",
-                i
-            );
-        }
+        } 
     }
-    println!(
-        "DEBUG Winnow: Final selected_fingerprints: {:?}",
-        selected_fingerprints
-    );
     selected_fingerprints
 }
 
@@ -236,7 +184,6 @@ pub fn calculate_jaccard_index(
     intersection_size as f64 / union_size as f64
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MossResult {
     pub score: f64,
@@ -248,21 +195,16 @@ pub struct MossResult {
 pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
     let tokens1 = tokenize(doc1);
     let tokens2 = tokenize(doc2);
-    println!("DEBUG: doc1: [{}]", doc1);
-    println!("DEBUG: doc2: [{}]", doc2);
-    println!("DEBUG: tokens1: {:?}", tokens1);
-    println!("DEBUG: tokens2: {:?}", tokens2);
 
     let k = 4;
     let w = 5;
     let kgrams1 = generate_token_kgrams(&tokens1, k);
     let kgrams2 = generate_token_kgrams(&tokens2, k);
-    println!("DEBUG: kgrams1: {:?}", kgrams1);
-    println!("DEBUG: kgrams2: {:?}", kgrams2);
 
     if kgrams1.is_empty() && kgrams2.is_empty() {
+        // If both documents are empty (or result in no k-grams), they are considered identical.
         return MossResult {
-            score: 1.0,
+            score: 1.0, // Jaccard index is 1.0 for two empty sets by some definitions
             fingerprints_matched: 0,
             fingerprints_doc1: 0,
             fingerprints_doc2: 0,
@@ -270,11 +212,13 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
     }
 
     if kgrams1.is_empty() || kgrams2.is_empty() {
+        // If one document is empty (or results in no k-grams) and the other is not,
+        // they have no similarity.
         return MossResult {
             score: 0.0,
             fingerprints_matched: 0,
-            fingerprints_doc1: kgrams1.len(),
-            fingerprints_doc2: kgrams2.len(),
+            fingerprints_doc1: kgrams1.len(), // Will be 0 if kgrams1 is empty
+            fingerprints_doc2: kgrams2.len(), // Will be 0 if kgrams2 is empty
         };
     }
 
@@ -291,8 +235,6 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
 
     let fingerprints1 = winnow_hashes(&hashes1, w);
     let fingerprints2 = winnow_hashes(&hashes2, w);
-    println!("DEBUG: fingerprints1: {:?}", fingerprints1);
-    println!("DEBUG: fingerprints2: {:?}", fingerprints2);
 
     let hash_set1: HashSet<u64> = fingerprints1.iter().map(|&(hash, _)| hash).collect();
     let hash_set2: HashSet<u64> = fingerprints2.iter().map(|&(hash, _)| hash).collect();
@@ -300,12 +242,25 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
     let intersection_size = hash_set1.intersection(&hash_set2).count();
     let union_size = hash_set1.union(&hash_set2).count();
 
-    let score = if union_size > 0 {
-        intersection_size as f64 / union_size as f64
+    let score = if union_size == 0 {
+        // This case should ideally be covered by the empty kgrams checks above.
+        // If both sets of fingerprints are empty, but kgrams were not, implies k > 0 but w made them empty.
+        // If kgrams were initially non-empty, but winnowing resulted in empty fingerprint sets for both,
+        // and union_size is 0, it means both docs produced 0 fingerprints.
+        // This implies they are effectively empty for comparison purposes after winnowing.
+        // If they both result in zero fingerprints, they could be considered identical (score 1.0)
+        // or completely different (score 0.0) depending on interpretation.
+        // Given tests expect 1.0 for empty inputs and 0.0 for one empty, zero fingerprints post-winnowing for both
+        // should imply that nothing meaningful could be extracted, so score should be 0.0 unless kgrams were *also* empty.
+        // Let's stick to 0.0 if union_size is 0 but kgrams were not empty, as it means no common fingerprints.
+        if hash_set1.is_empty() && hash_set2.is_empty() {
+            1.0 // If both fingerprint sets are empty, treat as identical.
+        } else {
+            0.0 // Should not happen if union_size is 0 and sets are not both empty.
+        }
     } else {
-        0.0
+        intersection_size as f64 / union_size as f64
     };
-    println!("DEBUG: score: {}", score);
 
     MossResult {
         score,
@@ -313,155 +268,6 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
         fingerprints_doc1: hash_set1.len(),
         fingerprints_doc2: hash_set2.len(),
     }
-}
-
-fn calculate_directory_sha1(dir_path: &Path) -> Result<String, AlgorithmError> {
-    let mut hasher = Sha1::new();
-
-    for entry in fs::read_dir(dir_path)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_file() {
-            let mut file = fs::File::open(&path)?;
-            io::copy(&mut file, &mut hasher)?;
-        } else if path.is_dir() {
-            let sub_hash = calculate_directory_sha1(&path)?;
-            hasher.update(sub_hash.as_bytes());
-        }
-    }
-
-    Ok(format!("{:x}", hasher.finalize()))
-}
-
-fn calculate_char_frequency(content: &str) -> HashMap<char, usize> {
-    let mut frequency_map = HashMap::new();
-    for ch in content.chars() {
-        *frequency_map.entry(ch).or_insert(0) += 1;
-    }
-    frequency_map
-}
-
-fn compare_frequencies(freq1: &HashMap<char, usize>, freq2: &HashMap<char, usize>) -> f64 {
-    let mut total = 0;
-    let mut match_count = 0;
-
-    for (ch, count1) in freq1 {
-        total += count1;
-        if let Some(count2) = freq2.get(ch) {
-            match_count += count1.min(count2);
-        }
-    }
-
-    if total == 0 {
-        0.0
-    } else {
-        (match_count as f64 / total as f64) * 100.0
-    }
-}
-
-pub fn run_plagiarism_check(
-    project_id: String,
-    promotion_id: String,
-    base_extract_dir: &Path,
-) -> Result<PlagiarismAlgorithmResponse, AlgorithmError> {
-    let mut folder_details: Vec<FolderPlagiarismDetail> = Vec::new();
-    let mut folder_frequencies: HashMap<String, HashMap<char, usize>> = HashMap::new();
-
-    let entries = fs::read_dir(base_extract_dir).map_err(|e| {
-        AlgorithmError::DirectoryListing(format!("Failed to read base extraction directory: {}", e))
-    })?;
-
-    for entry in entries {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            if let Some(folder_name) = path.file_name().and_then(|name| name.to_str()) {
-                println!("Processing folder: {}", folder_name);
-                match calculate_directory_sha1(&path) {
-                    Ok(hash) => {
-                        println!("SHA1 for {} is: {}", folder_name, hash);
-                        let mut folder_content = String::new();
-
-                        for file_entry in fs::read_dir(&path)? {
-                            let file_entry = file_entry?;
-                            if file_entry.path().is_file() {
-                                if let Ok(content) = fs::read_to_string(file_entry.path()) {
-                                    folder_content.push_str(&content);
-                                }
-                            }
-                        }
-
-                        let frequency = calculate_char_frequency(&folder_content);
-                        folder_frequencies.insert(folder_name.to_string(), frequency);
-
-                        folder_details.push(FolderPlagiarismDetail {
-                            folder_name: folder_name.to_string(),
-                            sha1: hash,
-                            plagiarism_percentage: 0.0,
-                            matches: Vec::new(),
-                        });
-                    }
-                    Err(e) => {
-                        println!("Failed to process folder {}: {}", folder_name, e);
-                    }
-                }
-            }
-        }
-    }
-
-    for i in 0..folder_details.len() {
-        let current_folder_name = folder_details[i].folder_name.clone();
-        let current_folder_sha1 = folder_details[i].sha1.clone();
-        let current_frequency = folder_frequencies.get(&current_folder_name).unwrap();
-        let mut matches = Vec::new();
-        let mut total_match_percentage = 0.0;
-        let mut match_count = 0;
-
-        for (j, other_folder_detail) in folder_details.iter().enumerate() {
-            if i != j {
-                let other_folder_name = other_folder_detail.folder_name.clone();
-                let other_folder_sha1 = other_folder_detail.sha1.clone();
-                let other_frequency = folder_frequencies.get(&other_folder_name).unwrap();
-
-                let sha1_match_percentage = if current_folder_sha1 == other_folder_sha1 {
-                    100.0
-                } else {
-                    0.0
-                };
-
-                let frequency_match_percentage =
-                    compare_frequencies(current_frequency, other_frequency);
-
-                let match_percentage = (sha1_match_percentage + frequency_match_percentage) / 2.0;
-
-                if match_percentage > 0.0 {
-                    matches.push(PlagiarismMatch {
-                        matched_folder: other_folder_name.clone(),
-                        match_percentage,
-                        match_frequency: frequency_match_percentage,
-                    });
-                    total_match_percentage += match_percentage;
-                    match_count += 1;
-                }
-            }
-        }
-
-        folder_details[i].matches = matches;
-
-        folder_details[i].plagiarism_percentage = if match_count > 0 {
-            total_match_percentage / match_count as f64
-        } else {
-            0.0
-        };
-    }
-
-    Ok(PlagiarismAlgorithmResponse {
-        project_id,
-        promotion_id,
-        folder_results: folder_details,
-    })
 }
 
 #[cfg(test)]

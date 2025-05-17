@@ -1,0 +1,153 @@
+{
+  "projectId": "999",
+  "promotionId": "999",
+  "folderResults": [
+    {
+      "folderName": "997-250514223200",
+      "sha1": "61aaeea29884718dc6791e17f7eb444ae8b64751",
+      "plagiarismPercentage": 11.76385729345836,
+      "matches": [
+        {
+          "matchedFolder": "998-250514223200",
+          "overallMatchPercentage": 11.76385729345836,
+          "combinedScore": 11.76385729345836,
+          "flags": [],
+          "fileComparisons": [
+            {
+              "fileName": "main.c",
+              "fileRelativePath": "main.c",
+              "fileSizeBytes": 831,
+              "linesOfCode": 40,
+              "mossScore": 7.462686567164178,
+              "rabinKarpScore": 18.21561338289963,
+              "combinedScore": 11.76385729345836,
+              "flags": []
+            }
+          ]
+        },
+        {
+          "matchedFolder": "999-250514223200",
+          "overallMatchPercentage": 11.76385729345836,
+          "combinedScore": 11.76385729345836,
+          "flags": [],
+          "fileComparisons": [
+            {
+              "fileName": "main.c",
+              "fileRelativePath": "main.c",
+              "fileSizeBytes": 831,
+              "linesOfCode": 40,
+              "mossScore": 7.462686567164178,
+              "rabinKarpScore": 18.21561338289963,
+              "combinedScore": 11.76385729345836,
+              "flags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "folderName": "998-250514223200",
+      "sha1": "045efefb7cc504c04a162b351e44ece15bcb0122",
+      "plagiarismPercentage": 100,
+      "matches": [
+        {
+          "matchedFolder": "997-250514223200",
+          "overallMatchPercentage": 11.76385729345836,
+          "combinedScore": 11.76385729345836,
+          "flags": [],
+          "fileComparisons": [
+            {
+              "fileName": "main.c",
+              "fileRelativePath": "main.c",
+              "fileSizeBytes": 831,
+              "linesOfCode": 40,
+              "mossScore": 7.462686567164178,
+              "rabinKarpScore": 18.21561338289963,
+              "combinedScore": 11.76385729345836,
+              "flags": []
+            }
+          ]
+        },
+        {
+          "matchedFolder": "999-250514223200",
+          "overallMatchPercentage": 100,
+          "combinedScore": 100,
+          "flags": [
+            "VERY_HIGH_SIMILARITY",
+            "SIGNIFICANT_MOSS_MATCH",
+            "SIGNIFICANT_RABIN_KARP_MATCH"
+          ],
+          "fileComparisons": [
+            {
+              "fileName": "main.c",
+              "fileRelativePath": "main.c",
+              "fileSizeBytes": 778,
+              "linesOfCode": 38,
+              "mossScore": 100,
+              "rabinKarpScore": 100,
+              "combinedScore": 100,
+              "flags": [
+                "HIGH_SIMILARITY",
+                "SIGNIFICANT_SIMILARITY",
+                "HIGH_MOSS_MATCH",
+                "HIGH_RABIN_KARP_MATCH"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "folderName": "999-250514223200",
+      "sha1": "045efefb7cc504c04a162b351e44ece15bcb0122",
+      "plagiarismPercentage": 100,
+      "matches": [
+        {
+          "matchedFolder": "997-250514223200",
+          "overallMatchPercentage": 11.76385729345836,
+          "combinedScore": 11.76385729345836,
+          "flags": [],
+          "fileComparisons": [
+            {
+              "fileName": "main.c",
+              "fileRelativePath": "main.c",
+              "fileSizeBytes": 831,
+              "linesOfCode": 40,
+              "mossScore": 7.462686567164178,
+              "rabinKarpScore": 18.21561338289963,
+              "combinedScore": 11.76385729345836,
+              "flags": []
+            }
+          ]
+        },
+        {
+          "matchedFolder": "998-250514223200",
+          "overallMatchPercentage": 100,
+          "combinedScore": 100,
+          "flags": [
+            "VERY_HIGH_SIMILARITY",
+            "SIGNIFICANT_MOSS_MATCH",
+            "SIGNIFICANT_RABIN_KARP_MATCH"
+          ],
+          "fileComparisons": [
+            {
+              "fileName": "main.c",
+              "fileRelativePath": "main.c",
+              "fileSizeBytes": 778,
+              "linesOfCode": 38,
+              "mossScore": 100,
+              "rabinKarpScore": 100,
+              "combinedScore": 100,
+              "flags": [
+                "HIGH_SIMILARITY",
+                "SIGNIFICANT_SIMILARITY",
+                "HIGH_MOSS_MATCH",
+                "HIGH_RABIN_KARP_MATCH"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

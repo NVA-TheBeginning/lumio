@@ -1,5 +1,6 @@
 use crate::comparison_orchestrator::{ProjectComparisonReport, compare_normalized_projects};
 use crate::project_processor::{NormalizedProject, process_project_folder};
+use crate::s3;
 use actix_web::web::{Data, Json};
 use actix_web::{HttpResponse, Responder};
 use apistos::{ApiComponent, api_operation};
@@ -7,8 +8,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::s3;
-use crate::project_processor::get_project_submission_paths;
 
 #[derive(Clone)]
 pub struct AppState {

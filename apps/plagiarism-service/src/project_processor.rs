@@ -60,6 +60,7 @@ fn detect_language(path: &Path) -> SourceLanguage {
         Some("rs") => SourceLanguage::Rust,
         Some("py") => SourceLanguage::Python,
         Some("txt") => SourceLanguage::Text,
+        Some("c") => SourceLanguage::Text,
         _ => SourceLanguage::Unknown,
     }
 }
@@ -75,10 +76,21 @@ pub fn process_project_folder(
         let entry = entry?;
         let path = entry.path();
         if path.is_file() {
-            let relative_path = match path.strip_prefix(project_path) {
+            let mut relative_path = match path.strip_prefix(project_path) {
                 Ok(p) => p.to_path_buf(),
                 Err(_) => continue,
             };
+
+            if let Some(first_comp) = relative_path.components().next() {
+                if let Some(first_comp_str) = first_comp.as_os_str().to_str() {
+                    if first_comp_str == project_id_str {
+                        relative_path = relative_path
+                            .strip_prefix(first_comp_str)
+                            .unwrap_or(&relative_path)
+                            .to_path_buf();
+                    }
+                }
+            }
 
             if relative_path.components().any(|comp| {
                 let s = comp.as_os_str();
@@ -109,6 +121,11 @@ pub fn process_project_folder(
                         SourceLanguage::Rust | SourceLanguage::Python => {
                             source_files_for_concatenation.push((relative_path, content));
                         }
+                        SourceLanguage::Text => {
+                            if path.extension().and_then(|ext| ext.to_str()) == Some("c") {
+                                source_files_for_concatenation.push((relative_path, content));
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -129,12 +146,9 @@ pub fn process_project_folder(
                 .collect::<Vec<String>>()
                 .join("\n\n---FILE_SEPARATOR---\n\n");
 
-            println!("DEBUG: Concatenated string length: {}", concatenated_string.len());
             let hash = calculate_file_sha1(&concatenated_string);
-            println!("DEBUG: Generated SHA1 hash: {}", hash);
             (Some(concatenated_string), Some(hash))
         } else {
-            println!("DEBUG: No source files for concatenation");
             (None, None)
         };
 
@@ -144,43 +158,6 @@ pub fn process_project_folder(
         concatenated_source_code: final_concatenated_code,
         concatenated_source_hash: final_concatenated_hash,
     })
-}
-
-pub fn get_project_submission_paths(
-    base_extract_dir: &Path,
-    _project_id: &str,
-    _promotion_id: &str,
-) -> io::Result<Vec<(PathBuf, String)>> {
-    let mut submission_paths = Vec::new();
-
-    if !base_extract_dir.exists() || !base_extract_dir.is_dir() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!(
-                "Base extraction directory not found or not a directory: {}",
-                base_extract_dir.display()
-            ),
-        ));
-    }
-
-    for entry_result in fs::read_dir(base_extract_dir)? {
-        let entry = entry_result?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            if let Some(folder_name_osstr) = path.file_name() {
-                if let Some(folder_name_str) = folder_name_osstr.to_str() {
-                    submission_paths.push((path.clone(), folder_name_str.to_string()));
-                } else {
-                    eprintln!(
-                        "Warning: Skipping directory with non-UTF-8 name: {:?}",
-                        path.display()
-                    );
-                }
-            }
-        }
-    }
-    Ok(submission_paths)
 }
 
 #[cfg(test)]
@@ -239,68 +216,6 @@ mod tests {
             processed_file2.char_length, 0,
             "Character count for empty.py should be 0"
         );
-        assert_eq!(
-            processed_file2.line_count, 0,
-            "Line count for empty.py should be 0"
-        );
-    }
-
-    #[test]
-    fn test_get_project_submission_paths_finds_subdirectories() {
-        let base_temp_dir = tempdir().unwrap();
-        let extract_path = base_temp_dir.path();
-
-        let sub1_path = extract_path.join("student_submission_1");
-        fs::create_dir(&sub1_path).unwrap();
-        let sub2_path = extract_path.join("another_student_proj");
-        fs::create_dir(&sub2_path).unwrap();
-        let sub3_path = extract_path.join("12345_project");
-        fs::create_dir(&sub3_path).unwrap();
-
-        File::create(extract_path.join("some_file.txt")).unwrap();
-
-        let result_paths =
-            get_project_submission_paths(extract_path, "test_proj", "test_promo").unwrap();
-
-        let found_names: std::collections::HashSet<_> =
-            result_paths.iter().map(|(_, name)| name.as_str()).collect();
-        let expected_names: std::collections::HashSet<_> = [
-            "student_submission_1",
-            "another_student_proj",
-            "12345_project",
-        ]
-        .iter()
-        .cloned()
-        .collect();
-
-        assert_eq!(
-            found_names, expected_names,
-            "Should find exactly the expected submission folders"
-        );
-        assert_eq!(result_paths.len(), 3, "Should find 3 submission folders");
-    }
-
-    #[test]
-    fn test_get_project_submission_paths_empty_dir() {
-        let base_temp_dir = tempdir().unwrap();
-        let extract_path = base_temp_dir.path();
-
-        let result_paths =
-            get_project_submission_paths(extract_path, "test_proj", "test_promo").unwrap();
-        assert_eq!(
-            result_paths.len(),
-            0,
-            "Should find 0 folders in an empty directory"
-        );
-    }
-
-    #[test]
-    fn test_get_project_submission_paths_non_existent_dir() {
-        let non_existent_path = Path::new("./this_path_surely_does_not_exist_12345");
-        let result = get_project_submission_paths(non_existent_path, "test_proj", "test_promo");
-        assert!(
-            result.is_err(),
-            "Should return an error for a non-existent base directory"
-        );
+        assert_eq!(processed_file2.line_count, 0, "Line count for empty.py should be 0");
     }
 }
