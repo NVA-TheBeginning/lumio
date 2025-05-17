@@ -72,11 +72,7 @@
           "matchedFolder": "999-250514223200",
           "overallMatchPercentage": 100,
           "combinedScore": 100,
-          "flags": [
-            "VERY_HIGH_SIMILARITY",
-            "SIGNIFICANT_MOSS_MATCH",
-            "SIGNIFICANT_RABIN_KARP_MATCH"
-          ],
+          "flags": ["VERY_HIGH_SIMILARITY","SIGNIFICANT_MOSS_MATCH","SIGNIFICANT_RABIN_KARP_MATCH"],
           "fileComparisons": [
             {
               "fileName": "main.c",
@@ -86,12 +82,7 @@
               "mossScore": 100,
               "rabinKarpScore": 100,
               "combinedScore": 100,
-              "flags": [
-                "HIGH_SIMILARITY",
-                "SIGNIFICANT_SIMILARITY",
-                "HIGH_MOSS_MATCH",
-                "HIGH_RABIN_KARP_MATCH"
-              ]
+              "flags": ["HIGH_SIMILARITY","SIGNIFICANT_SIMILARITY","HIGH_MOSS_MATCH","HIGH_RABIN_KARP_MATCH"]
             }
           ]
         }
@@ -124,11 +115,7 @@
           "matchedFolder": "998-250514223200",
           "overallMatchPercentage": 100,
           "combinedScore": 100,
-          "flags": [
-            "VERY_HIGH_SIMILARITY",
-            "SIGNIFICANT_MOSS_MATCH",
-            "SIGNIFICANT_RABIN_KARP_MATCH"
-          ],
+          "flags": ["VERY_HIGH_SIMILARITY","SIGNIFICANT_MOSS_MATCH","SIGNIFICANT_RABIN_KARP_MATCH"],
           "fileComparisons": [
             {
               "fileName": "main.c",
@@ -138,12 +125,7 @@
               "mossScore": 100,
               "rabinKarpScore": 100,
               "combinedScore": 100,
-              "flags": [
-                "HIGH_SIMILARITY",
-                "SIGNIFICANT_SIMILARITY",
-                "HIGH_MOSS_MATCH",
-                "HIGH_RABIN_KARP_MATCH"
-              ]
+              "flags": ["HIGH_SIMILARITY","SIGNIFICANT_SIMILARITY","HIGH_MOSS_MATCH","HIGH_RABIN_KARP_MATCH"]
             }
           ]
         }
