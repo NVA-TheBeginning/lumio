@@ -8,11 +8,14 @@ interface Project {
   id: number;
   name: string;
   description: string;
-  promotions: string[];
+  promotions: {
+    id: number;
+    name: string;
+    status: "VISIBLE" | "DRAFT" | "HIDDEN" | string;
+  }[];
   updatedAt: string;
   createdAt: string;
-  deletedAt: string;
-  status: "VISIBLE" | "DRAFT" | "HIDDEN" | string;
+  deletedAt: string | null;
 }
 
 interface CreateProjectData {
@@ -91,18 +94,9 @@ async function getUserId(): Promise<number> {
   return Number(user?.id);
 }
 
-export async function getAllProjects(): Promise<{ projects: Project[]; promotions: string[] }> {
+export async function getAllProjects(): Promise<Project[]> {
   const id = await getUserId();
-  const data = await authFetchData<Project[]>(`${API_URL}/projects/creator/${id}`);
-  for (const project of data) {
-    project.promotions = ["randomPromotions"];
-    project.status = "visible";
-  }
-  const promoSet = new Set<string>(data.flatMap((project) => project.promotions));
-  return {
-    projects: data,
-    promotions: Array.from(promoSet),
-  };
+  return await authFetchData<Project[]>(`${API_URL}/projects/creator/${id}`);
 }
 
 export async function createProject(data: CreateProjectData): Promise<void> {

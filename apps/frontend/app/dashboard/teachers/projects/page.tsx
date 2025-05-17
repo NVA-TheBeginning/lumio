@@ -19,14 +19,12 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { getAllProjects } from "./actions";
 
 interface FilterState {
   promotions: string[];
   dateRange: string;
-  status: string[];
   search: string;
 }
 
@@ -44,19 +42,17 @@ export default function ProjectList() {
   const [filters, setFilters] = useState<FilterState>({
     promotions: [],
     dateRange: "all",
-    status: [],
     search: "",
   });
 
   const [activeFiltersCount, setActiveFiltersCount] = useState<number>(0);
-  const [sortBy, setSortBy] = useState<"date" | "title" | "status">("date");
+  const [sortBy, setSortBy] = useState<"date" | "title">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(9);
-  const [activeTab, setActiveTab] = useState<string>("all");
 
   const {
-    data: { projects = [], promotions = [] } = {},
+    data: projects = [],
     isLoading: isLoadingProjects,
     isError: isErrorProjects,
     error: projectsError,
@@ -66,11 +62,24 @@ export default function ProjectList() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const promotions = useMemo(() => {
+    if (!projects || projects.length === 0) return [];
+
+    const promotionSet = new Set<string>();
+
+    projects.forEach((project) => {
+      project.promotions.forEach((promotion) => {
+        promotionSet.add(promotion.name);
+      });
+    });
+
+    return Array.from(promotionSet);
+  }, [projects]);
+
   useEffect(() => {
     let count = 0;
     if (filters.promotions.length > 0) count++;
     if (filters.dateRange !== "all") count++;
-    if (filters.status.length > 0) count++;
     if (filters.search.trim() !== "") count++;
     setActiveFiltersCount(count);
   }, [filters]);
@@ -92,11 +101,9 @@ export default function ProjectList() {
     }
 
     return projects.filter((project) => {
-      const matchesTab = activeTab === "all" || project.status === activeTab;
-
       const matchesPromotion =
         filters.promotions.length === 0 ||
-        project.promotions.some((promotion) => filters.promotions.includes(promotion));
+        project.promotions.some((promotion) => filters.promotions.includes(promotion.name));
 
       const matchesSearch =
         filters.search === "" ||
@@ -106,11 +113,9 @@ export default function ProjectList() {
       const projectDate = new Date(project.createdAt);
       const matchesDate = filters.dateRange === "all" || (dateLimit && projectDate >= dateLimit);
 
-      const matchesStatus = filters.status.length === 0 || filters.status.includes(project.status);
-
-      return matchesTab && matchesPromotion && matchesSearch && matchesDate && matchesStatus;
+      return matchesPromotion && matchesSearch && matchesDate;
     });
-  }, [filters, activeTab, projects, isLoadingProjects]);
+  }, [filters, projects, isLoadingProjects]);
 
   const sortedProjects = useMemo(() => {
     return [...filteredProjects].sort((a, b) => {
@@ -121,9 +126,6 @@ export default function ProjectList() {
       }
       if (sortBy === "title") {
         return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      }
-      if (sortBy === "status") {
-        return sortOrder === "asc" ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status);
       }
       return 0;
     });
@@ -160,40 +162,8 @@ export default function ProjectList() {
     setFilters({
       promotions: [],
       dateRange: "all",
-      status: [],
       search: "",
     });
-    setCurrentPage(1);
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "visible":
-        return "default";
-      case "draft":
-        return "secondary";
-      case "hidden":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
-  const getStatusDisplayText = (status: string) => {
-    switch (status) {
-      case "visible":
-        return "Visible";
-      case "draft":
-        return "Brouillon";
-      case "hidden":
-        return "Masqué";
-      default:
-        return status;
-    }
-  };
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
     setCurrentPage(1);
   };
 
@@ -236,15 +206,6 @@ export default function ProjectList() {
           )}
         </div>
       </div>
-
-      <Tabs defaultValue="all" className="mb-6" value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-2">
-          <TabsTrigger value="all">Tous</TabsTrigger>
-          <TabsTrigger value="visible">Visibles</TabsTrigger>
-          <TabsTrigger value="draft">Brouillons</TabsTrigger>
-          <TabsTrigger value="hidden">Masqués</TabsTrigger>
-        </TabsList>
-      </Tabs>
 
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -443,7 +404,6 @@ export default function ProjectList() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <CardDescription className="text-sm">{formatDate(project.createdAt)}</CardDescription>
-                  <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="grow pb-3">
@@ -452,8 +412,8 @@ export default function ProjectList() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {project.promotions.length > 0 &&
                     project.promotions.map((promotion) => (
-                      <Badge key={promotion} variant="secondary" className="text-xs">
-                        {promotion}
+                      <Badge key={promotion.id} variant="secondary" className="text-xs">
+                        {promotion.name}
                       </Badge>
                     ))}
                 </div>
