@@ -65,7 +65,7 @@ fn detect_language(path: &Path) -> SourceLanguage {
     }
 }
 
-fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
+pub fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
     let mut blacklist: FxHashSet<String> = FxHashSet::from_iter([
         String::from("target/"),
         String::from("node_modules/"),
@@ -77,6 +77,7 @@ fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
         String::from(".hg/"),
         String::from(".idea/"),
         String::from(".vscode/"),
+        String::from(".vscode\\"),
         String::from(".exe"),
         String::from(".DS_Store"),
         String::from(".dll"),
@@ -84,6 +85,8 @@ fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
         String::from(".log"),
         String::from(".zip"),
         String::from(".md"),
+        String::from(".github/"),
+        String::from(".github\\"),
         String::from("LICENSE"),
     ]);
 
