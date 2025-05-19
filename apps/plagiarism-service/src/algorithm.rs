@@ -27,7 +27,6 @@ impl From<io::Error> for AlgorithmError {
 pub const RK_RADIX: u64 = 256;
 pub const RK_PRIME_Q: u64 = 101;
 
-#[allow(dead_code)]
 pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
     if kgram.is_empty() {
         return 0;
@@ -39,7 +38,6 @@ pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
     hash_value
 }
 
-#[allow(dead_code)]
 pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
     if k_length == 0 {
         return 0;
@@ -54,7 +52,6 @@ pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
     h_mult
 }
 
-#[allow(dead_code)]
 pub fn recalculate_hash(
     old_hash: u64,
     old_byte: u8,
@@ -69,7 +66,6 @@ pub fn recalculate_hash(
     new_hash
 }
 
-#[allow(dead_code)]
 pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) -> Vec<usize> {
     let m = pattern.len();
     let n = text.len();
@@ -102,7 +98,6 @@ pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) ->
     matches
 }
 
-#[allow(dead_code)]
 pub fn tokenize(text: &str) -> Vec<String> {
     text.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
@@ -111,7 +106,6 @@ pub fn tokenize(text: &str) -> Vec<String> {
         .collect()
 }
 
-#[allow(dead_code)]
 pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>> {
     if k_val == 0 || tokens.len() < k_val {
         return Vec::new();
@@ -122,7 +116,6 @@ pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>
         .collect()
 }
 
-#[allow(dead_code)]
 pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     let mut hasher = DefaultHasher::new();
 
@@ -130,7 +123,6 @@ pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     hasher.finish()
 }
 
-#[allow(dead_code)]
 pub fn winnow_hashes(
     hashes_with_indices: &[(u64, usize)],
     window_size: usize,
