@@ -155,7 +155,7 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         body.project_id, body.promotion_id
     );
     let base_extract_target_dir = &app_state.extract_base_path;
-        let s3_file_keys = match s3::list_files_in_directory(&s3_directory_prefix).await {
+    let s3_file_keys = match s3::list_files_in_directory(&s3_directory_prefix).await {
         Ok(keys) => keys,
         Err(e) => {
             eprintln!(
@@ -314,7 +314,7 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         for j in (i + 1)..normalized_projects.len() {
             let proj_a = &normalized_projects[i];
             let proj_b = &normalized_projects[j];
-            
+
             let total_files = proj_a.files.len() + proj_b.files.len();
             println!(
                 "  -> Comparing {} total files ({} from project A, {} from project B)",
@@ -325,8 +325,10 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
 
             let comparison_results = compare_normalized_projects(proj_a, proj_b);
             println!(
-                "  -> Found {} file-to-file comparison results.",
-                comparison_results.file_to_file_comparisons.len()
+                "  -> Found {} file-to-file comparison results for {} total files in project A and {} total files in project B",
+                comparison_results.file_to_file_comparisons.len(),
+                proj_a.files.len(),
+                proj_b.files.len()
             );
             comparison_reports.push(comparison_results);
         }
