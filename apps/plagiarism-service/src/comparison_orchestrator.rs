@@ -76,11 +76,6 @@ pub fn compare_documents_rabin_karp(
     }
 }
 
-#[allow(dead_code)]
-const DEFAULT_MOSS_K_TOKEN: usize = 4;
-#[allow(dead_code)]
-const DEFAULT_MOSS_WINDOW_SIZE: usize = 5;
-
 pub const MIN_CHAR_LENGTH_FOR_COMPARISON: usize = 20;
 const MIN_LINE_COUNT_FOR_COMPARISON: usize = 3;
 const MAX_LENGTH_RATIO_DIFFERENCE: f64 = 10.0;
