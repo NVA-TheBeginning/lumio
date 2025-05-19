@@ -200,7 +200,7 @@ pub fn compare_normalized_projects(
 mod project_comparison_logic_tests {
 
     use crate::project_processor::{NormalizedProject, ProcessedFile, SourceLanguage};
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap;
     use std::path::PathBuf;
 
     const TEST_MIN_CHARS: usize = 20;
@@ -263,10 +263,10 @@ mod project_comparison_logic_tests {
 
     #[test]
     fn test_skips_if_file_a_too_small_chars() {
-        let mut files_a: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_a: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_a, file_obj_a) = mock_file("file.txt", "small");
         files_a.insert(path_a, file_obj_a);
-        let mut files_b: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_b: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_b, file_obj_b) = mock_file("file.txt", "long enough content now\nand two lines");
         files_b.insert(path_b, file_obj_b);
 
@@ -292,10 +292,10 @@ mod project_comparison_logic_tests {
 
     #[test]
     fn test_skips_if_file_b_too_small_lines() {
-        let mut files_a: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_a: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_a, file_obj_a) = mock_file("file.txt", "long enough content now\nand two lines");
         files_a.insert(path_a, file_obj_a);
-        let mut files_b: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_b: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_b, file_obj_b) = mock_file("file.txt", "long enough but 1 line");
         files_b.insert(path_b, file_obj_b);
 
@@ -326,10 +326,10 @@ mod project_comparison_logic_tests {
             (content_short.chars().count() as f64 * (TEST_MAX_RATIO + 1.0)) as usize;
         let content_long = "L".repeat(char_count_long);
 
-        let mut files_a: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_a: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_a, file_obj_a) = mock_file("file.txt", content_short);
         files_a.insert(path_a, file_obj_a);
-        let mut files_b: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_b: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_b, file_obj_b) = mock_file("file.txt", &content_long);
         files_b.insert(path_b, file_obj_b);
 
@@ -358,10 +358,10 @@ mod project_comparison_logic_tests {
         let content1 = "This is document one, suitable for comparison.\nIt has multiple lines.";
         let content2 = "This is document two, also suitable for comparison.\nAlso has many lines.";
 
-        let mut files_a: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_a: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_a1, file_obj_a1) = mock_file("file.txt", content1);
         files_a.insert(path_a1, file_obj_a1);
-        let mut files_b: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_b: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (path_b1, file_obj_b1) = mock_file("file.txt", content2);
         files_b.insert(path_b1, file_obj_b1);
 
@@ -385,7 +385,7 @@ mod project_comparison_logic_tests {
 
     #[test]
     fn test_compares_multiple_valid_files_and_skips_one() {
-        let mut files_a: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_a: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (p_va1, f_va1) = mock_file("valid1.txt", "Content for valid1 in A.\nLine2.");
         files_a.insert(p_va1, f_va1);
         let (p_tsa, f_tsa) = mock_file("too_small.txt", "SmallA");
@@ -393,7 +393,7 @@ mod project_comparison_logic_tests {
         let (p_va2, f_va2) = mock_file("valid2.txt", "Content for valid2 in A.\nLine2.");
         files_a.insert(p_va2, f_va2);
 
-        let mut files_b: HashMap<PathBuf, ProcessedFile> = HashMap::new();
+        let mut files_b: FxHashMap<PathBuf, ProcessedFile> = FxHashMap::default();
         let (p_vb1, f_vb1) = mock_file("valid1.txt", "Content for valid1 in B.\nLine2.");
         files_b.insert(p_vb1, f_vb1);
         let (p_tsb, f_tsb) = mock_file(

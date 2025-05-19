@@ -1,7 +1,6 @@
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -27,7 +26,7 @@ pub struct ProcessedFile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NormalizedProject {
     pub project_id: String,
-    pub files: HashMap<PathBuf, ProcessedFile>,
+    pub files: FxHashMap<PathBuf, ProcessedFile>,
     pub concatenated_source_code: Option<String>,
     pub concatenated_source_hash: Option<String>,
 }
@@ -66,8 +65,8 @@ fn detect_language(path: &Path) -> SourceLanguage {
     }
 }
 
-fn build_blacklist(project_path: &Path) -> io::Result<HashSet<String>> {
-    let mut blacklist: HashSet<String> = HashSet::from([
+fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
+    let mut blacklist: FxHashSet<String> = FxHashSet::from_iter([
         String::from("target/"),
         String::from("node_modules/"),
         String::from("dist/"),
@@ -85,6 +84,7 @@ fn build_blacklist(project_path: &Path) -> io::Result<HashSet<String>> {
         String::from(".log"),
         String::from(".zip"),
         String::from(".md"),
+        String::from("LICENSE"),
     ]);
 
     let gitignore_path = project_path.join(".gitignore");
@@ -110,10 +110,10 @@ pub fn process_project_folder(
     project_path: &Path,
     project_id_str: &str,
 ) -> Result<NormalizedProject, ProjectProcessorError> {
-    let mut files_map = HashMap::new();
+    let mut files_map = FxHashMap::default();
     let mut source_files_for_concatenation: Vec<(PathBuf, String)> = Vec::new();
 
-    let blacklist = build_blacklist(&project_path)?;
+    let blacklist = build_blacklist(project_path)?;
 
     for entry in walkdir::WalkDir::new(project_path).into_iter() {
         let entry = entry?;
@@ -123,6 +123,7 @@ pub fn process_project_folder(
         let is_blacklisted = blacklist.iter().any(|item| path_str.contains(item));
 
         if is_blacklisted {
+            println!("Skipping blacklisted: {:?}", path);
             continue;
         }
 
