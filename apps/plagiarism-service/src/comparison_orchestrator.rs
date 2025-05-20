@@ -1,10 +1,10 @@
 use crate::algorithm::{
-    MossResult as MossComparisonResult,
-    compare_documents_moss_like as algorithm_compare_documents_moss_like,
+    MossResult as MossComparisonResult, calculate_jaccard_index,
+    compare_documents_moss_like as algorithm_compare_documents_moss_like, generate_byte_kgrams,
 };
 use crate::project_processor::NormalizedProject;
 use crate::project_processor::build_blacklist;
-use rustc_hash::{FxBuildHasher, FxHashSet};
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -12,6 +12,7 @@ use std::path::PathBuf;
 pub struct FileComparisonResult {
     pub file1_path: PathBuf,
     pub file2_path: PathBuf,
+
     pub moss_result: Option<MossComparisonResult>,
     pub rabin_karp_result: Option<RabinKarpComparisonResult>,
     pub size_bytes_a: usize,
@@ -46,45 +47,20 @@ pub fn compare_documents_rabin_karp(
         return RabinKarpComparisonResult::default();
     }
 
-    let mut total_matches = 0;
-    let total_possible_matches = if doc1_bytes.len() >= k_char {
-        doc1_bytes.len() - k_char + 1
-    } else {
-        0
-    };
+    let doc1_kgrams = generate_byte_kgrams(doc1_bytes, k_char);
+    let doc2_kgrams = generate_byte_kgrams(doc2_bytes, k_char);
 
-    let mut doc2_hashes =
-        FxHashSet::with_capacity_and_hasher(doc2_bytes.len() - k_char + 1, FxBuildHasher);
-    for i in 0..=(doc2_bytes.len() - k_char) {
-        let slice = &doc2_bytes[i..i + k_char];
-        doc2_hashes.insert(slice);
-    }
+    let total_kgrams_doc1 = doc1_kgrams.len();
+    let similarity_score = calculate_jaccard_index(&doc1_kgrams, &doc2_kgrams);
 
-    for i in 0..total_possible_matches {
-        let kgram = &doc1_bytes[i..i + k_char];
-        if doc2_hashes.contains(kgram) {
-            total_matches += 1;
-        }
-    }
-
-    let similarity_score = if total_possible_matches > 0 {
-        total_matches as f64 / total_possible_matches as f64
-    } else {
-        0.0
-    };
+    let intersection_size = doc1_kgrams.intersection(&doc2_kgrams).count();
 
     RabinKarpComparisonResult {
         similarity_score,
-        kgrams_doc1_found: total_matches,
-        total_kgrams_doc1: total_possible_matches,
+        kgrams_doc1_found: intersection_size,
+        total_kgrams_doc1,
     }
 }
-
-#[allow(dead_code)]
-const DEFAULT_MOSS_K_TOKEN: usize = 4;
-#[allow(dead_code)]
-const DEFAULT_MOSS_WINDOW_SIZE: usize = 5;
-
 pub const MIN_CHAR_LENGTH_FOR_COMPARISON: usize = 20;
 const MIN_LINE_COUNT_FOR_COMPARISON: usize = 3;
 const MAX_LENGTH_RATIO_DIFFERENCE: f64 = 10.0;

@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
@@ -44,9 +45,20 @@ pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>
 
 pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     let mut hasher = DefaultHasher::new();
-
     token_kgram.hash(&mut hasher);
     hasher.finish()
+}
+
+pub fn generate_byte_kgrams(bytes: &[u8], k: usize) -> FxHashSet<(u64, usize)> {
+    bytes
+        .windows(k)
+        .enumerate()
+        .map(|(i, window)| {
+            let mut hasher = DefaultHasher::new();
+            window.hash(&mut hasher);
+            (hasher.finish(), i)
+        })
+        .collect()
 }
 
 pub fn winnow_hashes(
@@ -82,10 +94,9 @@ pub fn winnow_hashes(
     selected_fingerprints
 }
 
-#[allow(dead_code)]
 pub fn calculate_jaccard_index(
-    set_a: &HashSet<(u64, usize)>,
-    set_b: &HashSet<(u64, usize)>,
+    set_a: &FxHashSet<(u64, usize)>,
+    set_b: &FxHashSet<(u64, usize)>,
 ) -> f64 {
     if set_a.is_empty() && set_b.is_empty() {
         return 1.0;
@@ -190,6 +201,7 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rustc_hash::FxHashSet;
 
     #[test]
     fn test_moss_tokenize_empty_string() {
@@ -428,16 +440,18 @@ mod tests {
 
     #[test]
     fn test_moss_jaccard_index_empty_sets() {
-        let set_a: HashSet<(u64, usize)> = HashSet::new();
-        let set_b: HashSet<(u64, usize)> = HashSet::new();
+        let set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        let set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 1.0);
     }
 
     #[test]
     fn test_moss_jaccard_index_one_set_empty() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1)].iter().cloned().collect();
-        let set_b: HashSet<(u64, usize)> = HashSet::new();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        let set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 0.0);
         assert_eq!(calculate_jaccard_index(&set_b, &set_a), 0.0);
@@ -445,7 +459,10 @@ mod tests {
 
     #[test]
     fn test_moss_jaccard_index_identical_sets() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1), (30, 2)].iter().cloned().collect();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        set_a.insert((30, 2));
         let set_b = set_a.clone();
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 1.0);
@@ -453,22 +470,29 @@ mod tests {
 
     #[test]
     fn test_moss_jaccard_index_no_overlap() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1)].iter().cloned().collect();
-        let set_b: HashSet<(u64, usize)> = [(30, 2), (40, 3)].iter().cloned().collect();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        let mut set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_b.insert((30, 2));
+        set_b.insert((40, 3));
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 0.0);
     }
 
     #[test]
     fn test_moss_jaccard_index_partial_overlap() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1), (30, 2), (40, 3)]
-            .iter()
-            .cloned()
-            .collect();
-        let set_b: HashSet<(u64, usize)> = [(30, 2), (40, 3), (50, 4), (60, 5), (70, 6)]
-            .iter()
-            .cloned()
-            .collect();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        set_a.insert((30, 2));
+        set_a.insert((40, 3));
+        let mut set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_b.insert((30, 2));
+        set_b.insert((40, 3));
+        set_b.insert((50, 4));
+        set_b.insert((60, 5));
+        set_b.insert((70, 6));
 
         let expected = 2.0 / 7.0;
         assert!((calculate_jaccard_index(&set_a, &set_b) - expected).abs() < 1e-9);
