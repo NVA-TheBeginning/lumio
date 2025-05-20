@@ -86,14 +86,16 @@ export class UsersService {
         })
         .filter((student) => student !== null);
 
-      const urlNotif = process.env.NOTIF_SERVICE_URL || "http://localhost:3007";
-      await fetch(`${urlNotif}/email/create-students`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ users: students }),
-      });
+      if (process.env.NODE_ENV !== "test") {
+        const urlNotif = process.env.NOTIF_SERVICE_URL || "http://localhost:3007";
+        await fetch(`${urlNotif}/email/create-students`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ users: students }),
+        });
+      }
 
       return {
         count: insertResult.count,
