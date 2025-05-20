@@ -10,7 +10,7 @@ export class EmailService {
       throw new Error("Emails feature is not enabled");
     }
 
-    console.log(`Sending email to ${to} with subject "${subject}" and body "${body}"`);
+    console.log(`Sending email to ${to} with subject "${subject}"`);
     await resend.emails.send({
       from: "onboarding@resend.dev",
       to,
