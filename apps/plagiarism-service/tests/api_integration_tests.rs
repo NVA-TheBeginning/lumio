@@ -143,15 +143,16 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         result_a.sha1,
         Some("61aaeea29884718dc6791e17f7eb444ae8b64751".to_string())
     );
-    assert_eq!(result_a.plagiarism_percentage, 11.76385729345836);
+
+    assert_eq!(result_a.plagiarism_percentage, 5.856008229231575);
 
     let match_a_to_b = result_a
         .matches
         .iter()
         .find(|m| m.matched_folder == "998-250514223200")
         .unwrap();
-    assert_eq!(match_a_to_b.overall_match_percentage, 11.76385729345836);
-    assert_eq!(match_a_to_b.combined_score, 11.76385729345836);
+    assert_eq!(match_a_to_b.overall_match_percentage, 5.856008229231575);
+    assert_eq!(match_a_to_b.combined_score, 5.856008229231575);
     assert!(match_a_to_b.flags.is_empty());
 
     let match_a_to_c = result_a
@@ -159,8 +160,8 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .iter()
         .find(|m| m.matched_folder == "999-250514223200")
         .unwrap();
-    assert_eq!(match_a_to_c.overall_match_percentage, 11.76385729345836);
-    assert_eq!(match_a_to_c.combined_score, 11.76385729345836);
+    assert_eq!(match_a_to_c.overall_match_percentage, 5.856008229231575);
+    assert_eq!(match_a_to_c.combined_score, 5.856008229231575);
     assert!(match_a_to_c.flags.is_empty());
 
     // Verify project 998 results
@@ -180,8 +181,8 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .iter()
         .find(|m| m.matched_folder == "997-250514223200")
         .unwrap();
-    assert_eq!(match_b_to_a.overall_match_percentage, 11.76385729345836);
-    assert_eq!(match_b_to_a.combined_score, 11.76385729345836);
+    assert_eq!(match_b_to_a.overall_match_percentage, 5.856008229231575);
+    assert_eq!(match_b_to_a.combined_score, 5.856008229231575);
     assert!(match_b_to_a.flags.is_empty());
 
     let match_b_to_c = result_b
@@ -224,8 +225,8 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         .iter()
         .find(|m| m.matched_folder == "997-250514223200")
         .unwrap();
-    assert_eq!(match_c_to_a.overall_match_percentage, 11.76385729345836);
-    assert_eq!(match_c_to_a.combined_score, 11.76385729345836);
+    assert_eq!(match_c_to_a.overall_match_percentage, 5.856008229231575);
+    assert_eq!(match_c_to_a.combined_score, 5.856008229231575);
     assert!(match_c_to_a.flags.is_empty());
 
     let match_c_to_b = result_c
