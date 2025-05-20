@@ -19,7 +19,7 @@ COPY --from=base /app/apps/notif-service ./notif-service
 
 ENV NODE_ENV=production
 ENV BUN_ENV=production
-ENV PORT=3004
+ENV PORT=3007
 EXPOSE $PORT
 
 HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
