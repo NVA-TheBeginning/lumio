@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
@@ -24,85 +25,6 @@ impl From<io::Error> for AlgorithmError {
     }
 }
 
-pub const RK_RADIX: u64 = 256;
-pub const RK_PRIME_Q: u64 = 101;
-
-#[allow(dead_code)]
-pub fn calculate_kgram_hash(kgram: &[u8], radix: u64, prime: u64) -> u64 {
-    if kgram.is_empty() {
-        return 0;
-    }
-    let mut hash_value: u64 = 0;
-    for &byte_val in kgram {
-        hash_value = (hash_value * radix + u64::from(byte_val)) % prime;
-    }
-    hash_value
-}
-
-#[allow(dead_code)]
-pub fn calculate_h_multiplier(k_length: usize, radix: u64, prime: u64) -> u64 {
-    if k_length == 0 {
-        return 0;
-    }
-    if k_length == 1 {
-        return 1;
-    }
-    let mut h_mult: u64 = 1;
-    for _ in 0..(k_length - 1) {
-        h_mult = (h_mult * radix) % prime;
-    }
-    h_mult
-}
-
-#[allow(dead_code)]
-pub fn recalculate_hash(
-    old_hash: u64,
-    old_byte: u8,
-    new_byte: u8,
-    h_multiplier: u64,
-    radix: u64,
-    prime: u64,
-) -> u64 {
-    let mut new_hash = old_hash;
-    new_hash = (new_hash + prime - (u64::from(old_byte) * h_multiplier) % prime) % prime;
-    new_hash = (new_hash * radix + u64::from(new_byte)) % prime;
-    new_hash
-}
-
-#[allow(dead_code)]
-pub fn rabin_karp_search(text: &[u8], pattern: &[u8], radix: u64, prime: u64) -> Vec<usize> {
-    let m = pattern.len();
-    let n = text.len();
-    let mut matches = Vec::new();
-
-    if m == 0 || n == 0 || m > n {
-        return matches;
-    }
-
-    let h_multiplier = calculate_h_multiplier(m, radix, prime);
-    let pattern_hash = calculate_kgram_hash(pattern, radix, prime);
-    let mut current_text_hash = calculate_kgram_hash(&text[0..m], radix, prime);
-
-    for i in 0..=(n - m) {
-        if pattern_hash == current_text_hash && &text[i..i + m] == pattern {
-            matches.push(i);
-        }
-
-        if i < n - m {
-            current_text_hash = recalculate_hash(
-                current_text_hash,
-                text[i],
-                text[i + m],
-                h_multiplier,
-                radix,
-                prime,
-            );
-        }
-    }
-    matches
-}
-
-#[allow(dead_code)]
 pub fn tokenize(text: &str) -> Vec<String> {
     text.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
@@ -111,7 +33,6 @@ pub fn tokenize(text: &str) -> Vec<String> {
         .collect()
 }
 
-#[allow(dead_code)]
 pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>> {
     if k_val == 0 || tokens.len() < k_val {
         return Vec::new();
@@ -122,15 +43,24 @@ pub fn generate_token_kgrams(tokens: &[String], k_val: usize) -> Vec<Vec<String>
         .collect()
 }
 
-#[allow(dead_code)]
 pub fn hash_token_kgram(token_kgram: &[String]) -> u64 {
     let mut hasher = DefaultHasher::new();
-
     token_kgram.hash(&mut hasher);
     hasher.finish()
 }
 
-#[allow(dead_code)]
+pub fn generate_byte_kgrams(bytes: &[u8], k: usize) -> FxHashSet<(u64, usize)> {
+    bytes
+        .windows(k)
+        .enumerate()
+        .map(|(i, window)| {
+            let mut hasher = DefaultHasher::new();
+            window.hash(&mut hasher);
+            (hasher.finish(), i)
+        })
+        .collect()
+}
+
 pub fn winnow_hashes(
     hashes_with_indices: &[(u64, usize)],
     window_size: usize,
@@ -164,10 +94,9 @@ pub fn winnow_hashes(
     selected_fingerprints
 }
 
-#[allow(dead_code)]
 pub fn calculate_jaccard_index(
-    set_a: &HashSet<(u64, usize)>,
-    set_b: &HashSet<(u64, usize)>,
+    set_a: &FxHashSet<(u64, usize)>,
+    set_b: &FxHashSet<(u64, usize)>,
 ) -> f64 {
     if set_a.is_empty() && set_b.is_empty() {
         return 1.0;
@@ -272,177 +201,7 @@ pub fn compare_documents_moss_like(doc1: &str, doc2: &str) -> MossResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_calculate_kgram_hash_empty() {
-        assert_eq!(calculate_kgram_hash(&[], RK_RADIX, RK_PRIME_Q), 0);
-    }
-
-    #[test]
-    fn test_calculate_kgram_hash_single_char() {
-        assert_eq!(calculate_kgram_hash(b"A", RK_RADIX, RK_PRIME_Q), 65);
-    }
-
-    #[test]
-    fn test_calculate_kgram_hash_simple_string() {
-        assert_eq!(calculate_kgram_hash(b"AB", RK_RADIX, RK_PRIME_Q), 41);
-        assert_eq!(calculate_kgram_hash(b"ABC", RK_RADIX, RK_PRIME_Q), 59);
-    }
-
-    #[test]
-    fn test_calculate_kgram_hash_with_prime_larger_than_char_value() {
-        const TEST_PRIME: u64 = 257;
-        assert_eq!(calculate_kgram_hash(b"a", RK_RADIX, TEST_PRIME), 97);
-        assert_eq!(calculate_kgram_hash(b"ab", RK_RADIX, TEST_PRIME), 1);
-    }
-
-    #[test]
-    fn test_calculate_h_multiplier_k_zero() {
-        assert_eq!(calculate_h_multiplier(0, RK_RADIX, RK_PRIME_Q), 0);
-    }
-
-    #[test]
-    fn test_calculate_h_multiplier_k_one() {
-        assert_eq!(calculate_h_multiplier(1, RK_RADIX, RK_PRIME_Q), 1);
-    }
-
-    #[test]
-    fn test_calculate_h_multiplier_k_greater_than_one() {
-        assert_eq!(calculate_h_multiplier(3, RK_RADIX, RK_PRIME_Q), 88);
-        assert_eq!(calculate_h_multiplier(2, RK_RADIX, RK_PRIME_Q), 54);
-    }
-
-    #[test]
-    fn test_recalculate_hash_simple() {
-        let initial_kgram = b"ABC";
-        let old_hash = calculate_kgram_hash(initial_kgram, RK_RADIX, RK_PRIME_Q);
-        assert_eq!(old_hash, 59, "Pre-condition: H(ABC) should be 59");
-
-        let old_byte = b'A';
-        let new_byte = b'D';
-        let k_length = initial_kgram.len();
-        let h_multiplier = calculate_h_multiplier(k_length, RK_RADIX, RK_PRIME_Q);
-        assert_eq!(
-            h_multiplier, 88,
-            "Pre-condition: h_multiplier for k=3 should be 88"
-        );
-
-        let recalculated_hash = recalculate_hash(
-            old_hash,
-            old_byte,
-            new_byte,
-            h_multiplier,
-            RK_RADIX,
-            RK_PRIME_Q,
-        );
-
-        let expected_hash_bcd = calculate_kgram_hash(b"BCD", RK_RADIX, RK_PRIME_Q);
-        assert_eq!(expected_hash_bcd, 0, "Verification: H(BCD) should be 0");
-        assert_eq!(recalculated_hash, expected_hash_bcd);
-    }
-
-    #[test]
-    fn test_rabin_karp_search_empty_text() {
-        assert_eq!(
-            rabin_karp_search(&[] as &[u8], b"A" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![] as Vec<usize>
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_empty_pattern() {
-        assert_eq!(
-            rabin_karp_search(b"ABC" as &[u8], &[] as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![] as Vec<usize>
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_pattern_longer_than_text() {
-        assert_eq!(
-            rabin_karp_search(b"AB" as &[u8], b"ABC" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![] as Vec<usize>
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_no_match() {
-        assert_eq!(
-            rabin_karp_search(b"ABCD" as &[u8], b"XY" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![] as Vec<usize>
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_single_match_start() {
-        assert_eq!(
-            rabin_karp_search(b"ABCD" as &[u8], b"AB" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![0usize]
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_single_match_end() {
-        assert_eq!(
-            rabin_karp_search(b"ABCD" as &[u8], b"CD" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![2usize]
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_single_match_middle() {
-        assert_eq!(
-            rabin_karp_search(b"ABCD" as &[u8], b"BC" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![1usize]
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_multiple_matches() {
-        assert_eq!(
-            rabin_karp_search(b"ABABA" as &[u8], b"AB" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![0usize, 2usize]
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_multiple_matches_overlapping() {
-        assert_eq!(
-            calculate_kgram_hash(b"AAA" as &[u8], RK_RADIX, RK_PRIME_Q),
-            3,
-            "Pre-check hash of AAA"
-        );
-        assert_eq!(
-            rabin_karp_search(b"AAAAA" as &[u8], b"AAA" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![0usize, 1usize, 2usize]
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_pattern_is_text() {
-        assert_eq!(
-            rabin_karp_search(b"ABC" as &[u8], b"ABC" as &[u8], RK_RADIX, RK_PRIME_Q),
-            vec![0usize]
-        );
-    }
-
-    #[test]
-    fn test_rabin_karp_search_with_different_prime() {
-        const TEST_PRIME_SEARCH: u64 = 257;
-        let text: &[u8] = b"ababcab";
-        let pattern: &[u8] = b"ab";
-        assert_eq!(
-            rabin_karp_search(text, pattern, RK_RADIX, TEST_PRIME_SEARCH),
-            vec![0usize, 2usize, 5usize]
-        );
-
-        let text2: &[u8] = b"testthispattern";
-        let pattern2: &[u8] = b"pattern";
-        assert_eq!(
-            rabin_karp_search(text2, pattern2, RK_RADIX, TEST_PRIME_SEARCH),
-            vec![8usize]
-        );
-    }
+    use rustc_hash::FxHashSet;
 
     #[test]
     fn test_moss_tokenize_empty_string() {
@@ -681,16 +440,18 @@ mod tests {
 
     #[test]
     fn test_moss_jaccard_index_empty_sets() {
-        let set_a: HashSet<(u64, usize)> = HashSet::new();
-        let set_b: HashSet<(u64, usize)> = HashSet::new();
+        let set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        let set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 1.0);
     }
 
     #[test]
     fn test_moss_jaccard_index_one_set_empty() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1)].iter().cloned().collect();
-        let set_b: HashSet<(u64, usize)> = HashSet::new();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        let set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 0.0);
         assert_eq!(calculate_jaccard_index(&set_b, &set_a), 0.0);
@@ -698,7 +459,10 @@ mod tests {
 
     #[test]
     fn test_moss_jaccard_index_identical_sets() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1), (30, 2)].iter().cloned().collect();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        set_a.insert((30, 2));
         let set_b = set_a.clone();
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 1.0);
@@ -706,22 +470,29 @@ mod tests {
 
     #[test]
     fn test_moss_jaccard_index_no_overlap() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1)].iter().cloned().collect();
-        let set_b: HashSet<(u64, usize)> = [(30, 2), (40, 3)].iter().cloned().collect();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        let mut set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_b.insert((30, 2));
+        set_b.insert((40, 3));
 
         assert_eq!(calculate_jaccard_index(&set_a, &set_b), 0.0);
     }
 
     #[test]
     fn test_moss_jaccard_index_partial_overlap() {
-        let set_a: HashSet<(u64, usize)> = [(10, 0), (20, 1), (30, 2), (40, 3)]
-            .iter()
-            .cloned()
-            .collect();
-        let set_b: HashSet<(u64, usize)> = [(30, 2), (40, 3), (50, 4), (60, 5), (70, 6)]
-            .iter()
-            .cloned()
-            .collect();
+        let mut set_a: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_a.insert((10, 0));
+        set_a.insert((20, 1));
+        set_a.insert((30, 2));
+        set_a.insert((40, 3));
+        let mut set_b: FxHashSet<(u64, usize)> = FxHashSet::default();
+        set_b.insert((30, 2));
+        set_b.insert((40, 3));
+        set_b.insert((50, 4));
+        set_b.insert((60, 5));
+        set_b.insert((70, 6));
 
         let expected = 2.0 / 7.0;
         assert!((calculate_jaccard_index(&set_a, &set_b) - expected).abs() < 1e-9);

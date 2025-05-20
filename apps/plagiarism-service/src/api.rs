@@ -150,22 +150,11 @@ fn generate_overall_flags(moss_score: f64, rabin_karp_score: f64) -> Vec<String>
 
 #[api_operation(summary = "Downloads, processes, and compares project submissions for plagiarism.")]
 pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>) -> impl Responder {
-    println!(
-        "Received plagiarism check request for Project ID: {}, Promotion ID: {}",
-        body.project_id, body.promotion_id
-    );
-
-    // --- 1. S3 Fetch and Extraction ---
     let s3_directory_prefix = format!(
         "project-{}/promo-{}/step-999/",
         body.project_id, body.promotion_id
     );
     let base_extract_target_dir = &app_state.extract_base_path;
-    println!(
-        "Using base extract directory: {:?}",
-        base_extract_target_dir
-    );
-
     let s3_file_keys = match s3::list_files_in_directory(&s3_directory_prefix).await {
         Ok(keys) => keys,
         Err(e) => {
@@ -286,12 +275,6 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
     for (folder_path, submission_id) in &extracted_submission_details {
         match process_project_folder(folder_path, submission_id) {
             Ok(norm_proj) => {
-                println!(
-                    "Processed local folder: {}. Files: {}. Concat available: {}",
-                    norm_proj.project_id,
-                    norm_proj.files.len(),
-                    norm_proj.concatenated_source_code.is_some()
-                );
                 normalized_projects.push(norm_proj);
             }
             Err(e) => {
@@ -331,15 +314,21 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         for j in (i + 1)..normalized_projects.len() {
             let proj_a = &normalized_projects[i];
             let proj_b = &normalized_projects[j];
+
+            let total_files = proj_a.files.len() + proj_b.files.len();
             println!(
-                "Comparing project '{}' with project '{}'",
-                proj_a.project_id, proj_b.project_id
+                "  -> Comparing {} total files ({} from project A, {} from project B)",
+                total_files,
+                proj_a.files.len(),
+                proj_b.files.len()
             );
 
             let comparison_results = compare_normalized_projects(proj_a, proj_b);
             println!(
-                "  -> Found {} file-to-file comparison results.",
-                comparison_results.file_to_file_comparisons.len()
+                "  -> Found {} file-to-file comparison results for {} total files in project A and {} total files in project B",
+                comparison_results.file_to_file_comparisons.len(),
+                proj_a.files.len(),
+                proj_b.files.len()
             );
             comparison_reports.push(comparison_results);
         }

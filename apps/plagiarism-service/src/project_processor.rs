@@ -1,6 +1,6 @@
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
-use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -26,7 +26,7 @@ pub struct ProcessedFile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NormalizedProject {
     pub project_id: String,
-    pub files: HashMap<PathBuf, ProcessedFile>,
+    pub files: FxHashMap<PathBuf, ProcessedFile>,
     pub concatenated_source_code: Option<String>,
     pub concatenated_source_hash: Option<String>,
 }
@@ -65,16 +65,71 @@ fn detect_language(path: &Path) -> SourceLanguage {
     }
 }
 
+pub fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
+    let mut blacklist: FxHashSet<String> = FxHashSet::from_iter([
+        String::from("target/"),
+        String::from("node_modules/"),
+        String::from("dist/"),
+        String::from("build/"),
+        String::from(".next/"),
+        String::from(".git/"),
+        String::from(".svn/"),
+        String::from(".hg/"),
+        String::from(".idea/"),
+        String::from(".vscode/"),
+        String::from(".vscode\\"),
+        String::from(".exe"),
+        String::from(".DS_Store"),
+        String::from(".dll"),
+        String::from(".lock"),
+        String::from(".log"),
+        String::from(".zip"),
+        String::from(".md"),
+        String::from(".github/"),
+        String::from(".github\\"),
+        String::from("LICENSE"),
+    ]);
+
+    let gitignore_path = project_path.join(".gitignore");
+    if gitignore_path.exists() {
+        let gitignore_content = fs::read_to_string(gitignore_path)?;
+        for line in gitignore_content.lines() {
+            let trimmed_line = line.trim();
+            if !trimmed_line.is_empty()
+                && !trimmed_line.starts_with('#')
+                && !trimmed_line.contains("*")
+                && !trimmed_line.contains("!")
+            {
+                blacklist.insert(trimmed_line.to_string());
+            }
+        }
+    }
+
+    println!("Blacklisted files/folders: {:?}", blacklist);
+    Ok(blacklist)
+}
+
 pub fn process_project_folder(
     project_path: &Path,
     project_id_str: &str,
 ) -> Result<NormalizedProject, ProjectProcessorError> {
-    let mut files_map = HashMap::new();
+    let mut files_map = FxHashMap::default();
     let mut source_files_for_concatenation: Vec<(PathBuf, String)> = Vec::new();
+
+    let blacklist = build_blacklist(project_path)?;
 
     for entry in walkdir::WalkDir::new(project_path).into_iter() {
         let entry = entry?;
         let path = entry.path();
+        let path_str = path.to_string_lossy();
+
+        let is_blacklisted = blacklist.iter().any(|item| path_str.contains(item));
+
+        if is_blacklisted {
+            println!("Skipping blacklisted: {:?}", path);
+            continue;
+        }
+
         if path.is_file() {
             let mut relative_path = match path.strip_prefix(project_path) {
                 Ok(p) => p.to_path_buf(),
@@ -90,13 +145,6 @@ pub fn process_project_folder(
                             .to_path_buf();
                     }
                 }
-            }
-
-            if relative_path.components().any(|comp| {
-                let s = comp.as_os_str();
-                s == ".git" || s == "target" || s == ".svn" || s == ".hg"
-            }) {
-                continue;
             }
 
             let language = detect_language(path);
