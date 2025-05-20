@@ -1,18 +1,22 @@
 import { Injectable } from "@nestjs/common";
 import { Resend } from "resend";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 @Injectable()
 export class EmailService {
   private async sendEmail(to: string, subject: string, body: string): Promise<void> {
     const resend = new Resend(process.env.RESEND_KEY);
+    const isEmailEnabled = process.env.ENABLE_EMAILS === "true";
 
-    if (!resend.emails) {
+    if (!(resend.emails || isEmailEnabled)) {
       throw new Error("Emails feature is not enabled");
     }
 
     console.log(`Sending email to ${to} with subject "${subject}"`);
+    await sleep(3000);
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "lumio@jayllyz.fr",
       to,
       subject,
       html: body,
