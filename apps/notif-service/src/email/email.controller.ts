@@ -22,10 +22,8 @@ export class EmailController {
   async createMultipleStudentAccounts(
     @Body() createMultipleStudentAccountsDto: CreateMultipleStudentAccountsDto,
   ): Promise<void> {
-    await Promise.all(
-      createMultipleStudentAccountsDto.users.map((user) =>
-        this.emailService.createdStudentAccount(user.email, user.password),
-      ),
+    createMultipleStudentAccountsDto.users.forEach((user) =>
+      this.emailService.createdStudentAccount(user.email, user.password),
     );
   }
 }
