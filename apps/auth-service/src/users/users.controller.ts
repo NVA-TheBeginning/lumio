@@ -59,7 +59,7 @@ export class UsersController {
       return [];
     }
 
-    const userIds = ids.split(",").map((id) => parseInt(id, 10));
+    const userIds = ids.split(",").map((id) => Number.parseInt(id, 10));
     return await this.usersService.findUsersByIds(userIds, page, size);
   }
 }
