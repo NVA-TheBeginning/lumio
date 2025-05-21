@@ -169,8 +169,8 @@ export class UsersService {
     page: string | undefined,
     size: string = String(DEFAULT_ROWS_PER_PAGE),
   ): Promise<PaginatedResponse<UserResponse>> {
-    const currentPage = page ? parseInt(page, 10) || 1 : 1;
-    const itemsPerPage = parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE;
+    const currentPage = page ? Number.parseInt(page, 10) || 1 : 1;
+    const itemsPerPage = Number.parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE;
     const skipAmount = (currentPage - 1) * itemsPerPage;
 
     const users = await this.prisma.user.findMany({

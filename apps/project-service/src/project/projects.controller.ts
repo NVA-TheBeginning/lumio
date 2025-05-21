@@ -100,7 +100,7 @@ export class ProjectController {
   async findByPromotions(@Query("promotionIds") promotionIds: string) {
     const ids = promotionIds
       .split(",")
-      .map((s) => parseInt(s, 10))
+      .map((s) => Number.parseInt(s, 10))
       .filter((n) => !Number.isNaN(n));
     return this.projectService.findByPromotions(ids);
   }
