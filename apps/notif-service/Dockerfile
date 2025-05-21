@@ -13,6 +13,10 @@ RUN bun --bun run build -F notif-service
 FROM oven/bun:1.2 AS production
 WORKDIR /apps
 
+RUN apt update && apt install curl -y --no-install-recommends \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=base /app/package.json ./
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/apps/notif-service ./notif-service
