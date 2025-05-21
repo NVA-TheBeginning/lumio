@@ -9,4 +9,4 @@ scrape_configs:
   static_configs:
   - targets:
     - 'prometheus:9090'
-    - 'https://lumio-gateway.jayllyz.fr'
+    - 'lumio-gateway.jayllyz.fr:80'
