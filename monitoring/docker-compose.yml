@@ -5,7 +5,7 @@ services:
       - "9095:9090"
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--web.external-url=http://prometheus:9095/"
+      - "--web.external-url=https://lumio-prometheus.jayllyz.fr"
       - "--web.route-prefix=/"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
