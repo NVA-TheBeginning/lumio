@@ -102,6 +102,11 @@ export async function getAllProjects(): Promise<Project[]> {
   return await authFetchData<Project[]>(`${API_URL}/projects/creator/${id}`);
 }
 
+export async function getAllProjectsStudents(): Promise<Project[]> {
+  const id = await getUserId();
+  return await authFetchData<Project[]>(`${API_URL}/projects/students/${id}/detailed`);
+}
+
 export async function createProject(data: CreateProjectData): Promise<void> {
   data.creatorId = await getUserId();
   await authPostData(`${API_URL}/projects`, data);
