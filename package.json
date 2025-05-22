@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "lumio",
-  "packageManager": "bun@1.2.10",
+  "packageManager": "bun@1.2.14",
   "scripts": {
     "build": "turbo run build",
     "build:ci": "turbo run build --affected",

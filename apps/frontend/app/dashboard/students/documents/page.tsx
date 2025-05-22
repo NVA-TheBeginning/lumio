@@ -3,11 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { type Document, deleteDocument, getDocuments } from "@/app/dashboard/teachers/documents/actions";
 import DocumentList from "@/components/documents-list";
 import { Button } from "@/components/ui/button";
 import UploadModal from "@/components/upload-modal";
-import type { Document } from "./actions";
-import { deleteDocument, getDocuments } from "./actions";
 
 export default function DocumentDrive() {
   const [isUploading, setIsUploading] = useState(false);
