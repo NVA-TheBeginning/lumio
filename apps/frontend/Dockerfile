@@ -1,6 +1,9 @@
 FROM oven/bun:1.2 AS base
 WORKDIR /app
 
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+
 COPY package.json bun.lock ./
 COPY apps/frontend/package.json ./apps/frontend/
 
