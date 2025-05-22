@@ -59,6 +59,7 @@ jobs:
           .github/workflows/ci.yaml
           rust-toolchain.toml
           justfile
+          bun.lock
           apps/plagiarism-service/**
 
     - name: Install Rust toolchain
