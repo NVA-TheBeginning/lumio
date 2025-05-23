@@ -39,7 +39,7 @@ export class DeliverablesController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   async update(@Body() updateDeliverableDto: UpdateDeliverableDto) {
-    return this.proxy.forwardRequest("files", "/deliverables", "PUT", updateDeliverableDto);
+    return this.proxy.forwardRequest("files", "/projects/deliverables", "PUT", updateDeliverableDto);
   }
 
   @Delete("projects/deliverables/:projectId/:promotionId")
@@ -47,6 +47,10 @@ export class DeliverablesController {
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   async remove(@Param() params: DeliverableIdParams): Promise<void> {
-    return this.proxy.forwardRequest("files", `/deliverables/${params.projectId}/${params.promotionId}`, "DELETE");
+    return this.proxy.forwardRequest(
+      "files",
+      `/projects/deliverables/${params.projectId}/${params.promotionId}`,
+      "DELETE",
+    );
   }
 }
