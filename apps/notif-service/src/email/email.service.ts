@@ -10,7 +10,7 @@ export class EmailService {
     const isEmailEnabled = process.env.ENABLE_EMAILS === "true";
 
     if (!(resend.emails || isEmailEnabled)) {
-      throw new Error("Emails feature is not enabled");
+      return;
     }
 
     console.log(`Sending email to ${to} with subject "${subject}"`);
