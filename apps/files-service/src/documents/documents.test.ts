@@ -64,7 +64,12 @@ describe("DocumentController", () => {
       mockPrismaService.documents.create.mockResolvedValue(mockDocument);
       mockS3Service.uploadFile.mockResolvedValue(undefined);
 
-      const result = await controller.uploadDocument(mockFile as unknown as File, "Test Document", 123);
+      const result = await controller.uploadDocument(
+        mockFile as unknown as File,
+        "Test Document",
+        123,
+        mockFile.mimetype,
+      );
 
       expect(result).toEqual(mockDocument);
 
@@ -82,17 +87,17 @@ describe("DocumentController", () => {
     });
 
     test("should throw BadRequestException when no file is provided", async () => {
-      expect(controller.uploadDocument(null as unknown as File, "Test Document", 123)).rejects.toThrow(
-        BadRequestException,
-      );
+      expect(
+        controller.uploadDocument(null as unknown as File, "Test Document", 123, "application/pdf"),
+      ).rejects.toThrow(BadRequestException);
     });
 
     test("should handle errors during upload", async () => {
       mockS3Service.uploadFile.mockRejectedValue(new Error("Upload failed"));
 
-      expect(controller.uploadDocument(mockFile as unknown as File, "Test Document", 123)).rejects.toThrow(
-        BadRequestException,
-      );
+      expect(
+        controller.uploadDocument(mockFile as unknown as File, "Test Document", 123, "application/pdf"),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

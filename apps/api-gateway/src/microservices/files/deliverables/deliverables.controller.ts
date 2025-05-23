@@ -1,25 +1,19 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Deliverables } from "@prisma-files/client";
-import { DeliverablesService } from "@/deliverables/deliverables.service";
-import {
-  CreateDeliverableDto,
-  DeliverableIdParams,
-  ProjectIdParams,
-  UpdateDeliverableDto,
-} from "@/deliverables/dto/deliverables.dto";
+import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
+import { CreateDeliverableDto, DeliverableIdParams, ProjectIdParams, UpdateDeliverableDto } from "./dto.js";
 
 @ApiTags("deliverables")
 @Controller()
 export class DeliverablesController {
-  constructor(private readonly deliverablesService: DeliverablesService) {}
+  constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post("projects/deliverables")
   @ApiOperation({ summary: "Create a new deliverable for a project" })
   @ApiResponse({ status: HttpStatus.CREATED, description: "The deliverable has been successfully created." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
-  async create(@Body() createDeliverableDto: CreateDeliverableDto): Promise<Deliverables> {
-    return this.deliverablesService.create(createDeliverableDto);
+  async create(@Body() createDeliverableDto: CreateDeliverableDto) {
+    return this.proxy.forwardRequest("files", "/projects/deliverables", "POST", createDeliverableDto);
   }
 
   @Get("projects/:projectId/deliverables")
@@ -31,10 +25,11 @@ export class DeliverablesController {
     type: Number,
     description: "Filter deliverables by promotion ID",
   })
-  async findAll(@Param() params: ProjectIdParams, @Query("promoId") promoId?: number): Promise<Deliverables[]> {
-    return this.deliverablesService.findAllByProjectPromo(
-      Number(params.projectId),
-      promoId ? Number(promoId) : undefined,
+  async findAll(@Param() params: ProjectIdParams, @Query("promoId") promoId?: number) {
+    return this.proxy.forwardRequest(
+      "files",
+      `/projects/${params.projectId}/deliverables${promoId ? `?promoId=${promoId}` : ""}`,
+      "GET",
     );
   }
 
@@ -43,8 +38,8 @@ export class DeliverablesController {
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully updated." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async update(@Body() updateDeliverableDto: UpdateDeliverableDto): Promise<Deliverables> {
-    return this.deliverablesService.update(updateDeliverableDto);
+  async update(@Body() updateDeliverableDto: UpdateDeliverableDto) {
+    return this.proxy.forwardRequest("files", "/deliverables", "PUT", updateDeliverableDto);
   }
 
   @Delete("projects/deliverables/:projectId/:promotionId")
@@ -52,6 +47,6 @@ export class DeliverablesController {
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   async remove(@Param() params: DeliverableIdParams): Promise<void> {
-    return this.deliverablesService.remove(Number(params.projectId), Number(params.promotionId));
+    return this.proxy.forwardRequest("files", `/deliverables/${params.projectId}/${params.promotionId}`, "DELETE");
   }
 }

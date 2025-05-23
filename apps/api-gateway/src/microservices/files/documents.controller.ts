@@ -66,6 +66,7 @@ export class DocumentController {
     formData.append("file", new Blob([file.buffer]), file.originalname);
     formData.append("name", name);
     formData.append("userId", userId.toString());
+    formData.append("mimetype", file.mimetype);
 
     return this.proxy.forwardRequest("files", "/documents/upload", "POST", formData, {
       "Content-Type": "multipart/form-data",
