@@ -57,10 +57,16 @@ export class DocumentController {
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(FileInterceptor("file", { preservePath: true }))
   @ApiBadRequestResponse({ description: "Invalid file or user ID provided" })
-  async uploadDocument(@UploadedFile() file: File, @Body("name") name: string, @Body("userId") userId: number) {
+  async uploadDocument(
+    @UploadedFile() file: File,
+    @Body("name") name: string,
+    @Body("userId") userId: number,
+    @Body("mimetype") mimetype: string,
+  ) {
     if (!file) {
       throw new BadRequestException("No file uploaded");
     }
+    file.mimetype = mimetype;
 
     return this.documentService.uploadDocument(file, name, userId);
   }
