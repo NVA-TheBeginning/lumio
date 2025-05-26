@@ -187,7 +187,7 @@ export async function updateProjectStatus(
   idPromotion: number,
   status: "VISIBLE" | "DRAFT" | "HIDDEN" | string,
 ): Promise<void> {
-  return await authPatchData(`${API_URL}/projects/${idProject}/${idPromotion}/status`, { status });
+  return await authPatchData<void>(`${API_URL}/projects/${idProject}/${idPromotion}/status`, { status });
 }
 
 export interface GroupSettingsUpdateDto {

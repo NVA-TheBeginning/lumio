@@ -132,7 +132,7 @@ export async function authDeleteData<T = void>(url: string): Promise<T> {
   }
 
   if (response.status === 204) {
-    return {} as T;
+    return undefined as T;
   }
 
   return response.json();
