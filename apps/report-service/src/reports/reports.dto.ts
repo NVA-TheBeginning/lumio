@@ -62,12 +62,11 @@ export class UpdateReportDto {
   @IsInt()
   groupId: number;
 
-  @ApiPropertyOptional({ description: "Report sections", type: [UpdateReportSectionDto] })
-  @IsOptional()
+  @ApiProperty({ description: "Report sections", type: [UpdateReportSectionDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateReportSectionDto)
-  sections?: UpdateReportSectionDto[];
+  sections: UpdateReportSectionDto[];
 }
 
 export class ReportSectionResponseDto {
