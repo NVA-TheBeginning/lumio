@@ -109,7 +109,7 @@ export class ReportsService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2003") {
-          throw new BadRequestException("Invalid project_id or group_id reference");
+          throw new BadRequestException("Invalid projectId or groupId provided");
         }
       }
       throw error;

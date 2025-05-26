@@ -20,14 +20,13 @@ export class CreateReportSectionDto {
 }
 
 export class CreateReportDto {
-  @ApiProperty({ description: "Project ID reference" })
+  @ApiProperty({ description: "Project ID" })
   @IsInt()
   projectId: number;
 
-  @ApiPropertyOptional({ description: "Group ID reference (optional)" })
-  @IsOptional()
+  @ApiProperty({ description: "Group ID" })
   @IsInt()
-  groupId?: number;
+  groupId: number;
 
   @ApiProperty({ description: "Report sections", type: [CreateReportSectionDto] })
   @IsArray()
@@ -55,15 +54,13 @@ export class UpdateReportSectionDto {
 }
 
 export class UpdateReportDto {
-  @ApiPropertyOptional({ description: "Project ID reference" })
-  @IsOptional()
+  @ApiProperty({ description: "Project ID reference" })
   @IsInt()
-  projectId?: number;
+  projectId: number;
 
-  @ApiPropertyOptional({ description: "Group ID reference (optional)" })
-  @IsOptional()
+  @ApiProperty({ description: "Group ID reference" })
   @IsInt()
-  groupId?: number;
+  groupId: number;
 
   @ApiPropertyOptional({ description: "Report sections", type: [UpdateReportSectionDto] })
   @IsOptional()
