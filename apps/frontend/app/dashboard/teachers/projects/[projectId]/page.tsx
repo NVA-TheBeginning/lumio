@@ -13,7 +13,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const [activeTab, setActiveTab] = useState("overview");
 
   const { data: ProjectData, isLoading } = useQuery<ProjectType>({
-    queryKey: ["projects", projectId],
+    queryKey: ["projects", Number(projectId)],
     queryFn: () => getProjectById(Number(projectId)),
   });
 

@@ -1,6 +1,6 @@
 "use server";
-import { getTokens, getUserFromCookie } from "@/lib/cookie";
-import { authFetchData, authPostData } from "@/lib/utils";
+import { getUserFromCookie } from "@/lib/cookie";
+import { authDeleteData, authFetchData, authPatchData, authPostData, authPutData } from "@/lib/utils";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
 
@@ -44,10 +44,13 @@ export interface GroupType {
 }
 
 export interface GroupSettingsType {
+  projectId: number;
+  promotionId: number;
   minMembers: number;
   maxMembers: number;
   mode: string;
   deadline: string;
+  updatedAt: string;
 }
 
 export interface PromotionType {
@@ -116,36 +119,25 @@ export async function getProjectById(id: number): Promise<ProjectType> {
     throw new Error(`Project with ID ${id} not found`);
   }
 
+  const mockPromoId = 1;
+  const groupSettings = await authFetchData<GroupSettingsType>(
+    `${API_URL}/projects/${id}/promotions/${mockPromoId}/group-settings`,
+  );
+  const groups = await authFetchData<GroupType[]>(`${API_URL}/projects/${id}/promotions/${mockPromoId}/groups`);
+
   const baseProject = data as Omit<ProjectType, "promotions" | "deliverables">;
 
   const mockPromotions: PromotionType[] = [
     {
-      id: 101,
+      id: 1,
       name: "Promotion 2025",
       description: "Étudiants de la promotion 2025",
       status: "VISIBLE",
-      groupSettings: { minMembers: 3, maxMembers: 5, mode: "manual", deadline: "2025-12-31T23:59:59Z" },
-      groups: [
-        {
-          id: 201,
-          name: "Groupe Alpha",
-          members: [
-            { id: 301, name: "Alice Smith" },
-            { id: 302, name: "Bob Johnson" },
-          ],
-        },
-        { id: 202, name: "Groupe Beta", members: [{ id: 303, name: "Charlie Brown" }] },
-      ],
-    },
-    {
-      id: 102,
-      name: "Promotion 2026",
-      description: "Étudiants de la promotion 2026",
-      status: "HIDDEN",
-      groupSettings: { minMembers: 2, maxMembers: 4, mode: "auto", deadline: "2026-12-31T23:59:59Z" },
-      groups: [],
+      groupSettings,
+      groups,
     },
   ];
+  console.log("mockPromotions", mockPromotions);
 
   const mockDeliverables: DeliverableType[] = [
     {
@@ -187,20 +179,7 @@ export async function getProjectById(id: number): Promise<ProjectType> {
 }
 
 export async function deleteProject(id: number): Promise<void> {
-  const { accessToken } = await getTokens();
-  if (!accessToken) {
-    throw new Error("Access token is missing");
-  }
-  const response = await fetch(`${API_URL}/projects/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
-  }
+  return await authDeleteData(`${API_URL}/projects/${id}`);
 }
 
 export async function updateProjectStatus(
@@ -208,19 +187,45 @@ export async function updateProjectStatus(
   idPromotion: number,
   status: "VISIBLE" | "DRAFT" | "HIDDEN" | string,
 ): Promise<void> {
-  const { accessToken } = await getTokens();
-  if (!accessToken) {
-    throw new Error("Access token is missing");
-  }
-  const response = await fetch(`${API_URL}/projects/${idProject}/${idPromotion}/status`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  });
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
-  }
+  return await authPatchData<void>(`${API_URL}/projects/${idProject}/${idPromotion}/status`, { status });
+}
+
+export interface GroupSettingsUpdateDto {
+  minMembers: number;
+  maxMembers: number;
+  mode: "MANUAL" | "RANDOM" | "FREE" | string;
+  deadline: string;
+}
+
+export interface CreateGroupsDto {
+  numberOfGroups: number;
+  baseName?: string;
+}
+
+interface UpdateGroupDto {
+  name: string;
+}
+
+export async function updateGroupSettings(projectId: number, promotionId: number, data: GroupSettingsUpdateDto) {
+  return await authPatchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/group-settings`, data);
+}
+
+export async function createGroups(projectId: number, promotionId: number, data: CreateGroupsDto) {
+  return await authPostData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/groups`, data);
+}
+
+export async function updateGroup(groupId: number, data: UpdateGroupDto) {
+  return await authPutData(`${API_URL}/groups/${groupId}`, data);
+}
+
+export async function deleteGroup(groupId: number) {
+  return await authDeleteData(`${API_URL}/groups/${groupId}`);
+}
+
+export async function addMembersToGroup(groupId: number, studentIds: number[]) {
+  return await authPostData(`${API_URL}/groups/${groupId}/students`, { studentIds });
+}
+
+export async function removeMemberFromGroup(groupId: number, userId: number) {
+  return await authDeleteData(`${API_URL}/groups/${groupId}/students/${userId}`);
 }
