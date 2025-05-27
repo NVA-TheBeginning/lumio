@@ -36,6 +36,7 @@ export class ReportsController {
   @ApiOperation({ summary: "Get all reports, optionally filtered by project or group" })
   @ApiQuery({ name: "projectId", required: false, type: Number, description: "Filter by project ID" })
   @ApiQuery({ name: "groupId", required: false, type: Number, description: "Filter by group ID" })
+  @ApiQuery({ name: "promotionId", required: false, type: Number, description: "Filter by promotion ID" })
   @ApiResponse({
     status: 200,
     description: "List of reports retrieved successfully.",
@@ -44,8 +45,9 @@ export class ReportsController {
   async findAll(
     @Query("projectId", new ParseIntPipe({ optional: true })) projectId?: number,
     @Query("groupId", new ParseIntPipe({ optional: true })) groupId?: number,
+    @Query("promotionId", new ParseIntPipe({ optional: true })) promotionId?: number,
   ): Promise<ReportResponseDto[]> {
-    return this.reportsService.findAll(projectId, groupId);
+    return this.reportsService.findAll(projectId, groupId, promotionId);
   }
 
   @Get(":id")

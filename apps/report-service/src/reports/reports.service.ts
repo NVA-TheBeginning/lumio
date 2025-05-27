@@ -15,6 +15,7 @@ export class ReportsService {
       data: {
         projectId: createReportDto.projectId,
         groupId: createReportDto.groupId,
+        promotionId: createReportDto.promotionId,
         sections: {
           create: createReportDto.sections.map((section) => ({
             title: section.title,
@@ -35,7 +36,7 @@ export class ReportsService {
     return report;
   }
 
-  async findAll(projectId?: number, groupId?: number): Promise<ReportResponseDto[]> {
+  async findAll(projectId?: number, groupId?: number, promotionId?: number): Promise<ReportResponseDto[]> {
     const where: Prisma.ReportWhereInput = {};
 
     if (projectId !== undefined) {
@@ -44,6 +45,10 @@ export class ReportsService {
 
     if (groupId !== undefined) {
       where.groupId = groupId;
+    }
+
+    if (promotionId !== undefined) {
+      where.promotionId = promotionId;
     }
 
     return await this.prisma.report.findMany({
@@ -85,22 +90,21 @@ export class ReportsService {
     }
 
     try {
-      const updateData: Prisma.ReportUpdateInput = {};
-
-      if (updateReportDto.sections) {
-        updateData.sections = {
-          deleteMany: {},
-          create: updateReportDto.sections.map((section) => ({
-            title: section.title || "",
-            contentMarkdown: section.contentMarkdown,
-            contentHtml: section.contentHtml,
-          })),
-        };
-      }
-
+      const { sections } = updateReportDto;
       const updatedReport = await this.prisma.report.update({
         where: { id },
-        data: updateData,
+        data: {
+          sections: {
+            update: sections.map((section) => ({
+              where: { id: section.id },
+              data: {
+                title: section.title,
+                contentMarkdown: section.contentMarkdown,
+                contentHtml: section.contentHtml,
+              },
+            })),
+          },
+        },
         include: {
           sections: {
             orderBy: { id: "asc" },

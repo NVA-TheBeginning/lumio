@@ -9,7 +9,7 @@ describe("Reports", () => {
   let app: NestFastifyApplication;
   let prisma: PrismaService;
   let reportId: number;
-  let sectionId: number;
+  let initialSectionIds: number[];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -26,6 +26,7 @@ describe("Reports", () => {
   const createReportDto = (): CreateReportDto => ({
     projectId: 1,
     groupId: 1,
+    promotionId: 1,
     sections: [
       {
         title: "Introduction",
@@ -65,6 +66,7 @@ describe("Reports", () => {
     expect(body.sections[1]).toHaveProperty("title", "Methodology");
 
     reportId = body.id;
+    initialSectionIds = body.sections.map((section: { id: number }) => section.id);
   });
 
   test("/reports (POST) - should fail when missing required fields", async () => {
@@ -81,7 +83,6 @@ describe("Reports", () => {
 
     expect(response.statusCode).toEqual(400);
     const body = JSON.parse(response.body);
-    console.log(body);
     expect(body.message).toContain("projectId");
   });
 
@@ -158,32 +159,13 @@ describe("Reports", () => {
     expect(body.message).toContain("Report with ID 999999 not found");
   });
 
-  test("/reports/:id (PATCH) - should update a report", async () => {
-    const updateDto = {
-      projectId: 1,
-      groupId: 1,
-      sections: [
-        {
-          title: "Updated Introduction",
-          contentMarkdown: "# Updated Introduction\nThis is updated.",
-          contentHtml: "<h1>Updated Introduction</h1><p>This is updated.</p>",
-        },
-      ],
-    };
-
-    const response = await app.inject({
-      method: "PATCH",
-      url: `/reports/${reportId}`,
-      payload: updateDto,
-    });
-
-    expect(response.statusCode).toEqual(200);
-  });
-
   test("/reports/:id (PATCH) - should update report sections", async () => {
+    expect(initialSectionIds).toHaveLength(2);
+
     const updateDto = {
       sections: [
         {
+          id: initialSectionIds[0],
           title: "Updated Introduction",
           contentMarkdown: "# Updated Introduction\nThis is updated.",
         },
@@ -198,8 +180,10 @@ describe("Reports", () => {
 
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
-    expect(body.sections).toHaveLength(1);
-    expect(body.sections[0]).toHaveProperty("title", "Updated Introduction");
+    expect(body.sections).toHaveLength(2);
+    const updatedSection = body.sections.find((s: { id: number }) => s.id === initialSectionIds[0]);
+    expect(updatedSection).toHaveProperty("title", "Updated Introduction");
+    expect(updatedSection).toHaveProperty("contentMarkdown", "# Updated Introduction\nThis is updated.");
   });
 
   test("/reports/:id (PATCH) - should return 404 for non-existent report", async () => {
@@ -226,10 +210,9 @@ describe("Reports", () => {
 
     expect(response.statusCode).toEqual(201);
     const body = JSON.parse(response.body);
-    expect(body.sections).toHaveLength(2);
+    expect(body.sections).toHaveLength(3);
     const newSection = body.sections.find((s: { title: string }) => s.title === "Conclusion");
     expect(newSection).toBeDefined();
-    sectionId = newSection.id;
   });
 
   test("/reports/:id/sections (POST) - should return 404 for non-existent report", async () => {
@@ -247,6 +230,7 @@ describe("Reports", () => {
 
   test("/reports/sections/:sectionId (PATCH) - should update a section", async () => {
     const updateSectionDto = {
+      id: initialSectionIds[1],
       title: "Updated Conclusion",
       contentMarkdown: "## Updated Conclusion\nThis is the updated conclusion.",
       contentHtml: "<h2>Updated Conclusion</h2><p>This is the updated conclusion.</p>",
@@ -254,7 +238,7 @@ describe("Reports", () => {
 
     const response = await app.inject({
       method: "PATCH",
-      url: `/reports/sections/${sectionId}`,
+      url: `/reports/sections/${initialSectionIds[1]}`,
       payload: updateSectionDto,
     });
 
@@ -265,7 +249,7 @@ describe("Reports", () => {
       url: `/reports/${reportId}`,
     });
     const reportBody = JSON.parse(reportResponse.body);
-    const updatedSection = reportBody.sections.find((s: { id: number }) => s.id === sectionId);
+    const updatedSection = reportBody.sections.find((s: { id: number }) => s.id === initialSectionIds[1]);
     expect(updatedSection).toHaveProperty("title", "Updated Conclusion");
   });
 
@@ -286,9 +270,8 @@ describe("Reports", () => {
   test("/reports/sections/:sectionId (DELETE) - should delete a section", async () => {
     const response = await app.inject({
       method: "DELETE",
-      url: `/reports/sections/${sectionId}`,
+      url: `/reports/sections/${initialSectionIds[0]}`,
     });
-
     expect(response.statusCode).toEqual(204);
 
     const reportResponse = await app.inject({
@@ -296,7 +279,7 @@ describe("Reports", () => {
       url: `/reports/${reportId}`,
     });
     const reportBody = JSON.parse(reportResponse.body);
-    const deletedSection = reportBody.sections.find((s: { id: number }) => s.id === sectionId);
+    const deletedSection = reportBody.sections.find((s: { id: number }) => s.id === initialSectionIds[0]);
     expect(deletedSection).toBeUndefined();
   });
 

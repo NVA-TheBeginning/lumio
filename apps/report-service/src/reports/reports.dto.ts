@@ -28,6 +28,10 @@ export class CreateReportDto {
   @IsInt()
   groupId: number;
 
+  @ApiProperty({ description: "Promotion ID" })
+  @IsInt()
+  promotionId: number;
+
   @ApiProperty({ description: "Report sections", type: [CreateReportSectionDto] })
   @IsArray()
   @ValidateNested({ each: true })
@@ -36,6 +40,11 @@ export class CreateReportDto {
 }
 
 export class UpdateReportSectionDto {
+  @ApiProperty({ description: "Section ID" })
+  @IsInt()
+  @IsNotEmpty()
+  id: number;
+
   @ApiPropertyOptional({ description: "Section title", maxLength: 255 })
   @IsOptional()
   @IsString()
@@ -54,14 +63,6 @@ export class UpdateReportSectionDto {
 }
 
 export class UpdateReportDto {
-  @ApiProperty({ description: "Project ID reference" })
-  @IsInt()
-  projectId: number;
-
-  @ApiProperty({ description: "Group ID reference" })
-  @IsInt()
-  groupId: number;
-
   @ApiProperty({ description: "Report sections", type: [UpdateReportSectionDto] })
   @IsArray()
   @ValidateNested({ each: true })

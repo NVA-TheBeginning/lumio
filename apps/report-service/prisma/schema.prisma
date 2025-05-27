@@ -20,7 +20,8 @@ datasource db {
 model Report {
   id          Int      @id @default(autoincrement())
   projectId   Int
-  groupId     Int?
+  groupId     Int
+  promotionId Int
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
