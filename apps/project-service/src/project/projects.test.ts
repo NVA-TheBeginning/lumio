@@ -134,22 +134,6 @@ describe("Projects", () => {
     expect(proj.name).toBe(projectName);
   });
 
-  test("/projects/creator/:creatorId (GET) - should return projects for creator", async () => {
-    const res = await app.inject({ method: "GET", url: "/projects/creator/1" });
-    expect(res.statusCode).toBe(200);
-    const list = JSON.parse(res.body) as Array<{ id: number }>;
-    expect(Array.isArray(list)).toBe(true);
-    expect(list.some((p) => p.id === projectId)).toBe(true);
-  });
-
-  test("/projects/creator/:creatorId (GET) - should return empty array for non-existing creator", async () => {
-    const res = await app.inject({ method: "GET", url: "/projects/creator/999999" });
-    expect(res.statusCode).toBe(200);
-    const list = JSON.parse(res.body) as Array<unknown>;
-    expect(Array.isArray(list)).toBe(true);
-    expect(list).toHaveLength(0);
-  });
-
   test("/projects/:id (GET) - not found", async () => {
     const res = await app.inject({ method: "GET", url: "/projects/999999" });
     expect(res.statusCode).toBe(404);

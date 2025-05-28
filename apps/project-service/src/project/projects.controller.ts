@@ -18,7 +18,7 @@ import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator";
 import { ProjectDetailedDto } from "@/project/dto/project-detailed.dto";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto, UpdateProjectStatusDto } from "./dto/update-project.dto";
-import { ProjectService, ProjectsByPromotion } from "./projects.service";
+import { ProjectService } from "./projects.service";
 
 @ApiTags("projects")
 @Controller("projects")
@@ -34,13 +34,25 @@ export class ProjectController {
     return this.projectService.create(createProjectDto);
   }
 
-  @Get("creator/:creatorId")
+  @Get("myprojects")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Retrieve all projects created by a specific user" })
-  @ApiParam({ name: "creatorId", description: "Creator user ID", type: Number })
-  @ApiResponse({ status: 200, description: "Projects list for the given creator." })
-  async findByCreator(@Param("creatorId", ParseIntPipe) creatorId: number) {
-    return this.projectService.findByCreator(creatorId);
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get projects for the logged-in user (teachers see theirs, students see those they belong to)",
+  })
+  @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
+  @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
+  @ApiResponse({ status: 200, description: "Paginated list or map of projects" })
+  async findMine(
+    @GetUser() user: JwtUser,
+    @Query("page", ParseIntPipe) page = 1,
+    @Query("size", ParseIntPipe) size = 10,
+  ) {
+    if (user.role === "TEACHER" || user.role === "ADMIN") {
+      return this.projectService.findByCreator(user.sub, page, size);
+    }
+    return this.projectService.findProjectsForStudent(user.sub, page, size);
   }
 
   @Get()
@@ -119,27 +131,5 @@ export class ProjectController {
       .map((s) => Number.parseInt(s, 10))
       .filter((n) => !Number.isNaN(n));
     return this.projectService.findByPromotions(ids);
-  }
-
-  @Get("student/:studentId/detailed")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: "Get student’s paginated projects with group status, by promotion",
-  })
-  @ApiParam({ name: "studentId", type: Number, description: "Student user ID" })
-  @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
-  @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
-  @ApiResponse({
-    status: 200,
-    description: "Map promotionId → paginated ProjectWithGroupStatus",
-  })
-  async findByStudentDetailed(
-    @Param("studentId", ParseIntPipe) studentId: number,
-    @Query("page") page?: number,
-    @Query("size") size?: number,
-  ): Promise<ProjectsByPromotion> {
-    const p = page ? page : 1;
-    const s = size ? size : 10;
-    return this.projectService.findProjectsForStudent(studentId, p, s);
   }
 }

@@ -75,33 +75,32 @@ export class ProjectService {
     });
   }
 
-  async findByCreator(creatorId: number): Promise<ProjectWithPromotions[]> {
+  async findByCreator(creatorId: number, page: number, size: number): Promise<Paginated<ProjectWithPromotions>> {
     if (creatorId == null) {
       throw new BadRequestException("creatorId is required");
     }
 
+    const totalRecords = await this.prisma.project.count({
+      where: { creatorId, deletedAt: null },
+    });
+
     const projects = await this.prisma.project.findMany({
       where: { creatorId, deletedAt: null },
+      skip: (page - 1) * size,
+      take: size,
+      orderBy: { createdAt: "desc" },
       include: {
         projectPromotions: {
           select: {
             promotionId: true,
             status: true,
-            promotion: {
-              select: {
-                name: true,
-              },
-            },
+            promotion: { select: { name: true } },
           },
         },
       },
     });
 
-    if (projects.length === 0) {
-      return [];
-    }
-
-    return projects.map((p) => ({
+    const data: ProjectWithPromotions[] = projects.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
@@ -114,6 +113,17 @@ export class ProjectService {
         status: pp.status,
       })),
     }));
+
+    const totalPages = Math.ceil(totalRecords / size) || 1;
+    const meta: PaginationMeta = {
+      totalRecords,
+      currentPage: page,
+      totalPages,
+      nextPage: page < totalPages ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
+    };
+
+    return { data, pagination: meta };
   }
 
   async findAll() {
@@ -136,16 +146,13 @@ export class ProjectService {
       throw new NotFoundException(`Project ${id} not found`);
     }
 
-    // Commencer à construire la réponse minimale
     const dto: ProjectDetailedDto = {
       id: project.id,
       name: project.name,
       description: project.description,
     };
 
-    // Si c'est un prof ou admin, on ajoute toutes les infos
     if (user.role === "TEACHER" || user.role === "ADMIN") {
-      // 1) promotions + status
       const pps = await this.prisma.projectPromotion.findMany({
         where: { projectId: id },
         include: { promotion: true },
@@ -158,7 +165,6 @@ export class ProjectService {
         }),
       );
 
-      // 2) tous les groupes de ce projet
       const groups = await this.prisma.group.findMany({
         where: { projectId: id },
         include: { members: true },
