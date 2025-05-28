@@ -416,7 +416,7 @@ export class ProjectService {
     if (groupSettings.length === 0) return;
     const invalid = groupSettings.map((gs) => gs.promotionId).filter((pid) => !promotionIds.includes(pid));
     if (invalid.length) {
-      throw new BadRequestException(`GroupSettings invalides pour promotions : ${invalid.join(", ")}`);
+      throw new BadRequestException(`Invalid group settings for promotions: ${invalid.join(", ")}`);
     }
     for (const { minMembers, maxMembers, deadline } of groupSettings) {
       if (minMembers > maxMembers) {
