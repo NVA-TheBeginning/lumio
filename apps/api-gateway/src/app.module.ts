@@ -1,10 +1,12 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { HealthController } from "@/health/health.controller.js";
 import { AuthModule } from "@/microservices/auth/auth.module.js";
 import { ProjectsModule } from "@/microservices/projects-groups/projects/projects.module.js";
 import configuration from "./config/configuration.js";
 import { UsersModule } from "./microservices/auth/users/users.module.js";
+import { DeliverablesModule } from "./microservices/files/deliverables/deliverables.module.js";
 import { FilesModule } from "./microservices/files/files.module.js";
 import { SubmissionsModule } from "./microservices/files/submissions/submissions.module.js";
 
@@ -19,6 +21,13 @@ import { SubmissionsModule } from "./microservices/files/submissions/submissions
     ProjectsModule,
     FilesModule,
     SubmissionsModule,
+    DeliverablesModule,
+    PrometheusModule.register({
+      path: "/metrics",
+      defaultLabels: {
+        app: "Lumio API Gateway",
+      },
+    }),
   ],
   controllers: [HealthController],
 })

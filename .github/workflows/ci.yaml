@@ -19,11 +19,17 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
   RUSTFLAGS: "-Dwarnings -C debuginfo=0"
+  REGION: ${{ secrets.REGION }}
+  MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+  ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+  S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+  SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
 
 jobs:
   test:
     name: Build and test
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    environment: LUMIO
     permissions:
       contents: read
 
@@ -53,6 +59,7 @@ jobs:
           .github/workflows/ci.yaml
           rust-toolchain.toml
           justfile
+          bun.lock
           apps/plagiarism-service/**
 
     - name: Install Rust toolchain
@@ -90,7 +97,7 @@ jobs:
 
   lint:
     name: Code quality
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
       contents: read
 

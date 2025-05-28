@@ -12,7 +12,7 @@ export default () => ({
     files: process.env.FILES_SERVICE_URL || "http://localhost:3004",
     report: process.env.REPORT_SERVICE_URL || "http://localhost:3005",
     evaluation: process.env.EVALUATION_SERVICE_URL || "http://localhost:3006",
-    notification: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:3007",
+    notif: process.env.NOTIF_SERVICE_URL || "http://localhost:3007",
     plagiarism: process.env.PLAGIARISM_SERVICE_URL || "http://localhost:3008",
   },
 });

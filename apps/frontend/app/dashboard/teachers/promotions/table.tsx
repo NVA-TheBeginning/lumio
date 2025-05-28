@@ -165,19 +165,11 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     setCurrentPage(page);
   };
 
-  if (!promotionId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
-        <p className="text-muted-foreground">Veuillez sélectionner une promotion pour voir ses membres</p>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return <MembersTableSkeleton />;
   }
 
-  if (isError) {
+  if (isError || !promotionId) {
     return (
       <div className="rounded-md bg-destructive/15 p-4 text-destructive">
         <p>Une erreur est survenue lors du chargement des membres.</p>

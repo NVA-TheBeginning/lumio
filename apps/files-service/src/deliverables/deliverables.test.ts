@@ -78,11 +78,11 @@ describe("Deliverables", () => {
     expect(body.length).toBeGreaterThan(0);
   });
 
-  test("/deliverables (PUT) - should update a deliverable", async () => {
+  test("/projects/deliverables (PUT) - should update a deliverable", async () => {
     const updatedName = `Updated Deliverable ${Date.now()}`;
     const response = await app.inject({
       method: "PUT",
-      url: "/deliverables",
+      url: "/projects/deliverables",
       payload: {
         projectId: projectId,
         promotionId: promotionId,
@@ -102,10 +102,10 @@ describe("Deliverables", () => {
     deliverableName = updatedName;
   });
 
-  test("/deliverables/:projectId/:promotionId (DELETE) - should delete a deliverable", async () => {
+  test("/projects/deliverables/:projectId/:promotionId (DELETE) - should delete a deliverable", async () => {
     const response = await app.inject({
       method: "DELETE",
-      url: `/deliverables/${projectId}/${promotionId}`,
+      url: `/projects/deliverables/${projectId}/${promotionId}`,
     });
 
     expect(response.statusCode).toEqual(200);

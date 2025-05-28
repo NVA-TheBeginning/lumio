@@ -38,7 +38,7 @@ export class DeliverablesController {
     );
   }
 
-  @Put("deliverables")
+  @Put("projects/deliverables")
   @ApiOperation({ summary: "Update a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully updated." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
@@ -47,7 +47,7 @@ export class DeliverablesController {
     return this.deliverablesService.update(updateDeliverableDto);
   }
 
-  @Delete("deliverables/:projectId/:promotionId")
+  @Delete("projects/deliverables/:projectId/:promotionId")
   @ApiOperation({ summary: "Delete a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })

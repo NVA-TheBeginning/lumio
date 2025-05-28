@@ -52,7 +52,7 @@ export default function DocumentDrive() {
         <h1 className="text-3xl font-bold">Espace Documents</h1>
         <Button onClick={() => setIsUploading(true)} className="flex items-center gap-2">
           <PlusIcon size={16} />
-          Ajouter un fichier
+          Ajouter
         </Button>
       </div>
 

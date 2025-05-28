@@ -47,7 +47,7 @@ export class UsersService {
       }),
     );
 
-    const studentsData = studentsWithPasswords.map((item) => ({
+    const studentsData = studentsWithPasswords?.map((item) => ({
       lastname: item.student.lastname,
       firstname: item.student.firstname,
       email: item.student.email,
@@ -81,10 +81,21 @@ export class UsersService {
           return {
             studentId: createdStudent.id,
             email: user.student.email,
-            initialPassword: user.randomPassword,
+            password: user.randomPassword,
           };
         })
         .filter((student) => student !== null);
+
+      if (process.env.NODE_ENV !== "test") {
+        const urlNotif = process.env.NOTIF_SERVICE_URL || "http://localhost:3007";
+        await fetch(`${urlNotif}/email/create-students`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ users: students }),
+        });
+      }
 
       return {
         count: insertResult.count,
@@ -158,8 +169,8 @@ export class UsersService {
     page: string | undefined,
     size: string = String(DEFAULT_ROWS_PER_PAGE),
   ): Promise<PaginatedResponse<UserResponse>> {
-    const currentPage = page ? parseInt(page, 10) || 1 : 1;
-    const itemsPerPage = parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE;
+    const currentPage = page ? Number.parseInt(page, 10) || 1 : 1;
+    const itemsPerPage = Number.parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE;
     const skipAmount = (currentPage - 1) * itemsPerPage;
 
     const users = await this.prisma.user.findMany({

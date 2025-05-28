@@ -119,13 +119,13 @@ describe("ProjectsController.findByStudentDetailed", () => {
           {
             project: {
               id: 5,
-              name: "",
-              description: "",
-              creatorId: 0,
-              createdAt: "",
-              updatedAt: "",
+              name: "Project A",
+              description: "Description A",
+              creatorId: 1,
+              createdAt: new Date(),
+              updatedAt: new Date(),
             },
-            groupStatus: "no_groups",
+            groupStatus: "in_group",
           },
         ],
         pagination: {

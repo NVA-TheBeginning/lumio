@@ -1,15 +1,20 @@
-use actix_web::Error;
-use actix_web::web::Json;
-use apistos::actix::CreatedJson;
+use crate::comparison_orchestrator::{ProjectComparisonReport, compare_normalized_projects};
+use crate::project_processor::{NormalizedProject, process_project_folder};
+use crate::s3;
+use actix_web::web::{Data, Json};
+use actix_web::{HttpResponse, Responder};
 use apistos::{ApiComponent, api_operation};
-use rand::Rng;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
-use crate::s3::{get_file_from_s3, list_files_in_directory};
+#[derive(Clone)]
+pub struct AppState {
+    pub extract_base_path: PathBuf,
+}
 
-#[derive(Deserialize, JsonSchema, ApiComponent)]
+#[derive(Deserialize, Serialize, JsonSchema, ApiComponent)]
 pub struct BodyRequest {
     #[serde(rename = "projectId")]
     pub project_id: String,
@@ -17,206 +22,432 @@ pub struct BodyRequest {
     pub promotion_id: String,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, ApiComponent)]
-pub struct FolderPlagiarismResult {
+#[derive(Serialize, Deserialize, JsonSchema, ApiComponent, Clone)]
+pub struct ApiFileComparisonDetail {
+    #[serde(rename = "fileName")]
+    pub file_name: String,
+    #[serde(rename = "fileRelativePath")]
+    pub file_relative_path: PathBuf,
+    #[serde(rename = "fileSizeBytes")]
+    pub file_size_bytes: usize,
+    #[serde(rename = "linesOfCode")]
+    pub lines_of_code: usize,
+    #[serde(rename = "mossScore")]
+    pub moss_score: f64,
+    #[serde(rename = "rabinKarpScore")]
+    pub rabin_karp_score: f64,
+    #[serde(rename = "combinedScore")]
+    pub combined_score: f64,
+    pub flags: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, ApiComponent, Clone)]
+pub struct ApiMatchDetail {
+    #[serde(rename = "matchedFolder")]
+    pub matched_folder: String,
+    #[serde(rename = "overallMatchPercentage")]
+    pub overall_match_percentage: f64,
+    #[serde(rename = "combinedScore")]
+    pub combined_score: f64,
+    pub flags: Vec<String>,
+    #[serde(rename = "fileComparisons")]
+    pub file_comparisons: Vec<ApiFileComparisonDetail>,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, ApiComponent, Clone)]
+pub struct ApiFolderResultReport {
     #[serde(rename = "folderName")]
     pub folder_name: String,
+    #[serde(rename = "sha1")]
+    pub sha1: Option<String>,
     #[serde(rename = "plagiarismPercentage")]
     pub plagiarism_percentage: f64,
+    pub matches: Vec<ApiMatchDetail>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, ApiComponent)]
-pub struct PlagiarismCheckResponse {
+pub struct ComprehensivePlagiarismResponse {
     #[serde(rename = "projectId")]
     pub project_id: String,
     #[serde(rename = "promotionId")]
     pub promotion_id: String,
     #[serde(rename = "folderResults")]
-    pub folder_results: Vec<FolderPlagiarismResult>,
+    pub folder_results: Vec<ApiFolderResultReport>,
 }
 
-#[api_operation(summary = "Checks for plagiarism for a given project and promotion")]
-pub(crate) async fn checks_projects(
-    body: Json<BodyRequest>,
-) -> Result<CreatedJson<PlagiarismCheckResponse>, Error> {
-    let s3_directory = format!(
-        "project-{}/promo-{}/step-999/", // @TODO: Replace with actual step
-        body.project_id, body.promotion_id
-    );
+#[derive(Serialize, Deserialize, JsonSchema, ApiComponent, Clone)]
+pub struct ApiPlagiarismMatch {
+    #[serde(rename = "matchedFolder")]
+    pub matched_folder: String,
+    #[serde(rename = "matchPercentage")]
+    pub match_percentage: f64,
+}
 
-    let base_extract_dir = Path::new("./extract");
-    let mut extracted_dirs_to_clean = Vec::new();
-    let mut extracted_folder_names = Vec::new();
+#[derive(Serialize, Deserialize, JsonSchema, ApiComponent)]
+pub struct TempPlagiarismCheckResponse {
+    pub status: String,
+    #[serde(rename = "processedSubmissionCount")]
+    pub processed_submission_count: usize,
+    #[serde(rename = "comparisonPairsProcessed")]
+    pub comparison_pairs_processed: usize,
+    #[serde(rename = "processedProjectIds")]
+    pub processed_project_ids: Vec<String>,
+}
 
-    if let Err(e) = std::fs::create_dir_all(base_extract_dir) {
-        println!("Failed to create base extraction directory: {}", e);
+fn calculate_combined_score(moss_score: f64, rabin_karp_score: f64) -> f64 {
+    // Weight the scores - adjust weights as needed
+    const MOSS_WEIGHT: f64 = 0.6;
+    const RABIN_KARP_WEIGHT: f64 = 0.4;
+
+    (moss_score * MOSS_WEIGHT + rabin_karp_score * RABIN_KARP_WEIGHT)
+        / (MOSS_WEIGHT + RABIN_KARP_WEIGHT)
+}
+
+fn generate_file_flags(moss_score: f64, rabin_karp_score: f64) -> Vec<String> {
+    let mut flags = Vec::new();
+
+    // High similarity flags
+    if moss_score > 80.0 || rabin_karp_score > 80.0 {
+        flags.push("HIGH_SIMILARITY".to_string());
     }
 
-    let files = match list_files_in_directory(&s3_directory).await {
-        Ok(files) => {
-            println!("Found {} files in {}", files.len(), s3_directory);
-            files
-        }
+    // Significant similarity flags
+    if moss_score > 50.0 || rabin_karp_score > 50.0 {
+        flags.push("SIGNIFICANT_SIMILARITY".to_string());
+    }
+
+    // Algorithm-specific flags
+    if moss_score > 70.0 {
+        flags.push("HIGH_MOSS_MATCH".to_string());
+    }
+    if rabin_karp_score > 70.0 {
+        flags.push("HIGH_RABIN_KARP_MATCH".to_string());
+    }
+
+    flags
+}
+
+fn generate_overall_flags(moss_score: f64, rabin_karp_score: f64) -> Vec<String> {
+    let mut flags = Vec::new();
+
+    // High overall similarity
+    if moss_score > 80.0 && rabin_karp_score > 80.0 {
+        flags.push("VERY_HIGH_SIMILARITY".to_string());
+    } else if moss_score > 70.0 || rabin_karp_score > 70.0 {
+        flags.push("HIGH_SIMILARITY".to_string());
+    }
+
+    // Algorithm-specific flags
+    if moss_score > 60.0 {
+        flags.push("SIGNIFICANT_MOSS_MATCH".to_string());
+    }
+    if rabin_karp_score > 60.0 {
+        flags.push("SIGNIFICANT_RABIN_KARP_MATCH".to_string());
+    }
+
+    flags
+}
+
+#[api_operation(summary = "Downloads, processes, and compares project submissions for plagiarism.")]
+pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>) -> impl Responder {
+    let s3_directory_prefix = format!(
+        "project-{}/promo-{}/step-999/",
+        body.project_id, body.promotion_id
+    );
+    let base_extract_target_dir = &app_state.extract_base_path;
+    let s3_file_keys = match s3::list_files_in_directory(&s3_directory_prefix).await {
+        Ok(keys) => keys,
         Err(e) => {
-            println!("Error listing files: {:?}", e);
-            Vec::new()
+            eprintln!(
+                "Error listing S3 files for prefix '{}': {}",
+                s3_directory_prefix, e
+            );
+            return HttpResponse::InternalServerError().json(ComprehensivePlagiarismResponse {
+                project_id: body.project_id.clone(),
+                promotion_id: body.promotion_id.clone(),
+                folder_results: vec![],
+            });
         }
     };
 
-    let zip_files: Vec<&String> = files.iter().filter(|f| f.ends_with(".zip")).collect();
+    let zip_file_keys: Vec<&String> = s3_file_keys
+        .iter()
+        .filter(|k| k.ends_with(".zip"))
+        .collect();
+    println!(
+        "Found {} S3 files, {} are zips under prefix '{}'.",
+        s3_file_keys.len(),
+        zip_file_keys.len(),
+        s3_directory_prefix
+    );
 
-    if zip_files.is_empty() {
-        println!("No zip files found in directory");
-    } else {
-        println!("Found {} zip files", zip_files.len());
+    if zip_file_keys.is_empty() {
+        println!("No zip files found in S3 directory for processing.");
+        return HttpResponse::Ok().json(ComprehensivePlagiarismResponse {
+            project_id: body.project_id.clone(),
+            promotion_id: body.promotion_id.clone(),
+            folder_results: vec![],
+        });
+    }
 
-        for zip_file_key in zip_files {
-            println!("Processing zip file: {}", zip_file_key);
+    let mut extracted_submission_details: Vec<(PathBuf, String)> = Vec::new();
 
-            let zip_file_name = Path::new(zip_file_key)
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("unknown_zip");
+    for s3_zip_key in zip_file_keys {
+        let zip_file_name_on_s3 = std::path::Path::new(s3_zip_key)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("unknown_s3_zip_name.zip");
 
-            let folder_name = zip_file_name.replace(".zip", "");
-            let extract_dir = base_extract_dir.join(&folder_name);
+        let submission_id = zip_file_name_on_s3.replace(".zip", "");
+        let extract_to_path = base_extract_target_dir.join(&submission_id);
 
-            if let Err(e) = std::fs::create_dir_all(&extract_dir) {
-                println!(
-                    "Failed to create extraction directory {}: {}",
-                    extract_dir.display(),
+        println!(
+            "Processing S3 zip: {} to {}",
+            s3_zip_key,
+            extract_to_path.display()
+        );
+
+        // Cleanup existing directory if it exists
+        if extract_to_path.exists() {
+            if let Err(e) = std::fs::remove_dir_all(&extract_to_path) {
+                eprintln!(
+                    "Warning: Failed to remove existing directory {}: {}",
+                    extract_to_path.display(),
                     e
                 );
-                continue;
             }
-            extracted_dirs_to_clean.push(extract_dir.clone());
-            extracted_folder_names.push(folder_name);
+        }
+        if let Err(e) = std::fs::create_dir_all(&extract_to_path) {
+            eprintln!(
+                "Failed to create extraction directory {}: {}. Skipping this zip.",
+                extract_to_path.display(),
+                e
+            );
+            continue;
+        }
 
-            let zip_data = match get_file_from_s3(zip_file_key).await {
-                Ok(data) => data,
-                Err(e) => {
-                    println!("Failed to download zip file {}: {}", zip_file_key, e);
-                    if let Err(e) = std::fs::remove_dir_all(&extract_dir) {
-                        println!("Failed to clean up extraction directory: {}", e);
-                    }
-                    continue;
-                }
-            };
-
-            let temp_zip_path = format!("./{}.zip", &zip_file_name);
-            if let Err(e) = std::fs::write(&temp_zip_path, &zip_data) {
-                println!("Failed to save temporary zip file: {}", e);
-                if let Err(e) = std::fs::remove_dir_all(&extract_dir) {
-                    println!("Failed to clean up extraction directory: {}", e);
-                }
-                continue;
-            }
-
-            let file = match std::fs::File::open(&temp_zip_path) {
-                Ok(file) => file,
-                Err(e) => {
-                    println!("Failed to open saved zip: {}", e);
-                    if let Err(e) = std::fs::remove_file(&temp_zip_path) {
-                        println!("Failed to remove temporary zip file: {}", e);
-                    }
-                    if let Err(e) = std::fs::remove_dir_all(&extract_dir) {
-                        println!("Failed to clean up extraction directory: {}", e);
-                    }
-                    continue;
-                }
-            };
-
-            let mut archive = match zip::ZipArchive::new(file) {
-                Ok(archive) => archive,
-                Err(e) => {
-                    println!("Failed to parse zip archive: {}", e);
-                    if let Err(e) = std::fs::remove_file(&temp_zip_path) {
-                        println!("Failed to remove temporary zip file: {}", e);
-                    }
-                    if let Err(e) = std::fs::remove_dir_all(&extract_dir) {
-                        println!("Failed to clean up extraction directory: {}", e);
-                    }
-                    continue;
-                }
-            };
-
-            for i in 0..archive.len() {
-                let mut file = match archive.by_index(i) {
-                    Ok(file) => file,
-                    Err(e) => {
-                        println!("Failed to get file from archive: {}", e);
-                        continue;
-                    }
-                };
-                let outpath = extract_dir.join(file.name());
-
-                if file.name().ends_with('/') {
-                    if let Err(e) = std::fs::create_dir_all(&outpath) {
-                        println!("Failed to create directory {}: {}", outpath.display(), e);
-                    }
-                } else {
-                    if let Some(p) = outpath.parent() {
-                        if !p.exists() {
-                            if let Err(e) = std::fs::create_dir_all(p) {
-                                println!("Failed to create parent directory: {}", e);
-                            }
-                        }
-                    }
-
-                    let mut outfile = match std::fs::File::create(&outpath) {
-                        Ok(file) => file,
-                        Err(e) => {
-                            println!("Failed to create file {}: {}", outpath.display(), e);
+        match s3::get_file_from_s3(s3_zip_key).await {
+            Ok(zip_data) => {
+                let reader = std::io::Cursor::new(zip_data);
+                match zip::ZipArchive::new(reader) {
+                    Ok(mut archive) => {
+                        if let Err(e) = archive.extract(&extract_to_path) {
+                            eprintln!(
+                                "Failed to extract zip archive {} to {}: {}",
+                                s3_zip_key,
+                                extract_to_path.display(),
+                                e
+                            );
                             continue;
                         }
-                    };
-
-                    if let Err(e) = std::io::copy(&mut file, &mut outfile) {
-                        println!("Failed to write file content: {}", e);
+                        println!(
+                            "Successfully extracted {} to {}",
+                            s3_zip_key,
+                            extract_to_path.display()
+                        );
+                        extracted_submission_details.push((extract_to_path, submission_id));
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "Failed to read zip archive from S3 key {}: {}",
+                            s3_zip_key, e
+                        );
                     }
                 }
             }
-
-            println!(
-                "Successfully extracted {} to {}",
-                zip_file_key,
-                extract_dir.display()
-            );
-
-            // Clean up the temporary zip file
-            if let Err(e) = std::fs::remove_file(&temp_zip_path) {
-                println!("Failed to remove temporary zip file: {}", e);
+            Err(e) => {
+                eprintln!("Failed to download S3 key {}: {}", s3_zip_key, e);
             }
         }
     }
 
-    // MOCKING: Generate random plagiarism percentages for each extracted folder
-    let mut rng = rand::rng();
-    let folder_results: Vec<FolderPlagiarismResult> = extracted_folder_names
-        .into_iter()
-        .map(|folder_name| FolderPlagiarismResult {
-            folder_name,
-            plagiarism_percentage: rng.random_range(0.0..100.0),
-        })
-        .collect();
+    if extracted_submission_details.is_empty() {
+        println!("No submissions were successfully downloaded and extracted for analysis.");
+        return HttpResponse::Ok().json(ComprehensivePlagiarismResponse {
+            project_id: body.project_id.clone(),
+            promotion_id: body.promotion_id.clone(),
+            folder_results: vec![],
+        });
+    }
 
-    for dir in extracted_dirs_to_clean {
-        if let Err(e) = std::fs::remove_dir_all(&dir) {
+    // --- 2. Process Each Extracted Project Folder ---
+    let mut normalized_projects: Vec<NormalizedProject> = Vec::new();
+    for (folder_path, submission_id) in &extracted_submission_details {
+        match process_project_folder(folder_path, submission_id) {
+            Ok(norm_proj) => {
+                normalized_projects.push(norm_proj);
+            }
+            Err(e) => {
+                eprintln!(
+                    "Error processing project folder '{}': {:?}. Skipping.",
+                    folder_path.display(),
+                    e
+                );
+            }
+        }
+    }
+
+    if normalized_projects.len() < 2 {
+        println!(
+            "Not enough projects successfully processed for comparison (need at least 2, got {}).",
+            normalized_projects.len()
+        );
+        let mut folder_results_for_single: Vec<ApiFolderResultReport> = Vec::new();
+        for np in normalized_projects {
+            folder_results_for_single.push(ApiFolderResultReport {
+                folder_name: np.project_id,
+                sha1: np.concatenated_source_hash,
+                plagiarism_percentage: 0.0,
+                matches: vec![],
+            });
+        }
+        return HttpResponse::Ok().json(ComprehensivePlagiarismResponse {
+            project_id: body.project_id.clone(),
+            promotion_id: body.promotion_id.clone(),
+            folder_results: folder_results_for_single,
+        });
+    }
+
+    // --- 3. Pairwise Project Comparisons ---
+    let mut comparison_reports: Vec<ProjectComparisonReport> = Vec::new();
+    for i in 0..normalized_projects.len() {
+        for j in (i + 1)..normalized_projects.len() {
+            let proj_a = &normalized_projects[i];
+            let proj_b = &normalized_projects[j];
+
+            let total_files = proj_a.files.len() + proj_b.files.len();
             println!(
-                "Failed to clean up extraction directory {}: {}",
-                dir.display(),
+                "  -> Comparing {} total files ({} from project A, {} from project B)",
+                total_files,
+                proj_a.files.len(),
+                proj_b.files.len()
+            );
+
+            let comparison_results = compare_normalized_projects(proj_a, proj_b);
+            println!(
+                "  -> Found {} file-to-file comparison results for {} total files in project A and {} total files in project B",
+                comparison_results.file_to_file_comparisons.len(),
+                proj_a.files.len(),
+                proj_b.files.len()
+            );
+            comparison_reports.push(comparison_results);
+        }
+    }
+    println!(
+        "Completed {} pairwise project comparisons.",
+        comparison_reports.len()
+    );
+
+    // --- 4. Aggregate and Format Final API Response ---
+    let mut final_folder_results_map: HashMap<String, ApiFolderResultReport> = HashMap::new();
+
+    for np in &normalized_projects {
+        final_folder_results_map.insert(
+            np.project_id.clone(),
+            ApiFolderResultReport {
+                folder_name: np.project_id.clone(),
+                sha1: np.concatenated_source_hash.clone(),
+                plagiarism_percentage: 0.0,
+                matches: Vec::new(),
+            },
+        );
+    }
+
+    for report in comparison_reports {
+        let overall_moss_score = report
+            .whole_project_moss_result
+            .as_ref()
+            .map_or(0.0, |r| r.score * 100.0);
+        let overall_rk_score = report
+            .whole_project_rabin_karp_result
+            .as_ref()
+            .map_or(0.0, |r| r.similarity_score * 100.0);
+        let pair_overall_combined_score =
+            calculate_combined_score(overall_moss_score, overall_rk_score);
+        let pair_overall_flags = generate_overall_flags(overall_moss_score, overall_rk_score);
+
+        // Transform FileComparisonResults to ApiFileComparisonDetail
+        let mut api_file_details_for_pair: Vec<ApiFileComparisonDetail> = Vec::new();
+        for enriched_file_comp in &report.file_to_file_comparisons {
+            let moss_score = enriched_file_comp
+                .moss_result
+                .as_ref()
+                .map_or(0.0, |r| r.score * 100.0);
+            let rk_score = enriched_file_comp
+                .rabin_karp_result
+                .as_ref()
+                .map_or(0.0, |r| r.similarity_score * 100.0);
+            let combined = calculate_combined_score(moss_score, rk_score);
+            let flags = generate_file_flags(moss_score, rk_score);
+
+            api_file_details_for_pair.push(ApiFileComparisonDetail {
+                file_name: enriched_file_comp
+                    .file1_path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned(),
+                file_relative_path: enriched_file_comp.file1_path.clone(),
+                file_size_bytes: enriched_file_comp.size_bytes_a,
+                lines_of_code: enriched_file_comp.lines_a,
+                moss_score,
+                rabin_karp_score: rk_score,
+                combined_score: combined,
+                flags,
+            });
+        }
+
+        // Update result for project1_id
+        if let Some(folder_res_a) = final_folder_results_map.get_mut(&report.project1_id) {
+            folder_res_a.matches.push(ApiMatchDetail {
+                matched_folder: report.project2_id.clone(),
+                overall_match_percentage: pair_overall_combined_score,
+                combined_score: pair_overall_combined_score,
+                flags: pair_overall_flags.clone(),
+                file_comparisons: api_file_details_for_pair.clone(),
+            });
+            if pair_overall_combined_score > folder_res_a.plagiarism_percentage {
+                folder_res_a.plagiarism_percentage = pair_overall_combined_score;
+            }
+        }
+
+        // Update result for project2_id
+        if let Some(folder_res_b) = final_folder_results_map.get_mut(&report.project2_id) {
+            folder_res_b.matches.push(ApiMatchDetail {
+                matched_folder: report.project1_id.clone(),
+                overall_match_percentage: pair_overall_combined_score,
+                combined_score: pair_overall_combined_score,
+                flags: pair_overall_flags,
+                file_comparisons: api_file_details_for_pair,
+            });
+            if pair_overall_combined_score > folder_res_b.plagiarism_percentage {
+                folder_res_b.plagiarism_percentage = pair_overall_combined_score;
+            }
+        }
+    }
+
+    let mut analysis_results_vec: Vec<ApiFolderResultReport> =
+        final_folder_results_map.into_values().collect();
+    analysis_results_vec.sort_by(|a, b| a.folder_name.cmp(&b.folder_name));
+
+    let final_api_response = ComprehensivePlagiarismResponse {
+        project_id: body.project_id.clone(),
+        promotion_id: body.promotion_id.clone(),
+        folder_results: analysis_results_vec,
+    };
+
+    // --- 5. Cleanup extracted folders ---
+    for (path_to_clean, _submission_id) in extracted_submission_details {
+        if let Err(e) = std::fs::remove_dir_all(&path_to_clean) {
+            eprintln!(
+                "Failed to cleanup extracted folder {}: {}",
+                path_to_clean.display(),
                 e
             );
         } else {
-            println!("Cleaned up extraction directory: {}", dir.display());
+            println!("Cleaned up extracted folder: {}", path_to_clean.display());
         }
     }
 
-    let response = PlagiarismCheckResponse {
-        project_id: body.project_id.clone(),
-        promotion_id: body.promotion_id.clone(),
-        folder_results,
-    };
-
-    Ok(CreatedJson(response))
+    HttpResponse::Ok().json(final_api_response)
 }

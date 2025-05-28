@@ -67,6 +67,7 @@ export default async function Home() {
                 src="https://picsum.photos/500/400"
                 alt="Lumio Interface"
                 className="rounded-lg shadow-xl"
+                priority
                 width={500}
                 height={400}
               />

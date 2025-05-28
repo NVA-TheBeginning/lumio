@@ -26,7 +26,7 @@ export class PromotionsController {
   @Get()
   @ApiOkResponse({ type: PromotionEntity, isArray: true })
   async findAll(@Query("creatorId") creatorId?: string) {
-    const creatorIdNumber = creatorId ? parseInt(creatorId, 10) : undefined;
+    const creatorIdNumber = creatorId ? Number.parseInt(creatorId, 10) : undefined;
     const promos = await this.promotionsService.findAll(creatorIdNumber);
     return promos.map((promo) => new PromotionEntity(promo));
   }

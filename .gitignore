@@ -40,3 +40,5 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 '.idea' 
+.idea/
+lumio.iml

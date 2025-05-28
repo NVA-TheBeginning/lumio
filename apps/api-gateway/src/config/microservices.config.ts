@@ -9,6 +9,6 @@ export const microservicesDocs: MicroserviceInfo[] = [
   { name: "files", url: process.env.FILES_SERVICE_URL || "http://localhost:3004" },
   { name: "report", url: process.env.REPORT_SERVICE_URL || "http://localhost:3005" },
   { name: "evaluation", url: process.env.EVALUATION_SERVICE_URL || "http://localhost:3006" },
-  { name: "notification", url: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:3007" },
+  { name: "notif", url: process.env.NOTIF_SERVICE_URL || "http://localhost:3007" },
   { name: "plagiarism", url: process.env.PLAGIARISM_SERVICE_URL || "http://localhost:3008" },
 ];
