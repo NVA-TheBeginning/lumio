@@ -40,7 +40,7 @@ export class ProjectController {
   @ApiParam({ name: "creatorId", description: "Creator user ID", type: Number })
   @ApiResponse({ status: 200, description: "Projects list for the given creator." })
   async findByCreator(@Param("creatorId", ParseIntPipe) creatorId: number) {
-    return this.projectService.findAll(creatorId);
+    return this.projectService.findByCreator(creatorId);
   }
 
   @Get()
