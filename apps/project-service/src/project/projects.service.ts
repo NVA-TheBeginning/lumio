@@ -401,7 +401,7 @@ export class ProjectService {
 
   private validateBasics(name: string, description: string, creatorId: number) {
     if (!(name && description && creatorId)) {
-      throw new BadRequestException("name, description et creatorId sont requis");
+      throw new BadRequestException("name, description and creatorId are required");
     }
   }
 
@@ -422,7 +422,7 @@ export class ProjectService {
     if (groupSettings.length === 0) return;
     const invalid = groupSettings.map((gs) => gs.promotionId).filter((pid) => !promotionIds.includes(pid));
     if (invalid.length) {
-      throw new BadRequestException(`GroupSettings invalides pour promotions : ${invalid.join(", ")}`);
+      throw new BadRequestException(`Invalid group settings for promotions: ${invalid.join(", ")}`);
     }
     for (const { minMembers, maxMembers, deadline } of groupSettings) {
       if (minMembers > maxMembers) {
