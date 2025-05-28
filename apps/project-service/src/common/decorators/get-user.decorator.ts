@@ -7,9 +7,9 @@ export interface JwtUser {
   role: "STUDENT" | "TEACHER" | "ADMIN";
 }
 
-type RequestWithUser = FastifyRequest & { user: JwtUser };
+export const JwtUser = null as unknown as JwtUser;
 
 export const GetUser = createParamDecorator((_data: unknown, ctx: ExecutionContext): JwtUser => {
-  const req = ctx.switchToHttp().getRequest<RequestWithUser>();
+  const req = ctx.switchToHttp().getRequest<FastifyRequest & { user: JwtUser }>();
   return req.user;
 });
