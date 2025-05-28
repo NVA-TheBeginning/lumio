@@ -89,6 +89,7 @@ describe("GET /projects/myprojects (role-based pagination)", () => {
   });
 
   test("as STUDENT: returns map of promotionId → paginated projects", async () => {
+    await prisma.studentPromotion.create({ data: { promotionId: promotionIds[0], userId: 1 } });
     const group = await prisma.group.findFirst({
       where: { projectId: projectId1, promotionId: promotionIds[0] },
     });
