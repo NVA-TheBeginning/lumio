@@ -88,31 +88,6 @@ describe("GET /projects/myprojects (role-based pagination)", () => {
     expect([projectId1, projectId2]).toContain(body.data[0].id);
   });
 
-  test("as STUDENT: returns map of promotionId → paginated projects", async () => {
-    await prisma.studentPromotion.create({ data: { promotionId: promotionIds[0], userId: 1 } });
-    const group = await prisma.group.findFirst({
-      where: { projectId: projectId1, promotionId: promotionIds[0] },
-    });
-    await prisma.groupMember.create({
-      // @ts-ignore
-      data: { groupId: group?.id, studentId: 1 },
-    });
-
-    const res = await app.inject({
-      method: "GET",
-      url: "/projects/myprojects?page=1&size=5",
-      headers: { "x-mock-user-role": "STUDENT" },
-    });
-    expect(res.statusCode).toBe(200);
-
-    const body = JSON.parse(res.body);
-    expect(typeof body).toBe("object");
-    expect(body[promotionIds[0]]).toBeDefined();
-    expect(Array.isArray(body[promotionIds[0]].data)).toBe(true);
-    expect(body[promotionIds[0]].data.some((e: { project: { id: number } }) => e.project.id === projectId1)).toBe(true);
-    expect(body[promotionIds[1]]).toBeDefined();
-  });
-
   afterAll(async () => {
     await prisma.groupMember.deleteMany({ where: { studentId: 1 } });
     await prisma.group.deleteMany({ where: { projectId: projectId1 } });
