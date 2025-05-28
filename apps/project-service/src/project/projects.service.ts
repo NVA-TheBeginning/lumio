@@ -395,7 +395,7 @@ export class ProjectService {
 
   private validateBasics(name: string, description: string, creatorId: number) {
     if (!(name && description && creatorId)) {
-      throw new BadRequestException("name, description et creatorId sont requis");
+      throw new BadRequestException("name, description and creatorId are required");
     }
   }
 
