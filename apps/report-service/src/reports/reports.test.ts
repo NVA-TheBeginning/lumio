@@ -339,18 +339,14 @@ describe("Reports", () => {
   });
 
   afterAll(async () => {
-    await prisma.reportSection.deleteMany({
-      where: {
-        report: {
-          projectId: { in: [1, 2, 3] },
-        },
-      },
-    });
-    await prisma.report.deleteMany({
-      where: {
-        projectId: { in: [1, 2, 3] },
-      },
-    });
+    if (reportId) {
+      await prisma.reportSection.deleteMany({
+        where: { reportId },
+      });
+      await prisma.report.deleteMany({
+        where: { id: reportId },
+      });
+    }
     await app.close();
   });
 });

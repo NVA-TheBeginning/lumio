@@ -8,8 +8,8 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createReportDto: CreateReportDto): Promise<ReportResponseDto> {
-    if (!(createReportDto.projectId && createReportDto.groupId)) {
-      throw new BadRequestException("projectId and groupId are required");
+    if (!(createReportDto.projectId && createReportDto.groupId && createReportDto.promotionId)) {
+      throw new BadRequestException("projectId, groupId, and promotionId are required");
     }
     const report = await this.prisma.report.create({
       data: {

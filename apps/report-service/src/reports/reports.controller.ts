@@ -12,7 +12,13 @@ import {
   Query,
 } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { CreateReportDto, CreateReportSectionDto, ReportResponseDto, UpdateReportDto } from "./reports.dto";
+import {
+  CreateReportDto,
+  CreateReportSectionDto,
+  ReportResponseDto,
+  UpdateReportDto,
+  UpdateReportSectionDto,
+} from "./reports.dto";
 import { ReportsService } from "./reports.service";
 
 @ApiTags("reports")
@@ -114,7 +120,7 @@ export class ReportsController {
   @ApiResponse({ status: 404, description: "Section not found." })
   async updateSection(
     @Param("sectionId", ParseIntPipe) sectionId: number,
-    @Body() sectionData: CreateReportSectionDto,
+    @Body() sectionData: UpdateReportSectionDto,
   ): Promise<void> {
     return this.reportsService.updateSection(sectionId, sectionData);
   }

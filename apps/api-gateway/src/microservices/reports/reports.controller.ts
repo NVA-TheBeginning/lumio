@@ -13,7 +13,13 @@ import {
 } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { CreateReportDto, CreateReportSectionDto, ReportResponseDto, UpdateReportDto } from "./dto.js";
+import {
+  CreateReportDto,
+  CreateReportSectionDto,
+  ReportResponseDto,
+  UpdateReportDto,
+  UpdateReportSectionDto,
+} from "./dto.js";
 
 @ApiTags("reports")
 @Controller("reports")
@@ -118,7 +124,7 @@ export class ReportsController {
   @ApiResponse({ status: 404, description: "Section not found." })
   async updateSection(
     @Param("sectionId", ParseIntPipe) sectionId: number,
-    @Body() sectionData: CreateReportSectionDto,
+    @Body() sectionData: UpdateReportSectionDto,
   ): Promise<void> {
     return this.proxy.forwardRequest("reports", `/reports/sections/${sectionId}`, "PATCH", sectionData);
   }
