@@ -193,6 +193,29 @@
         "typescript": "^5.8.3",
       },
     },
+    "apps/report-service": {
+      "name": "report-service",
+      "version": "0.0.0",
+      "dependencies": {
+        "@fastify/static": "^8.2.0",
+        "@nestjs/common": "^11.1.2",
+        "@nestjs/core": "^11.1.2",
+        "@nestjs/mapped-types": "^2.1.0",
+        "@nestjs/platform-fastify": "^11.1.2",
+        "@nestjs/swagger": "^11.2.0",
+        "@prisma/client": "^6.8.2",
+        "class-validator": "^0.14.2",
+        "reflect-metadata": "^0.2.2",
+      },
+      "devDependencies": {
+        "@nestjs/cli": "^11.0.7",
+        "@nestjs/schematics": "^11.0.5",
+        "@nestjs/testing": "^11.1.2",
+        "@types/bun": "^1.2.14",
+        "prisma": "^6.8.2",
+        "typescript": "^5.8.3",
+      },
+    },
   },
   "trustedDependencies": [
     "esbuild",
@@ -1357,6 +1380,8 @@
     "regenerator-runtime": ["regenerator-runtime@0.14.1", "", {}, "sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw=="],
 
     "repeat-string": ["repeat-string@1.6.1", "", {}, "sha512-PV0dzCYDNfRi1jCDbJzpW7jNNDRuCOG/jI5ctQcGKt/clZD+YcPS3yIlWuTJMmESC8aevCFmWJy5wjAFgNqN6w=="],
+
+    "report-service": ["report-service@workspace:apps/report-service"],
 
     "require-from-string": ["require-from-string@2.0.2", "", {}, "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw=="],
 

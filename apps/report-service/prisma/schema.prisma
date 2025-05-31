@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@prisma-report"
+  previewFeatures = ["multiSchema"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["report_schema"]
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  groupId     Int
+  promotionId Int
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections ReportSection[]
+
+  @@index([projectId])
+  @@index([groupId])
+  @@index([submittedAt])
+  @@schema("report_schema")
+}
+
+model ReportSection {
+  id              Int      @id @default(autoincrement())
+  reportId        Int
+  title           String   @db.VarChar(255)
+  contentMarkdown String?  @db.Text
+  contentHtml     String?  @db.Text
+  updatedAt       DateTime @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@schema("report_schema")
+}
