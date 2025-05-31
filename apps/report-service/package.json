@@ -1,0 +1,33 @@
+{
+  "name": "report-service",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "bun --bun nest build",
+    "start": "bun --bun nest start",
+    "dev": "bun --bun nest start -w",
+    "dev:debug": "bun --bun nest start --debug --watch",
+    "start:prod": "bun --bun dist/main.js",
+    "test": "bun test",
+    "prisma": "npx prisma generate && npx prisma db push"
+  },
+  "dependencies": {
+    "@fastify/static": "^8.2.0",
+    "@nestjs/common": "^11.1.2",
+    "@nestjs/core": "^11.1.2",
+    "@nestjs/mapped-types": "^2.1.0",
+    "@nestjs/platform-fastify": "^11.1.2",
+    "@nestjs/swagger": "^11.2.0",
+    "@prisma/client": "^6.8.2",
+    "class-validator": "^0.14.2",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.7",
+    "@nestjs/schematics": "^11.0.5",
+    "@nestjs/testing": "^11.1.2",
+    "@types/bun": "^1.2.14",
+    "prisma": "^6.8.2",
+    "typescript": "^5.8.3"
+  }
+}

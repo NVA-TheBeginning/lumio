@@ -1,0 +1,6 @@
+[run]
+bun = true
+
+[test]
+coverage = true
+coverageSkipTestFiles = true
