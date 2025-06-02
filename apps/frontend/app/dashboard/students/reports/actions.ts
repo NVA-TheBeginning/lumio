@@ -3,7 +3,7 @@
 import { authDeleteData, authFetchData, authPatchData, authPostData } from "@/lib/utils";
 import type { CreateReportDto, Report, ReportSection, UpdateReportDto } from "@/types/report";
 
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
 export async function createReport(data: CreateReportDto): Promise<Report> {
   return authPostData<Report>(`${API_BASE_URL}/reports`, data);
@@ -24,6 +24,7 @@ export async function getReports(filters?: {
   if (filters?.promotionId) params.append("promotionId", filters.promotionId.toString());
 
   const url = `${API_BASE_URL}/reports${params.toString() ? `?${params.toString()}` : ""}`;
+  console.log("Fetching reports from:", url);
   return authFetchData<Report[]>(url);
 }
 

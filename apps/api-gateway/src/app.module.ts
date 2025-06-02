@@ -9,6 +9,7 @@ import { UsersModule } from "./microservices/auth/users/users.module.js";
 import { DeliverablesModule } from "./microservices/files/deliverables/deliverables.module.js";
 import { FilesModule } from "./microservices/files/files.module.js";
 import { SubmissionsModule } from "./microservices/files/submissions/submissions.module.js";
+import { ReportsModule } from "./microservices/reports/reports.module.js";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SubmissionsModule } from "./microservices/files/submissions/submissions
     FilesModule,
     SubmissionsModule,
     DeliverablesModule,
+    ReportsModule,
     PrometheusModule.register({
       path: "/metrics",
       defaultLabels: {
