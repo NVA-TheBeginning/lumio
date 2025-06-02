@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Eye, FileText, GripVertical, Plus, Save, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { JSX, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createReport, updateReport } from "@/app/dashboard/students/reports/actions";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { CreateReportDto, Report, ReportSection } from "@/types/report";
+import { CreateReportDto, Report, ReportSection, UpdateReportDto } from "@/types/report";
 
 interface ReportEditorProps {
   projectId: number;
@@ -52,7 +52,7 @@ export default function ReportEditor({
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Report> }) => updateReport(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateReportDto }) => updateReport(id, data),
     onSuccess: () => {
       toast.success("Rapport mis à jour", {
         description: "Vos modifications ont été sauvegardées.",
@@ -105,10 +105,11 @@ export default function ReportEditor({
       setSections((prevSections) => {
         const newSections = [...prevSections];
         const targetIndex = direction === "up" ? index - 1 : index + 1;
-        const section = newSections[index];
-        const newSection = newSections[targetIndex];
-        newSections[index] = newSection || { title: "", contentMarkdown: "" };
-        newSections[targetIndex] = section || { title: "", contentMarkdown: "" };
+
+        if (newSections[index] && newSections[targetIndex]) {
+          [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+        }
+
         return newSections;
       });
 
@@ -120,8 +121,8 @@ export default function ReportEditor({
   const handleSave = useCallback(() => {
     if (existingReport?.id) {
       const updateData = {
-        sections: sections.map((section) => ({
-          id: section.id!,
+        sections: sections.map((section, index) => ({
+          id: section.id ?? index,
           title: section.title,
           contentMarkdown: section.contentMarkdown,
         })),
@@ -202,7 +203,6 @@ export default function ReportEditor({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar - Section Navigation */}
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
@@ -216,12 +216,22 @@ export default function ReportEditor({
             <CardContent className="p-0">
               <ScrollArea className="h-[600px]">
                 {sections.map((section, index) => (
+                  // biome-ignore lint/a11y/noStaticElementInteractions: fine here
                   <div
                     key={index}
                     className={`p-3 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
                       activeSection === index ? "bg-muted" : ""
                     }`}
                     onClick={() => setActiveSection(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setActiveSection(index);
+                      }
+                      if (e.key === "Delete" || e.key === "Backspace") {
+                        e.stopPropagation();
+                        removeSection(index);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -281,7 +291,6 @@ export default function ReportEditor({
           </Card>
         </div>
 
-        {/* Main Editor */}
         <div className="lg:col-span-3">
           {isPreview ? (
             <Card>
@@ -302,6 +311,7 @@ export default function ReportEditor({
                         {section.contentMarkdown ? (
                           <div
                             className="space-y-4"
+                            // biome-ignore lint/security/noDangerouslySetInnerHtml: We trust the markdown content here
                             dangerouslySetInnerHTML={{
                               __html: renderMarkdownPreview(section.contentMarkdown),
                             }}
