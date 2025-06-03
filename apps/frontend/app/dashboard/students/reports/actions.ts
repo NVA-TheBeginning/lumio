@@ -12,38 +12,50 @@ export async function createReport(data: CreateReportDto): Promise<Report> {
 export async function getReport(id: number): Promise<Report> {
   return authFetchData<Report>(`${API_BASE_URL}/reports/${id}`);
 }
-
-export async function getReports(filters?: {
+interface ReportFilters {
   projectId?: number;
   groupId?: number;
   promotionId?: number;
-}): Promise<Report[]> {
-  const params = new URLSearchParams();
-  if (filters?.projectId) params.append("projectId", filters.projectId.toString());
-  if (filters?.groupId) params.append("groupId", filters.groupId.toString());
-  if (filters?.promotionId) params.append("promotionId", filters.promotionId.toString());
+}
 
-  const url = `${API_BASE_URL}/reports${params.toString() ? `?${params.toString()}` : ""}`;
-  console.log("Fetching reports from:", url);
-  return authFetchData<Report[]>(url);
+export async function getReports(filters?: ReportFilters): Promise<Report[]> {
+  try {
+    const queryParts: string[] = [];
+    if (filters?.projectId) {
+      queryParts.push(`projectId=${encodeURIComponent(filters.projectId.toString())}`);
+    }
+    if (filters?.groupId) {
+      queryParts.push(`groupId=${encodeURIComponent(filters.groupId.toString())}`);
+    }
+    if (filters?.promotionId) {
+      queryParts.push(`promotionId=${encodeURIComponent(filters.promotionId.toString())}`);
+    }
+
+    const queryString = queryParts.join("&");
+    const url = `${API_BASE_URL}/reports${queryString ? `?${queryString}` : ""}`;
+    return await authFetchData<Report[]>(url);
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    throw error;
+  }
 }
 
 export async function updateReport(id: number, data: UpdateReportDto): Promise<Report> {
-  return authPatchData<Report>(`${API_BASE_URL}/reports/${id}`, data);
+  return await authPatchData<Report>(`${API_BASE_URL}/reports/${id}`, data);
 }
 
 export async function deleteReport(id: number): Promise<void> {
-  return authDeleteData<void>(`${API_BASE_URL}/reports/${id}`);
+  return await authDeleteData<void>(`${API_BASE_URL}/reports/${id}`);
 }
 
 export async function addReportSection(reportId: number, section: Omit<ReportSection, "id">): Promise<Report> {
-  return authPostData<Report>(`${API_BASE_URL}/reports/${reportId}/sections`, section);
+  return await authPostData<Report>(`${API_BASE_URL}/reports/${reportId}/sections`, section);
 }
 
 export async function updateReportSection(sectionId: number, section: Partial<ReportSection>): Promise<void> {
-  return authPatchData<void>(`${API_BASE_URL}/reports/sections/${sectionId}`, section);
+  return await authPatchData<void>(`${API_BASE_URL}/reports/sections/${sectionId}`, section);
 }
 
 export async function deleteReportSection(sectionId: number): Promise<void> {
-  return authDeleteData<void>(`${API_BASE_URL}/reports/sections/${sectionId}`);
+  return await authDeleteData<void>(`${API_BASE_URL}/reports/sections/${sectionId}`);
 }

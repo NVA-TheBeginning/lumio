@@ -10,11 +10,7 @@ import { formatDate } from "@/lib/utils";
 import { getReports } from "./actions";
 
 export default function ReportsPage() {
-  const {
-    data: reports,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data: reports, isLoading } = useQuery({
     queryKey: ["reports"],
     queryFn: () => getReports(),
   });
@@ -45,27 +41,18 @@ export default function ReportsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Erreur</h1>
-          <p className="text-muted-foreground">Impossible de charger les rapports.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Mes Rapports</h1>
-        <Link href="/reports/editor">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouveau Rapport
-          </Button>
-        </Link>
+        <h1 className="text-3xl font-bold">Rapports</h1>
+        {reports && reports.length > 0 && (
+          <Link href="/dashboard/students/reports/editor">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau Rapport
+            </Button>
+          </Link>
+        )}
       </div>
 
       {!reports || reports.length === 0 ? (
@@ -76,7 +63,7 @@ export default function ReportsPage() {
             <p className="text-muted-foreground text-center mb-4">
               Vous n'avez pas encore créé de rapport. Commencez par en créer un nouveau.
             </p>
-            <Link href="/reports/new?projectId=1&groupId=1&promotionId=1">
+            <Link href="/dashboard/students/reports/editor">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Créer mon premier rapport
@@ -113,7 +100,7 @@ export default function ReportsPage() {
                     </p>
                   )}
                   <div className="pt-2">
-                    <Link href={`/reports/${report.id}`}>
+                    <Link href={`/dashboard/students/reports/editor/${report.id}`}>
                       <Button variant="outline" size="sm" className="w-full">
                         Éditer
                       </Button>
