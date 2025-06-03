@@ -369,7 +369,6 @@ export default function ProjectList() {
       {isLoadingProjects ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: Fine for skeletons
             <Card key={index} className="flex flex-col h-full">
               <CardHeader className="pb-3">
                 <Skeleton className="h-7 w-3/4 mb-2" />

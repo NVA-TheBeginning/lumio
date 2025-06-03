@@ -35,7 +35,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 400, description: "Bad Request - Invalid input data." })
   async create(@Body() createReportDto: CreateReportDto): Promise<ReportResponseDto> {
-    return this.proxy.forwardRequest("reports", "/reports", "POST", createReportDto);
+    return this.proxy.forwardRequest("report", "/reports", "POST", createReportDto);
   }
 
   @Get()
@@ -53,7 +53,10 @@ export class ReportsController {
     @Query("groupId", new ParseIntPipe({ optional: true })) groupId?: number,
     @Query("promotionId", new ParseIntPipe({ optional: true })) promotionId?: number,
   ): Promise<ReportResponseDto[]> {
-    return this.proxy.forwardRequest("reports", "/reports", "GET", {
+    if (!(projectId || groupId || promotionId)) {
+      return this.proxy.forwardRequest("report", "/reports", "GET");
+    }
+    return this.proxy.forwardRequest("report", "/reports", "GET", {
       projectId,
       groupId,
       promotionId,
@@ -70,7 +73,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 404, description: "Report not found." })
   async findOne(@Param("id", ParseIntPipe) id: number): Promise<ReportResponseDto> {
-    return this.proxy.forwardRequest("reports", `/reports/${id}`, "GET");
+    return this.proxy.forwardRequest("report", `/reports/${id}`, "GET");
   }
 
   @Patch(":id")
@@ -87,7 +90,7 @@ export class ReportsController {
     @Param("id", ParseIntPipe) id: number,
     @Body() updateReportDto: UpdateReportDto,
   ): Promise<ReportResponseDto> {
-    return this.proxy.forwardRequest("reports", `/reports/${id}`, "PATCH", updateReportDto);
+    return this.proxy.forwardRequest("report", `/reports/${id}`, "PATCH", updateReportDto);
   }
 
   @Delete(":id")
@@ -97,7 +100,7 @@ export class ReportsController {
   @ApiResponse({ status: 204, description: "The report has been successfully deleted." })
   @ApiResponse({ status: 404, description: "Report not found." })
   async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {
-    return this.proxy.forwardRequest("reports", `/reports/${id}`, "DELETE");
+    return this.proxy.forwardRequest("report", `/reports/${id}`, "DELETE");
   }
 
   @Post(":id/sections")
@@ -113,7 +116,7 @@ export class ReportsController {
     @Param("id", ParseIntPipe) id: number,
     @Body() sectionData: CreateReportSectionDto,
   ): Promise<ReportResponseDto> {
-    return this.proxy.forwardRequest("reports", `/reports/${id}/sections`, "POST", sectionData);
+    return this.proxy.forwardRequest("report", `/reports/${id}/sections`, "POST", sectionData);
   }
 
   @Patch("sections/:sectionId")
@@ -126,7 +129,7 @@ export class ReportsController {
     @Param("sectionId", ParseIntPipe) sectionId: number,
     @Body() sectionData: UpdateReportSectionDto,
   ): Promise<void> {
-    return this.proxy.forwardRequest("reports", `/reports/sections/${sectionId}`, "PATCH", sectionData);
+    return this.proxy.forwardRequest("report", `/reports/sections/${sectionId}`, "PATCH", sectionData);
   }
 
   @Delete("sections/:sectionId")
@@ -136,6 +139,6 @@ export class ReportsController {
   @ApiResponse({ status: 204, description: "The section has been successfully deleted." })
   @ApiResponse({ status: 404, description: "Section not found." })
   async removeSection(@Param("sectionId", ParseIntPipe) sectionId: number): Promise<void> {
-    return this.proxy.forwardRequest("reports", `/reports/sections/${sectionId}`, "DELETE");
+    return this.proxy.forwardRequest("report", `/reports/sections/${sectionId}`, "DELETE");
   }
 }
