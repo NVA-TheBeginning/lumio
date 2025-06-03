@@ -2,9 +2,9 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Eye, FileText, GripVertical, Plus, Save, Trash2 } from "lucide-react";
-import { JSX, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { createReport, updateReport } from "@/app/dashboard/students/reports/actions";
+import { updateReport } from "@/app/dashboard/students/reports/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,43 +13,14 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { CreateReportDto, Report, ReportSection, UpdateReportDto } from "@/types/report";
+import { ReportSection, UpdateReportDto } from "@/types/report";
 
-interface ReportEditorProps {
-  projectId: number;
-  groupId: number;
-  promotionId: number;
-  existingReport?: Report;
-}
-
-export default function ReportEditor({
-  projectId,
-  groupId,
-  promotionId,
-  existingReport,
-}: ReportEditorProps): JSX.Element {
+export default function ReportEditor({ reportId }: { reportId: number }) {
   const queryClient = useQueryClient();
 
-  const [sections, setSections] = useState<ReportSection[]>(
-    existingReport?.sections || [{ title: "", contentMarkdown: "" }],
-  );
+  const [sections, setSections] = useState<ReportSection[]>([]);
   const [activeSection, setActiveSection] = useState<number>(0);
   const [isPreview, setIsPreview] = useState<boolean>(false);
-
-  const createMutation = useMutation({
-    mutationFn: createReport,
-    onSuccess: () => {
-      toast.success("Rapport créé", {
-        description: "Votre rapport a été créé avec succès.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["reports"] });
-    },
-    onError: () => {
-      toast.error("Erreur", {
-        description: "Impossible de créer le rapport.",
-      });
-    },
-  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateReportDto }) => updateReport(id, data),
@@ -119,28 +90,15 @@ export default function ReportEditor({
   );
 
   const handleSave = useCallback(() => {
-    if (existingReport?.id) {
-      const updateData = {
-        sections: sections.map((section, index) => ({
-          id: section.id ?? index,
-          title: section.title,
-          contentMarkdown: section.contentMarkdown,
-        })),
-      };
-      updateMutation.mutate({ id: existingReport.id, data: updateData });
-    } else {
-      const reportData: CreateReportDto = {
-        projectId,
-        groupId,
-        promotionId,
-        sections: sections.map((section) => ({
-          title: section.title,
-          contentMarkdown: section.contentMarkdown,
-        })),
-      };
-      createMutation.mutate(reportData);
-    }
-  }, [existingReport?.id, sections, projectId, groupId, promotionId, updateMutation, createMutation]);
+    const updateData = {
+      sections: sections.map((section, index) => ({
+        id: section.id ?? index,
+        title: section.title,
+        contentMarkdown: section.contentMarkdown,
+      })),
+    };
+    updateMutation.mutate({ id: reportId, data: updateData });
+  }, [reportId, sections, updateMutation]);
 
   const renderMarkdownPreview = useCallback((markdown: string): string => {
     if (!markdown) return "";
@@ -183,7 +141,7 @@ export default function ReportEditor({
     [sections.length],
   );
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = updateMutation.isPending;
   const currentSection = sections[activeSection];
 
   return (

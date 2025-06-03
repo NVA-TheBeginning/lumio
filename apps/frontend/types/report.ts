@@ -7,7 +7,7 @@ export interface ReportSection {
 }
 
 export interface Report {
-  id?: number;
+  id: number;
   projectId: number;
   groupId: number;
   promotionId: number;
