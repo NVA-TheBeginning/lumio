@@ -122,13 +122,12 @@ export class ProjectsController {
     return this.proxy.forwardRequest("project", "/projects", "POST", createProjectDto);
   }
 
-  @Get("creator/:creatorId")
+  @Get("myprojects")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get all projects by creator ID" })
-  @ApiParam({ name: "creatorId", description: "Creator user ID", type: Number })
-  @ApiResponse({ status: 200, description: "Array of projects for the specified creator", type: [Object] })
-  async findByCreator(@Param("creatorId", ParseIntPipe) creatorId: number) {
-    return this.proxy.forwardRequest("project", `/projects/creator/${creatorId}`, "GET");
+  @ApiOperation({ summary: "Get all projects by JWT token" })
+  @ApiResponse({ status: 200, description: "Paginated list or map of projects", type: Object })
+  async findByJWTToken() {
+    return this.proxy.forwardRequest("project", "/projects/myprojects", "GET");
   }
 
   @Get()
