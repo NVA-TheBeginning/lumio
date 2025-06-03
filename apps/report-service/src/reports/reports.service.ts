@@ -91,32 +91,55 @@ export class ReportsService {
 
     try {
       const { sections } = updateReportDto;
-      const updatedReport = await this.prisma.report.update({
-        where: { id },
-        data: {
-          sections: {
-            update: sections.map((section) => ({
-              where: { id: section.id },
-              data: {
-                title: section.title,
-                contentMarkdown: section.contentMarkdown,
-                contentHtml: section.contentHtml,
-              },
-            })),
+
+      if (!sections || sections.length === 0) {
+        return existingReport;
+      }
+
+      const updatedReport = await this.prisma.$transaction(async (prisma) => {
+        if (sections.length > 0) {
+          await Promise.all(
+            sections.map((section) =>
+              prisma.reportSection.upsert({
+                where: { id: section.id },
+                create: {
+                  reportId: id,
+                  title: section.title,
+                  contentMarkdown: section.contentMarkdown,
+                  contentHtml: section.contentHtml,
+                },
+                update: {
+                  title: section.title,
+                  contentMarkdown: section.contentMarkdown,
+                  contentHtml: section.contentHtml,
+                },
+              }),
+            ),
+          );
+        }
+
+        return prisma.report.findUnique({
+          where: { id },
+          include: {
+            sections: {
+              orderBy: { id: "asc" },
+            },
           },
-        },
-        include: {
-          sections: {
-            orderBy: { id: "asc" },
-          },
-        },
+        });
       });
+
+      if (!updatedReport) {
+        throw new Error("Failed to retrieve updated report");
+      }
 
       return updatedReport;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2003") {
-          throw new BadRequestException("Invalid projectId or groupId provided");
+        switch (error.code) {
+          case "P2003":
+            throw new BadRequestException("Invalid projectId or groupId provided");
+          default:
+            throw new BadRequestException(`Database error: ${error.message}`);
         }
       }
       throw error;

@@ -63,7 +63,8 @@
       },
       "suspicious": {
         "noDuplicateElseIf": "error",
-        "noDocumentCookie": "off"
+        "noDocumentCookie": "off",
+        "noArrayIndexKey": "off"
       }
     }
   },

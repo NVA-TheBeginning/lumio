@@ -45,21 +45,19 @@ export class UpdateReportSectionDto {
   @IsNotEmpty()
   id: number;
 
-  @ApiPropertyOptional({ description: "Section title", maxLength: 255 })
-  @IsOptional()
+  @ApiProperty({ description: "Section title", maxLength: 255 })
   @IsString()
   @IsNotEmpty()
-  title?: string;
+  title: string;
 
-  @ApiPropertyOptional({ description: "Section content in Markdown format" })
-  @IsOptional()
+  @ApiProperty({ description: "Section content in Markdown format" })
   @IsString()
-  contentMarkdown?: string;
+  contentMarkdown: string;
 
-  @ApiPropertyOptional({ description: "Section content in HTML format" })
-  @IsOptional()
+  @ApiProperty({ description: "Section content in HTML format" })
+
   @IsString()
-  contentHtml?: string;
+  contentHtml: string;
 }
 
 export class UpdateReportDto {
