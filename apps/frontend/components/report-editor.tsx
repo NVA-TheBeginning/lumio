@@ -1,10 +1,10 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Eye, FileText, GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { updateReport } from "@/app/dashboard/students/reports/actions";
+import { getReport, updateReport } from "@/app/dashboard/students/reports/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,15 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
   const [sections, setSections] = useState<ReportSection[]>([]);
   const [activeSection, setActiveSection] = useState<number>(0);
   const [isPreview, setIsPreview] = useState<boolean>(false);
+
+  useQuery({
+    queryKey: ["reports", reportId],
+    queryFn: async () => {
+      const report = await getReport(reportId);
+      setSections(report.sections);
+      return report;
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateReportDto }) => updateReport(id, data),
