@@ -73,7 +73,6 @@ export class CreateProjectDto {
   @ApiProperty({ description: "Group settings per promotion", type: [GroupSettingDto] })
   @IsOptional()
   @IsArray()
-  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => GroupSettingDto)
   groupSettings?: GroupSettingDto[];
