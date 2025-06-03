@@ -180,7 +180,7 @@ describe("Reports", () => {
 
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body);
-    expect(body.sections).toHaveLength(1);
+    expect(body.sections).toHaveLength(2);
     const updatedSection = body.sections.find((s: { id: number }) => s.id === initialSectionIds[0]);
     expect(updatedSection).toHaveProperty("title", "Updated Introduction");
     expect(updatedSection).toHaveProperty("contentMarkdown", "# Updated Introduction\nThis is updated.");

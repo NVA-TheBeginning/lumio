@@ -97,19 +97,25 @@ export class ReportsService {
       }
 
       const updatedReport = await this.prisma.$transaction(async (prisma) => {
-        await prisma.reportSection.deleteMany({
-          where: { reportId: id },
-        });
-
         if (sections.length > 0) {
-          await prisma.reportSection.createMany({
-            data: sections.map((section) => ({
-              reportId: id,
-              title: section.title,
-              contentMarkdown: section.contentMarkdown,
-              contentHtml: section.contentHtml,
-            })),
-          });
+          await Promise.all(
+            sections.map((section) =>
+              prisma.reportSection.upsert({
+                where: { id: section.id },
+                create: {
+                  reportId: id,
+                  title: section.title,
+                  contentMarkdown: section.contentMarkdown,
+                  contentHtml: section.contentHtml,
+                },
+                update: {
+                  title: section.title,
+                  contentMarkdown: section.contentMarkdown,
+                  contentHtml: section.contentHtml,
+                },
+              }),
+            ),
+          );
         }
 
         return prisma.report.findUnique({
