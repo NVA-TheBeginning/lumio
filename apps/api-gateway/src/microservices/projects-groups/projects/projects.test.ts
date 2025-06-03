@@ -50,8 +50,8 @@ describe("ProjectsController", () => {
 
   test("findByCreator calls proxy.forwardRequest with GET", async () => {
     (proxy.forwardRequest as jest.Mock).mockResolvedValue([{ id: 1 }, { id: 2 }]);
-    const result = await controller.findByCreator(1);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/creator/1", "GET");
+    const result = await controller.findByJWTToken();
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/projects/myprojects", "GET");
     expect(result).toEqual([{ id: 1 }, { id: 2 }]);
   });
 

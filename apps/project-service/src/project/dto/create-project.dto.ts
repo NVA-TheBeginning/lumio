@@ -65,14 +65,15 @@ export class CreateProjectDto {
   creatorId!: number;
 
   @ApiProperty({ description: "List of promotion IDs", type: [Number], example: [1, 2] })
+  @IsOptional()
   @IsArray()
   @IsInt({ each: true })
-  promotionIds!: number[];
+  promotionIds?: number[];
 
   @ApiProperty({ description: "Group settings per promotion", type: [GroupSettingDto] })
-  @IsArray()
   @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => GroupSettingDto)
-  groupSettings!: GroupSettingDto[];
+  groupSettings?: GroupSettingDto[];
 }

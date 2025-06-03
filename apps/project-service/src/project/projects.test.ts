@@ -81,7 +81,7 @@ describe("Projects", () => {
     const res = await app.inject({ method: "POST", url: "/projects", payload: invalidDto });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
-    expect(body.message).toContain("One or more promotions do not exist");
+    expect(body.message).toContain("Promotions not found : 999999");
   });
 
   test("/projects (POST) - invalid groupSettings (min>max)", async () => {
@@ -132,22 +132,6 @@ describe("Projects", () => {
     const proj = JSON.parse(res.body);
     expect(proj.id).toBe(projectId);
     expect(proj.name).toBe(projectName);
-  });
-
-  test("/projects/creator/:creatorId (GET) - should return projects for creator", async () => {
-    const res = await app.inject({ method: "GET", url: "/projects/creator/1" });
-    expect(res.statusCode).toBe(200);
-    const list = JSON.parse(res.body) as Array<{ id: number }>;
-    expect(Array.isArray(list)).toBe(true);
-    expect(list.some((p) => p.id === projectId)).toBe(true);
-  });
-
-  test("/projects/creator/:creatorId (GET) - should return empty array for non-existing creator", async () => {
-    const res = await app.inject({ method: "GET", url: "/projects/creator/999999" });
-    expect(res.statusCode).toBe(200);
-    const list = JSON.parse(res.body) as Array<unknown>;
-    expect(Array.isArray(list)).toBe(true);
-    expect(list).toHaveLength(0);
   });
 
   test("/projects/:id (GET) - not found", async () => {
@@ -220,11 +204,31 @@ describe("Projects", () => {
 
   afterAll(async () => {
     if (projectId) {
-      await prisma.groupSettings.deleteMany({ where: { projectId } });
-      await prisma.projectPromotion.deleteMany({ where: { projectId } });
-      await prisma.project.delete({ where: { id: projectId } });
+      await prisma.groupMember.deleteMany({
+        where: {
+          group: {
+            projectId: projectId,
+          },
+        },
+      });
+      await prisma.group.deleteMany({
+        where: { projectId },
+      });
+      await prisma.groupSettings.deleteMany({
+        where: { projectId },
+      });
+      await prisma.projectPromotion.deleteMany({
+        where: { projectId },
+      });
+      await prisma.project.delete({
+        where: { id: projectId },
+      });
     }
-    await prisma.promotion.deleteMany({ where: { id: { in: promotionIds } } });
+    if (promotionIds.length) {
+      await prisma.promotion.deleteMany({
+        where: { id: { in: promotionIds } },
+      });
+    }
     await app.close();
   });
 });
