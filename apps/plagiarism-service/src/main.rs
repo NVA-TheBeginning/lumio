@@ -37,6 +37,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Starting plagiarism service on http://localhost:3008");
     println!("Available endpoints:");
     println!("  POST /plagiarism/checks - Run plagiarism check");
+    println!("  GET /docs - OpenAPI specification (JSON)");
+    println!("  GET /ui - Swagger UI");
 
     HttpServer::new(move || {
         App::new()
@@ -51,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ),
             )
             .build_with(
-                "/openapi.json",
+                "/docs",
                 BuildConfig::default().with(SwaggerUIConfig::new(&"/ui")),
             )
     })
