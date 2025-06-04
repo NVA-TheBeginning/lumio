@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -39,12 +40,29 @@ export class ProjectController {
   })
   @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
   @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
+  @ApiQuery({
+    name: "userId",
+    type: Number,
+    required: true,
+    description: "ID de l’utilisateur (validé via gateway)",
+  })
+  @ApiQuery({
+    name: "userRole",
+    type: String,
+    required: true,
+    description: "Rôle de l’utilisateur (TEACHER, ADMIN ou STUDENT)",
+  })
   @ApiResponse({ status: 200, description: "Paginated list or map of projects" })
   async findMine(
     @GetUser() user: JwtUser,
-    @Query("page", ParseIntPipe) page = 1,
-    @Query("size", ParseIntPipe) size = 10,
+    @Query("page", ParseIntPipe) page,
+    @Query("size", ParseIntPipe) size,
+    @Query("userId") userId: number,
+    @Query("userRole") userRole: "TEACHER" | "ADMIN" | "STUDENT",
   ) {
+    if (!(userId && userRole)) {
+      throw new BadRequestException("userId and userRole are required query parameters.");
+    }
     if (user.role === "TEACHER" || user.role === "ADMIN") {
       return this.projectService.findByCreator(user.sub, page, size);
     }
