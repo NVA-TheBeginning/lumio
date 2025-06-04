@@ -9,9 +9,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder().setTitle("Project Service").setVersion("1.0").build();
 
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("ui", app, documentFactory);
-  SwaggerModule.setup("swagger", app, documentFactory, {
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("ui", app, document);
+  SwaggerModule.setup("swagger", app, document, {
     jsonDocumentUrl: "docs",
   });
 

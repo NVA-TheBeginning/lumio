@@ -179,6 +179,7 @@
         "@nestjs/common": "^11.1.2",
         "@nestjs/core": "^11.1.2",
         "@nestjs/mapped-types": "^2.1.0",
+        "@nestjs/passport": "^11.0.5",
         "@nestjs/platform-fastify": "^11.1.2",
         "@nestjs/swagger": "^11.2.0",
         "@prisma/client": "^6.9.0",
