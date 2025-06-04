@@ -43,7 +43,7 @@ export class MicroserviceProxyService {
       method, 
       data, 
       params, 
-      headers: { ...axios.defaults.headers, ...headers } 
+      headers: { ...axios.defaults.headers, ...(headers || {}) } 
     };
 
     try {
