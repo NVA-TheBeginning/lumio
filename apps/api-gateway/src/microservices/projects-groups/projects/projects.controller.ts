@@ -15,6 +15,7 @@ import {
   ValidationPipe,
 } from "@nestjs/common";
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOperation,
@@ -37,7 +38,6 @@ import {
 } from "class-validator";
 import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator.js";
 import { AuthGuard } from "@/jwt/guards/auth.guard.js";
-import { UsersController } from "@/microservices/auth/users/users.controller.js";
 import { ProjectsByPromotion } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { UpdateProjectStatusDto } from "../dto/project.dto.js";
@@ -112,10 +112,7 @@ export class CreateProjectDto {
 @ApiTags("projects")
 @Controller("projects")
 export class ProjectsController {
-  constructor(
-    private readonly proxy: MicroserviceProxyService,
-    private readonly usersController: UsersController,
-  ) {}
+  constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -129,6 +126,7 @@ export class ProjectsController {
   @Get("myprojects")
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: "Get all projects by JWT token (teachers paginated, students paginated by promotion)",
   })

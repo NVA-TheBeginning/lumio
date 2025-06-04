@@ -54,7 +54,6 @@ export class ProjectController {
   })
   @ApiResponse({ status: 200, description: "Paginated list or map of projects" })
   async findMine(
-    @GetUser() user: JwtUser,
     @Query("page", ParseIntPipe) page: number,
     @Query("size", ParseIntPipe) size: number,
     @Query("userId") userId: number,
@@ -63,10 +62,10 @@ export class ProjectController {
     if (!(userId && userRole)) {
       throw new BadRequestException("userId and userRole are required query parameters.");
     }
-    if (user.role === "TEACHER" || user.role === "ADMIN") {
-      return this.projectService.findByCreator(user.sub, page, size);
+    if (userRole === "TEACHER" || userRole === "ADMIN") {
+      return this.projectService.findByCreator(userId, page, size);
     }
-    return this.projectService.findProjectsForStudent(user.sub, page, size);
+    return this.projectService.findProjectsForStudent(userId, page, size);
   }
 
   @Get()
