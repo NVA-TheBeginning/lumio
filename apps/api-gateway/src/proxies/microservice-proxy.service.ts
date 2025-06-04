@@ -38,12 +38,12 @@ export class MicroserviceProxyService {
     }
 
     const url = `${baseUrl}${endpoint}`;
-    const config: AxiosRequestConfig = { 
-      url, 
-      method, 
-      data, 
-      params, 
-      headers: { ...axios.defaults.headers, ...(headers || {}) } 
+    const config: AxiosRequestConfig = {
+      url,
+      method,
+      data,
+      params,
+      headers: { ...axios.defaults.headers, ...(headers || {}) },
     };
 
     try {

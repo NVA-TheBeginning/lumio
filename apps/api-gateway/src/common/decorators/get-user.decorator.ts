@@ -18,7 +18,7 @@ export const GetUser = createParamDecorator((_data: unknown, ctx: ExecutionConte
   if (header) {
     try {
       return JSON.parse(header as string) as JwtUser;
-    } catch (error) {
+    } catch (_error) {
       // Handle JSON parsing error gracefully
       return null;
     }
