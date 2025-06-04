@@ -7,7 +7,12 @@ import { AppModule } from "@/app.module.js";
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ logger: true }));
 
-  const config = new DocumentBuilder().setTitle("Project Service").setVersion("1.0").build();
+  const config = new DocumentBuilder()
+      .setTitle("Project Service")
+      .setVersion("1.0")
+      .setDescription("API documentation for the Project Service")
+      .addBearerAuth()
+      .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("ui", app, document);
