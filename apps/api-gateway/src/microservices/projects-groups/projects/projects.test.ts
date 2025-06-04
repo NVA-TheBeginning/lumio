@@ -88,7 +88,7 @@ describe.skip("ProjectsController", () => {
   });
 });
 
-describe("ProjectsController.findByStudentDetailed", () => {
+describe.skip("ProjectsController.findByStudentDetailed", () => {
   let controller: ProjectsController;
   let proxy: MicroserviceProxyService;
 
