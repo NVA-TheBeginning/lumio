@@ -246,6 +246,15 @@ export class ProjectService {
       return {};
     }
 
+    const promos = await this.prisma.promotion.findMany({
+      where: { id: { in: promotionIds } },
+      select: { id: true, name: true },
+    });
+    const promoNamesMap: Record<number, string> = {};
+    promos.forEach((p) => {
+      promoNamesMap[p.id] = p.name;
+    });
+
     // Récupérer les liens projectPromotion pour ces promotions,
     const allLinks = await this.prisma.projectPromotion.findMany({
       where: { promotionId: { in: promotionIds } },
@@ -334,7 +343,7 @@ export class ProjectService {
         prevPage: page > 1 ? page - 1 : null,
       };
 
-      return [pid, { data: enriched, pagination: meta }] as const;
+      return [pid, { promotionName: promoNamesMap[pid], data: enriched, pagination: meta }] as const;
     });
 
     // On exécute tous les tasks en parallèle
