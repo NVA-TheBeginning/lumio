@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -15,9 +14,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import {
-  ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOperation,
@@ -38,7 +35,8 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
-import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-groups/projects/projects.service.js";
+import { AuthGuard } from "@/jwt/guards/auth.guard.js";
+import { ProjectsByPromotion } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { UpdateProjectStatusDto } from "../dto/project.dto.js";
 
@@ -112,10 +110,7 @@ export class CreateProjectDto {
 @ApiTags("projects")
 @Controller("projects")
 export class ProjectsController {
-  constructor(
-    private readonly proxy: MicroserviceProxyService,
-    private readonly projectsService: ProjectsService,
-  ) {}
+  constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -128,32 +123,18 @@ export class ProjectsController {
 
   @Get("myprojects")
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard("jwt"))
-  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
   @ApiOperation({
     summary: "Get all projects by JWT token (teachers paginated, students paginated by promotion)",
   })
   @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
   @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
   @ApiResponse({ status: 200, description: "Paginated list or map of projects", type: Object })
-  async findByJWTToken(
-    @Query("page") page?: number,
-    @Query("size") size?: number,
-    @Headers("authorization") authHeader?: string,
-  ) {
+  async findByJWTToken(@Query("page") page?: number, @Query("size") size?: number) {
     const p = page ?? 1;
     const s = size ?? 10;
 
-    const headers = authHeader ? { authorization: authHeader } : {};
-
-    return this.proxy.forwardRequest(
-      "project",
-      "/projects/myprojects",
-      "GET",
-      undefined,
-      { page: p, size: s },
-      headers,
-    );
+    return this.proxy.forwardRequest("project", "/projects/myprojects", "GET", undefined, { page: p, size: s });
   }
 
   @Get()

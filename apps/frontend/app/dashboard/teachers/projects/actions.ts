@@ -98,13 +98,7 @@ async function getUserId(): Promise<number> {
 }
 
 export async function getAllProjects(): Promise<Project[]> {
-  const id = await getUserId();
-  return await authFetchData<Project[]>(`${API_URL}/projects/creator/${id}`);
-}
-
-export async function getAllProjectsStudents(): Promise<Project[]> {
-  const id = await getUserId();
-  return await authFetchData<Project[]>(`${API_URL}/projects/students/${id}/detailed`);
+  return await authFetchData<Project[]>(`${API_URL}/projects/myprojects`);
 }
 
 export async function createProject(data: CreateProjectData): Promise<void> {

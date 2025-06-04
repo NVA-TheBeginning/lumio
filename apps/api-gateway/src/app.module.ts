@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { JwtModule } from "@nestjs/jwt";
 import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { HealthController } from "@/health/health.controller.js";
 import { AuthModule } from "@/microservices/auth/auth.module.js";
@@ -24,6 +25,7 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     SubmissionsModule,
     DeliverablesModule,
     ReportsModule,
+    JwtModule.register({}),
     PrometheusModule.register({
       path: "/metrics",
       defaultLabels: {
