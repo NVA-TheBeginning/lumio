@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -135,11 +136,24 @@ export class ProjectsController {
   @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
   @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
   @ApiResponse({ status: 200, description: "Paginated list or map of projects", type: Object })
-  async findByJWTToken(@Query("page") page?: number, @Query("size") size?: number) {
+  async findByJWTToken(
+    @Query("page") page?: number,
+    @Query("size") size?: number,
+    @Headers("authorization") authHeader?: string,
+  ) {
     const p = page ?? 1;
     const s = size ?? 10;
 
-    return this.proxy.forwardRequest("project", "/projects/myprojects", "GET", undefined, { page: p, size: s });
+    const headers = authHeader ? { authorization: authHeader } : {};
+
+    return this.proxy.forwardRequest(
+      "project",
+      "/projects/myprojects",
+      "GET",
+      undefined,
+      { page: p, size: s },
+      headers,
+    );
   }
 
   @Get()
