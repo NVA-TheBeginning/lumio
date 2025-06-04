@@ -260,7 +260,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                       <Input
                                         type="number"
                                         {...field}
-                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -277,7 +277,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                       <Input
                                         type="number"
                                         {...field}
-                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -397,7 +397,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                     <Input
                                       type="number"
                                       {...field}
-                                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
                                     />
                                   </FormControl>
                                   <FormMessage />

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noNestedComponentDefinitions: Nested component definitions are necessary for this component */
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
