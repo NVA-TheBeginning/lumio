@@ -38,7 +38,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Available endpoints:");
     println!("  POST /plagiarism/checks - Run plagiarism check");
     println!("  GET /docs - OpenAPI specification (JSON)");
-    println!("  GET /openapi.json - OpenAPI specification (JSON)");
     println!("  GET /ui - Swagger UI");
 
     HttpServer::new(move || {
