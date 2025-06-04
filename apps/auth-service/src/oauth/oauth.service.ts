@@ -31,7 +31,7 @@ export class OAuthService {
       });
     }
 
-    const tokens = this.authService.generateTokens(user.id, user.email);
+    const tokens = this.authService.generateTokens(user.id, user.email, user.role);
     return {
       id: user.id,
       email: user.email,
