@@ -10,10 +10,8 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator";
 import { ProjectDetailedDto } from "@/project/dto/project-detailed.dto";
 import { CreateProjectDto } from "./dto/create-project.dto";
@@ -36,19 +34,13 @@ export class ProjectController {
 
   @Get("myprojects")
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard("jwt"))
-  @ApiBearerAuth()
   @ApiOperation({
     summary: "Get projects for the logged-in user (teachers see theirs, students see those they belong to)",
   })
   @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
   @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
   @ApiResponse({ status: 200, description: "Paginated list or map of projects" })
-  async findMine(
-    @GetUser() user: JwtUser,
-    @Query("page", ParseIntPipe) page = 1,
-    @Query("size", ParseIntPipe) size = 10,
-  ) {
+  async findMine(@Query("page", ParseIntPipe) page, @Query("size", ParseIntPipe) size, @GetUser() user: JwtUser) {
     if (user.role === "TEACHER" || user.role === "ADMIN") {
       return this.projectService.findByCreator(user.sub, page, size);
     }
@@ -72,8 +64,6 @@ export class ProjectController {
 
   @Get(":id/detailed")
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard("jwt"))
-  @ApiBearerAuth()
   @ApiOperation({ summary: "Retrieve a project with detailed info (role-based)" })
   @ApiParam({ name: "id", type: Number, description: "Project ID" })
   @ApiResponse({ status: 200, description: "Detailed project info", type: ProjectDetailedDto })
