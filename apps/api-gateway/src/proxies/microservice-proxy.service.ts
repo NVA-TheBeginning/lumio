@@ -38,7 +38,13 @@ export class MicroserviceProxyService {
     }
 
     const url = `${baseUrl}${endpoint}`;
-    const config: AxiosRequestConfig = { url, method, data, params, headers };
+    const config: AxiosRequestConfig = { 
+      url, 
+      method, 
+      data, 
+      params, 
+      headers: { ...axios.defaults.headers, ...headers } 
+    };
 
     try {
       const response = await axios.request<TResponse>(config);
