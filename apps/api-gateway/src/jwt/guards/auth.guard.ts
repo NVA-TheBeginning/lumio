@@ -1,10 +1,20 @@
 import { CanActivate, ExecutionContext, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import type { FastifyRequest } from "fastify";
+import { jwtConstants } from "@/config/constants.js";
+
+type UserReq = {
+  sub: number;
+  email: string;
+  role: "TEACHER" | "STUDENT" | "ADMIN" | string;
+  type: string;
+  iat?: number;
+  exp?: number;
+};
 
 declare module "fastify" {
   interface FastifyRequest {
-    user?: unknown; //todo
+    user?: UserReq;
   }
 }
 
@@ -21,7 +31,7 @@ export class AuthGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: "your-secret-key",
+        secret: jwtConstants.secret,
       });
       request.user = payload;
     } catch (error) {
