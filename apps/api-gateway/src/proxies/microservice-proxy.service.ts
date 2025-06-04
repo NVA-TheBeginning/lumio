@@ -21,7 +21,7 @@ export class MicroserviceProxyService {
    * @param method Méthode HTTP à utiliser.
    * @param data Payload JSON (pour POST/PUT/PATCH).
    * @param params Query params (pour GET/DELETE/PATCH).
-   * @param headers
+   * @param headers En-têtes HTTP supplémentaires à envoyer avec la requête.
    * @returns Le body de la réponse typé TResponse.
    */
   async forwardRequest<TResponse>(
@@ -30,6 +30,7 @@ export class MicroserviceProxyService {
     method: HttpMethod,
     data?: object,
     params?: object,
+    headers?: object,
   ): Promise<TResponse> {
     const baseUrl = this.configService.get<string>(`microservices.${microservice}`);
     if (!baseUrl) {
@@ -37,7 +38,7 @@ export class MicroserviceProxyService {
     }
 
     const url = `${baseUrl}${endpoint}`;
-    const config: AxiosRequestConfig = { url, method, data, params };
+    const config: AxiosRequestConfig = { url, method, data, params, headers };
 
     try {
       const response = await axios.request<TResponse>(config);
