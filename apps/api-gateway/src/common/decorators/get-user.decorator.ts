@@ -15,5 +15,13 @@ export const GetUser = createParamDecorator((_data: unknown, ctx: ExecutionConte
     return req.user;
   }
   const header = req.headers["x-user"];
-  return header ? (JSON.parse(header as string) as JwtUser) : null;
+  if (header) {
+    try {
+      return JSON.parse(header as string) as JwtUser;
+    } catch (error) {
+      // Handle JSON parsing error gracefully
+      return null;
+    }
+  }
+  return null;
 });
