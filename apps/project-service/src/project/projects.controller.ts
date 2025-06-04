@@ -55,8 +55,8 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: "Paginated list or map of projects" })
   async findMine(
     @GetUser() user: JwtUser,
-    @Query("page", ParseIntPipe) page,
-    @Query("size", ParseIntPipe) size,
+    @Query("page", ParseIntPipe) page: number,
+    @Query("size", ParseIntPipe) size: number,
     @Query("userId") userId: number,
     @Query("userRole") userRole: "TEACHER" | "ADMIN" | "STUDENT",
   ) {
