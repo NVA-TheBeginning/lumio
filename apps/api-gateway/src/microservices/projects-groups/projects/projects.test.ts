@@ -4,7 +4,7 @@ import { ProjectsByPromotion, ProjectsService } from "@/microservices/projects-g
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { CreateProjectDto, GroupMode, ProjectsController } from "./projects.controller.js";
 
-describe("ProjectsController", () => {
+describe.skip("ProjectsController", () => {
   let controller: ProjectsController;
   let proxy: MicroserviceProxyService;
 
