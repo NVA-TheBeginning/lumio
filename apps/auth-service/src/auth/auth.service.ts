@@ -64,7 +64,7 @@ export class AuthService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    const tokens = this.generateTokens(user.id, user.email);
+    const tokens = this.generateTokens(user.id, user.email, user.role);
     return {
       id: user.id,
       email: user.email,
@@ -80,11 +80,17 @@ export class AuthService {
     if (!(id && email)) {
       throw new UnauthorizedException("Invalid refresh token");
     }
-    return this.generateTokens(id, email);
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      throw new UnauthorizedException("User not found");
+    }
+    return this.generateTokens(id, email, user.role);
   }
 
-  generateTokens(userId: number, email: string): AuthTokens {
-    const accessToken = this.accessSigner({ sub: userId, email, type: "access" });
+  generateTokens(userId: number, email: string, role: string): AuthTokens {
+    const accessToken = this.accessSigner({ sub: userId, email, role, type: "access" });
     const refreshToken = this.refreshSigner({ sub: userId, email, type: "refresh" });
     return { accessToken, refreshToken };
   }
