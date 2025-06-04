@@ -21,7 +21,6 @@ export class MicroserviceProxyService {
    * @param method Méthode HTTP à utiliser.
    * @param data Payload JSON (pour POST/PUT/PATCH).
    * @param params Query params (pour GET/DELETE/PATCH).
-   * @param headers
    * @returns Le body de la réponse typé TResponse.
    */
   async forwardRequest<TResponse>(

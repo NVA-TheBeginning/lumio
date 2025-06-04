@@ -75,10 +75,12 @@ export class ProjectService {
     });
   }
 
-  async findByCreator(creatorId: number, page: number, size: number): Promise<Paginated<ProjectWithPromotions>> {
-    if (creatorId == null) {
+  async findByCreator(creator: number, page: number, size: number): Promise<Paginated<ProjectWithPromotions>> {
+    if (creator == null) {
       throw new BadRequestException("creatorId is required");
     }
+
+    const creatorId = Number(creator);
 
     const totalRecords = await this.prisma.project.count({
       where: { creatorId, deletedAt: null },
@@ -224,11 +226,17 @@ export class ProjectService {
     return result;
   }
 
-  async findProjectsForStudent(studentId: number, page: number, size: number): Promise<ProjectsByPromotion> {
-    if (studentId == null) {
+  async findProjectsForStudent(student: number, page: number, size: number): Promise<ProjectsByPromotion> {
+    if (student == null) {
       throw new BadRequestException("studentId is required");
     }
 
+    const studentId = Number(student);
+    if (Number.isNaN(studentId) || studentId < 1) {
+      throw new BadRequestException("studentId must be a positive integer");
+    }
+
+    // Récupérer les promotions de l’étudiant
     const studentPromos = await this.prisma.studentPromotion.findMany({
       where: { userId: studentId },
       select: { promotionId: true },
@@ -238,16 +246,36 @@ export class ProjectService {
       return {};
     }
 
-    const links = await this.prisma.projectPromotion.findMany({
+    const promos = await this.prisma.promotion.findMany({
+      where: { id: { in: promotionIds } },
+      select: { id: true, name: true },
+    });
+    const promoNamesMap: Record<number, string> = {};
+    promos.forEach((p) => {
+      promoNamesMap[p.id] = p.name;
+    });
+
+    // Récupérer les liens projectPromotion pour ces promotions,
+    const allLinks = await this.prisma.projectPromotion.findMany({
       where: { promotionId: { in: promotionIds } },
       include: { project: true },
     });
 
-    const byPromos: Record<number, Project[]> = {};
+    // Construire un dictionnaire { promotionId => liste complète de Project }
+    type RawProject = {
+      id: number;
+      name: string;
+      description: string;
+      creatorId: number;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+
+    const byPromos: Record<number, RawProject[]> = {};
     for (const pid of promotionIds) {
       byPromos[pid] = [];
     }
-    for (const link of links) {
+    for (const link of allLinks) {
       const p = link.project;
       byPromos[link.promotionId].push({
         id: p.id,
@@ -259,62 +287,72 @@ export class ProjectService {
       });
     }
 
-    const tasks = promotionIds.map((pid) => {
+    // Pour chaque promotion, on découpe en pages et on enrichit chaque projet
+    const tasks = promotionIds.map(async (pid) => {
       const allProjects = byPromos[pid];
       const totalRecords = allProjects.length;
-      const totalPages = Math.ceil(totalRecords / size);
+      const totalPages = Math.ceil(totalRecords / size) || 1;
+
       const start = (page - 1) * size;
       const pageProjects = allProjects.slice(start, start + size);
 
-      return Promise.all(
-        pageProjects.map((proj) =>
-          this.prisma.groupSettings
-            .findMany({
-              where: { projectId: proj.id, promotionId: pid },
-              include: {
-                projectPromotion: {
-                  include: { groups: { include: { members: true } } },
+      // Pour chacun des projets de la page, récupérer le statut de groupe et le groupe
+      const enriched: ProjectWithGroupStatus[] = await Promise.all(
+        pageProjects.map(async (proj) => {
+          const settings = await this.prisma.groupSettings.findMany({
+            where: { projectId: proj.id, promotionId: pid },
+            include: {
+              projectPromotion: {
+                include: {
+                  groups: { include: { members: true } },
                 },
               },
-            })
-            .then((settings) => {
-              const groups = settings.flatMap((gs) => gs.projectPromotion.groups);
+            },
+          });
 
-              let status: GroupStatus = "no_groups";
-              let ownGroup: Group | undefined;
+          const groups = settings.flatMap((gs) => gs.projectPromotion.groups);
 
-              if (groups.length > 0) {
-                const found = groups.find((g) => g.members.some((m) => m.studentId === studentId));
-                status = found ? "in_group" : "not_in_group";
-                if (found) {
-                  ownGroup = {
-                    id: found.id,
-                    name: found.name,
-                    members: found.members.map((m) => ({
-                      studentId: m.studentId,
-                    })),
-                  };
-                }
-              }
+          let status: GroupStatus = "no_groups";
+          let ownGroup: Group | undefined;
 
-              return { project: proj, groupStatus: status, group: ownGroup };
-            }),
-        ),
-      ).then((enriched) => {
-        const meta: PaginationMeta = {
-          totalRecords,
-          currentPage: page,
-          totalPages,
-          nextPage: page < totalPages ? page + 1 : null,
-          prevPage: page > 1 ? page - 1 : null,
-        };
-        return [pid, { data: enriched, pagination: meta }] as const;
-      });
+          if (groups.length > 0) {
+            const found = groups.find((g) => g.members.some((m) => m.studentId === studentId));
+            status = found ? "in_group" : "not_in_group";
+            if (found) {
+              ownGroup = {
+                id: found.id,
+                name: found.name,
+                members: found.members.map((m) => ({ studentId: m.studentId })),
+              };
+            }
+          }
+
+          return {
+            project: proj,
+            groupStatus: status,
+            group: ownGroup,
+          };
+        }),
+      );
+
+      const meta: PaginationMeta = {
+        totalRecords,
+        currentPage: page,
+        totalPages,
+        nextPage: page < totalPages ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null,
+      };
+
+      return [pid, { promotionName: promoNamesMap[pid], data: enriched, pagination: meta }] as const;
     });
 
+    // On exécute tous les tasks en parallèle
     const entries = await Promise.all(tasks);
 
-    return Object.fromEntries(entries) as ProjectsByPromotion;
+    // On reconstruit un objet à partir des tuples [pid, Paginated<…>]
+    const result: ProjectsByPromotion = Object.fromEntries(entries);
+
+    return result;
   }
 
   async update(id: number, updateDto: UpdateProjectDto) {

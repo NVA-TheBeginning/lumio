@@ -15,6 +15,7 @@ import {
   ValidationPipe,
 } from "@nestjs/common";
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOperation,
@@ -35,6 +36,7 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
+import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator.js";
 import { AuthGuard } from "@/jwt/guards/auth.guard.js";
 import { ProjectsByPromotion } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
@@ -124,17 +126,23 @@ export class ProjectsController {
   @Get("myprojects")
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: "Get all projects by JWT token (teachers paginated, students paginated by promotion)",
   })
   @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
   @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
   @ApiResponse({ status: 200, description: "Paginated list or map of projects", type: Object })
-  async findByJWTToken(@Query("page") page?: number, @Query("size") size?: number) {
+  async findByJWTToken(@GetUser() user: JwtUser, @Query("page") page?: number, @Query("size") size?: number) {
     const p = page ?? 1;
     const s = size ?? 10;
 
-    return this.proxy.forwardRequest("project", "/projects/myprojects", "GET", undefined, { page: p, size: s });
+    return this.proxy.forwardRequest("project", "/projects/myprojects", "GET", undefined, {
+      page: p,
+      size: s,
+      userId: user.sub,
+      userRole: user.role,
+    });
   }
 
   @Get()
