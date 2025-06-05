@@ -1,6 +1,6 @@
 "use server";
 import { getUserFromCookie } from "@/lib/cookie";
-import { authDeleteData, authFetchData, authPatchData, authPostData, authPutData } from "@/lib/utils";
+import { authDeleteData, authFetchData, authPatchData, authPostData, authPutData, PaginationMeta } from "@/lib/utils";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
 
@@ -92,13 +92,44 @@ export interface ProjectType {
   deliverables: DeliverableType[];
 }
 
+export interface getAllStudentProjects {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  group: {
+    id: number;
+    name: string;
+  } | null;
+  promotion: {
+    id: number;
+    name: string;
+  };
+}
+
 async function getUserId(): Promise<number> {
   const user = await getUserFromCookie();
   return Number(user?.id);
 }
 
-export async function getAllProjects(): Promise<Project[]> {
-  return await authFetchData<Project[]>(`${API_URL}/projects/myprojects`);
+export async function getAllProjects(
+  page: number,
+  size: number,
+): Promise<{ pagination: PaginationMeta; data: Project[] }> {
+  return await authFetchData<{ pagination: PaginationMeta; data: Project[] }>(
+    `${API_URL}/projects/myprojects?page=${page}&size=${size}`,
+  );
+}
+
+export async function getAllStudentProjects(
+  page: number,
+  size: number,
+): Promise<{ pagination: PaginationMeta; data: getAllStudentProjects[] }> {
+  return await authFetchData<{ pagination: PaginationMeta; data: getAllStudentProjects[] }>(
+    `${API_URL}/projects/myprojects?page=${page}&size=${size}`,
+  );
 }
 
 export async function createProject(data: CreateProjectData): Promise<void> {

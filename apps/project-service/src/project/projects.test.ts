@@ -126,6 +126,22 @@ describe("Projects", () => {
     expect(list.some((p) => p.id === projectId)).toBe(true);
   });
 
+  test("/projects/myprojects (GET) - should return projects", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/projects/myprojects?userId=1&userRole=STUDENT&page=1&size=10",
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  test("/projects/myprojects (GET) - should return projects", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/projects/myprojects?userId=1&userRole=TEACHER&page=1&size=10",
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
   test("/projects/:id (GET) - should return the project", async () => {
     const res = await app.inject({ method: "GET", url: `/projects/${projectId}` });
     expect(res.statusCode).toBe(200);

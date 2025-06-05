@@ -1,13 +1,12 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Filter, Search, SlidersHorizontal, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Filter, Search, SlidersHorizontal, Users, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getAllProjects } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,31 +14,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
+import { getAllStudentProjects } from "../../teachers/projects/actions";
 
 interface FilterState {
-  promotions: string[];
-  dateRange: string;
+  hasGroup: string;
   search: string;
 }
 
-const datePeriods = [
+const groupStatusOptions = [
   { label: "Tous", value: "all" },
-  { label: "Cette année", value: "year" },
-  { label: "6 derniers mois", value: "6months" },
-  { label: "3 derniers mois", value: "3months" },
+  { label: "Avec groupe", value: "grouped" },
+  { label: "Sans groupe", value: "ungrouped" },
 ];
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Needed for complex filtering and sorting logic
 export default function ProjectList() {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState<FilterState>({
-    promotions: [],
-    dateRange: "all",
+    hasGroup: "all",
     search: "",
   });
 
@@ -50,34 +48,30 @@ export default function ProjectList() {
   const [itemsPerPage, setItemsPerPage] = useState<number>(9);
 
   const {
-    data: projects = [],
+    data: projectsResponse,
     isLoading: isLoadingProjects,
     isError: isErrorProjects,
     error: projectsError,
   } = useQuery({
-    queryKey: ["projects"],
-    queryFn: getAllProjects,
+    queryKey: ["projects", currentPage, itemsPerPage],
+    queryFn: async () => {
+      return await getAllStudentProjects(currentPage, itemsPerPage);
+    },
     staleTime: 5 * 60 * 1000,
   });
 
-  const promotions = useMemo(() => {
-    if (!projects || projects.length === 0) return [];
-
-    const promotionSet = new Set<string>();
-
-    projects.forEach((project) => {
-      project.promotions.forEach((promotion) => {
-        promotionSet.add(promotion.name);
-      });
-    });
-
-    return Array.from(promotionSet);
-  }, [projects]);
+  const projects = projectsResponse?.data || [];
+  const pagination = projectsResponse?.pagination || {
+    totalRecords: 0,
+    currentPage: 1,
+    totalPages: 1,
+    nextPage: null,
+    prevPage: null,
+  };
 
   useEffect(() => {
     let count = 0;
-    if (filters.promotions.length > 0) count++;
-    if (filters.dateRange !== "all") count++;
+    if (filters.hasGroup !== "all") count++;
     if (filters.search.trim() !== "") count++;
     setActiveFiltersCount(count);
   }, [filters]);
@@ -85,33 +79,18 @@ export default function ProjectList() {
   const filteredProjects = useMemo(() => {
     if (isLoadingProjects) return [];
 
-    const now = new Date();
-
-    let dateLimit: Date | null = null;
-    if (filters.dateRange === "year") {
-      dateLimit = new Date(now.getFullYear(), 0, 1);
-    } else if (filters.dateRange === "6months") {
-      dateLimit = new Date(now);
-      dateLimit.setMonth(now.getMonth() - 6);
-    } else if (filters.dateRange === "3months") {
-      dateLimit = new Date(now);
-      dateLimit.setMonth(now.getMonth() - 3);
-    }
-
     return projects.filter((project) => {
-      const matchesPromotion =
-        filters.promotions.length === 0 ||
-        project.promotions.some((promotion) => filters.promotions.includes(promotion.name));
-
       const matchesSearch =
         filters.search === "" ||
         project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         project.description.toLowerCase().includes(filters.search.toLowerCase());
 
-      const projectDate = new Date(project.createdAt);
-      const matchesDate = filters.dateRange === "all" || (dateLimit && projectDate >= dateLimit);
+      const matchesGroupStatus =
+        filters.hasGroup === "all" ||
+        (filters.hasGroup === "grouped" && project.group !== null) ||
+        (filters.hasGroup === "ungrouped" && project.group === null);
 
-      return matchesPromotion && matchesSearch && matchesDate;
+      return matchesSearch && matchesGroupStatus;
     });
   }, [filters, projects, isLoadingProjects]);
 
@@ -129,39 +108,29 @@ export default function ProjectList() {
     });
   }, [filteredProjects, sortBy, sortOrder]);
 
-  const paginatedProjects = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return sortedProjects.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedProjects, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(sortedProjects.length / itemsPerPage);
-
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (page >= 1 && page <= pagination.totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-    setCurrentPage(1);
-  };
-
-  const handlePromotionToggle = (promotion: string) => {
-    setFilters((prev) => {
-      const newPromotions = prev.promotions.includes(promotion)
-        ? prev.promotions.filter((p) => p !== promotion)
-        : [...prev.promotions, promotion];
-      return { ...prev, promotions: newPromotions };
-    });
-    setCurrentPage(1);
   };
 
   const clearAllFilters = () => {
     setFilters({
-      promotions: [],
-      dateRange: "all",
+      hasGroup: "all",
       search: "",
     });
+  };
+
+  const handleViewProject = (projectId: number) => {
+    router.push(`/dashboard/student/projects/${projectId}`);
+  };
+
+  const handleItemsPerPageChange = (newSize: string) => {
+    setItemsPerPage(Number.parseInt(newSize));
     setCurrentPage(1);
   };
 
@@ -188,8 +157,12 @@ export default function ProjectList() {
           <h1 className="text-3xl font-bold">Mes Projets</h1>
           {!isLoadingProjects ? (
             <p className="text-gray-500 mt-1">
-              {sortedProjects.length} projet{sortedProjects.length !== 1 ? "s" : ""} trouvé
-              {sortedProjects.length !== 1 ? "s" : ""}
+              {pagination.totalRecords} projet{pagination.totalRecords !== 1 ? "s" : ""} au total
+              {sortedProjects.length !== projects.length && (
+                <span>
+                  , {sortedProjects.length} affiché{sortedProjects.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </p>
           ) : (
             <Skeleton className="h-6 w-32 mt-2" />
@@ -224,45 +197,18 @@ export default function ProjectList() {
               <PopoverContent className="w-80" align="end">
                 <div className="grid gap-4">
                   <div className="space-y-2">
-                    {promotions.length > 1 && <h4 className="font-medium">Promotions ({promotions.length})</h4>}
-                    {isLoadingProjects ? (
-                      <div className="space-y-2">
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-6 w-full" />
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        {promotions.length > 1 &&
-                          promotions.map((promotion) => (
-                            <div key={promotion} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`promotion-${promotion}`}
-                                checked={filters.promotions.includes(promotion)}
-                                onCheckedChange={() => handlePromotionToggle(promotion)}
-                              />
-                              <Label htmlFor={`promotion-${promotion}`} className="text-sm">
-                                {promotion}
-                              </Label>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Période</h4>
+                    <h4 className="font-medium">Statut du groupe</h4>
                     <Select
-                      value={filters.dateRange}
-                      onValueChange={(value: string) => handleFilterChange({ dateRange: value })}
+                      value={filters.hasGroup}
+                      onValueChange={(value: string) => handleFilterChange({ hasGroup: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une période" />
+                        <SelectValue placeholder="Sélectionner un statut" />
                       </SelectTrigger>
                       <SelectContent>
-                        {datePeriods.map((period) => (
-                          <SelectItem key={period.value} value={period.value}>
-                            {period.label}
+                        {groupStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -273,7 +219,6 @@ export default function ProjectList() {
                     <Button variant="outline" size="sm" onClick={clearAllFilters}>
                       Réinitialiser
                     </Button>
-                    <Button size="sm">Appliquer</Button>
                   </div>
                 </div>
               </PopoverContent>
@@ -331,16 +276,10 @@ export default function ProjectList() {
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-gray-500">Filtres actifs:</span>
-            {filters.promotions?.map((promotion) => (
-              <Badge key={promotion} variant="outline" className="flex items-center gap-1">
-                {promotion}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handlePromotionToggle(promotion)} />
-              </Badge>
-            ))}
-            {filters.dateRange !== "all" && (
+            {filters.hasGroup !== "all" && (
               <Badge variant="outline" className="flex items-center gap-1">
-                {datePeriods.find((p) => p.value === filters.dateRange)?.label}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange({ dateRange: "all" })} />
+                {groupStatusOptions.find((opt) => opt.value === filters.hasGroup)?.label}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange({ hasGroup: "all" })} />
               </Badge>
             )}
             {filters.search && (
@@ -358,7 +297,7 @@ export default function ProjectList() {
 
       {isLoadingProjects ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
+          {Array.from({ length: itemsPerPage }).map((_, index) => (
             <Card key={index} className="flex flex-col h-full">
               <CardHeader className="pb-3">
                 <Skeleton className="h-7 w-3/4 mb-2" />
@@ -371,82 +310,104 @@ export default function ProjectList() {
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-3/4 mb-4" />
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-24" />
                   <Skeleton className="h-6 w-32" />
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 border-t pt-4">
-                <Skeleton className="h-9 w-20" />
                 <Skeleton className="h-9 w-24" />
               </CardFooter>
             </Card>
           ))}
         </div>
+      ) : sortedProjects.length === 0 ? (
+        <div className="text-center py-12 border rounded-lg bg-gray-50">
+          <h3 className="text-lg font-medium text-gray-900">Aucun projet trouvé</h3>
+          <p className="mt-2 text-gray-600">
+            {activeFiltersCount > 0
+              ? "Essayez de modifier vos filtres pour voir plus de projets."
+              : "Vous n'avez pas encore de projets assignés."}
+          </p>
+          {activeFiltersCount > 0 && (
+            <Button className="mt-4" variant="outline" onClick={clearAllFilters}>
+              Effacer les filtres
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedProjects?.map((project) => (
+          {sortedProjects.map((project) => (
             <Card key={project.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-xl line-clamp-2">{project.name}</CardTitle>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <CardDescription className="text-sm">{formatDate(project.createdAt)}</CardDescription>
+                  <CardDescription className="text-sm">{formatDate(project.createdAt.toString())}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="grow pb-3">
                 <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {project.promotions.length > 0 &&
-                    project.promotions.map((promotion) => (
-                      <Badge key={promotion.id} variant="secondary" className="text-xs">
-                        {promotion.name}
-                      </Badge>
-                    ))}
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-gray-400" />
+                  {project.group ? (
+                    <span className="text-green-600">
+                      Groupe: {project.group.name || `Groupe #${project.group.id}`}
+                    </span>
+                  ) : (
+                    <span className="text-orange-600">Aucun groupe assigné</span>
+                  )}
                 </div>
               </CardContent>
+              <CardFooter className="flex justify-end gap-2 border-t pt-4">
+                <Button size="sm" onClick={() => handleViewProject(project.id)} className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Voir le projet
+                </Button>
+              </CardFooter>
             </Card>
           ))}
         </div>
       )}
 
-      {!isLoadingProjects && totalPages > 1 && (
+      {!isLoadingProjects && pagination.totalPages > 1 && (
         <div className="flex justify-center items-center mt-8 gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            aria-label="Page précédente"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+          {pagination.prevPage && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.prevPage ?? 1)}
+              disabled={!pagination.prevPage}
+              aria-label="Page précédente"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
 
           <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
               let pageToShow: number;
 
-              if (totalPages <= 5) {
+              if (pagination.totalPages <= 5) {
                 pageToShow = i + 1;
-              } else if (currentPage <= 3) {
+              } else if (pagination.currentPage <= 3) {
                 pageToShow = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageToShow = totalPages - 4 + i;
+              } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                pageToShow = pagination.totalPages - 4 + i;
               } else {
-                pageToShow = currentPage - 2 + i;
+                pageToShow = pagination.currentPage - 2 + i;
               }
 
               return (
                 <Button
                   key={pageToShow}
-                  variant={currentPage === pageToShow ? "default" : "outline"}
+                  variant={pagination.currentPage === pageToShow ? "default" : "outline"}
                   size="icon"
                   className="w-8 h-8"
                   onClick={() => handlePageChange(pageToShow)}
                   aria-label={`Page ${pageToShow}`}
-                  aria-current={currentPage === pageToShow ? "page" : undefined}
+                  aria-current={pagination.currentPage === pageToShow ? "page" : undefined}
                 >
                   {pageToShow}
                 </Button>
@@ -454,33 +415,32 @@ export default function ProjectList() {
             })}
           </div>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            aria-label="Page suivante"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {pagination.nextPage && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.nextPage ?? pagination.totalPages)}
+              disabled={!pagination.nextPage}
+              aria-label="Page suivante"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       )}
 
-      <div className="flex justify-end mt-4">
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-500">
+          Page {pagination.currentPage} sur {pagination.totalPages}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Projets par page:</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={(value: string) => {
-              setItemsPerPage(Number.parseInt(value));
-              setCurrentPage(1);
-            }}
-          >
+          <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
             <SelectTrigger className="w-16 h-8">
-              <SelectValue placeholder="9" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[9, 18, 27].map((value) => (
+              {[9, 18, 27, 36].map((value) => (
                 <SelectItem key={value} value={value.toString()}>
                   {value}
                 </SelectItem>

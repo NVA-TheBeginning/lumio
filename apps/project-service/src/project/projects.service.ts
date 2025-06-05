@@ -46,6 +46,23 @@ export interface ProjectWithPromotions {
 
 export type ProjectsByPromotion = Record<number, Paginated<ProjectWithGroupStatus>>;
 
+export interface getAllStudentProjects {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  group: {
+    id: number;
+    name: string;
+  } | null;
+  promotion: {
+    id: number;
+    name: string;
+  };
+}
+
 @Injectable()
 export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
@@ -226,133 +243,111 @@ export class ProjectService {
     return result;
   }
 
-  async findProjectsForStudent(student: number, page: number, size: number): Promise<ProjectsByPromotion> {
-    if (student == null) {
-      throw new BadRequestException("studentId is required");
-    }
-
-    const studentId = Number(student);
-    if (Number.isNaN(studentId) || studentId < 1) {
-      throw new BadRequestException("studentId must be a positive integer");
-    }
-
-    // Récupérer les promotions de l’étudiant
-    const studentPromos = await this.prisma.studentPromotion.findMany({
-      where: { userId: studentId },
-      select: { promotionId: true },
+  private async getStudentProjectCount(studentId: number): Promise<number> {
+    return this.prisma.projectPromotion.count({
+      where: {
+        status: "VISIBLE",
+        promotion: {
+          studentPromotions: {
+            some: {
+              userId: studentId,
+            },
+          },
+        },
+      },
     });
-    const promotionIds = studentPromos.map((sp) => sp.promotionId);
-    if (promotionIds.length === 0) {
-      return {};
-    }
+  }
 
-    const promos = await this.prisma.promotion.findMany({
-      where: { id: { in: promotionIds } },
-      select: { id: true, name: true },
-    });
-    const promoNamesMap: Record<number, string> = {};
-    promos.forEach((p) => {
-      promoNamesMap[p.id] = p.name;
-    });
-
-    // Récupérer les liens projectPromotion pour ces promotions,
-    const allLinks = await this.prisma.projectPromotion.findMany({
-      where: { promotionId: { in: promotionIds } },
-      include: { project: true },
-    });
-
-    // Construire un dictionnaire { promotionId => liste complète de Project }
-    type RawProject = {
-      id: number;
-      name: string;
-      description: string;
-      creatorId: number;
-      createdAt: Date;
-      updatedAt: Date;
+  private async getPaginationMeta(
+    totalRecords: number,
+    currentPage: number,
+    pageSize: number,
+  ): Promise<PaginationMeta> {
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    return {
+      totalRecords,
+      currentPage,
+      totalPages,
+      nextPage: currentPage < totalPages ? currentPage + 1 : null,
+      prevPage: currentPage > 1 ? currentPage - 1 : null,
     };
+  }
 
-    const byPromos: Record<number, RawProject[]> = {};
-    for (const pid of promotionIds) {
-      byPromos[pid] = [];
-    }
-    for (const link of allLinks) {
-      const p = link.project;
-      byPromos[link.promotionId].push({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        creatorId: p.creatorId,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-      });
-    }
+  async findProjectsForStudent(
+    studentId: number,
+    currentPage: number,
+    pageSize: number,
+  ): Promise<Paginated<getAllStudentProjects>> {
+    const skip = (currentPage - 1) * pageSize;
 
-    // Pour chaque promotion, on découpe en pages et on enrichit chaque projet
-    const tasks = promotionIds.map(async (pid) => {
-      const allProjects = byPromos[pid];
-      const totalRecords = allProjects.length;
-      const totalPages = Math.ceil(totalRecords / size) || 1;
+    try {
+      const totalRecords = await this.getStudentProjectCount(studentId);
 
-      const start = (page - 1) * size;
-      const pageProjects = allProjects.slice(start, start + size);
-
-      // Pour chacun des projets de la page, récupérer le statut de groupe et le groupe
-      const enriched: ProjectWithGroupStatus[] = await Promise.all(
-        pageProjects.map(async (proj) => {
-          const settings = await this.prisma.groupSettings.findMany({
-            where: { projectId: proj.id, promotionId: pid },
-            include: {
-              projectPromotion: {
-                include: {
-                  groups: { include: { members: true } },
+      const projectPromotions = await this.prisma.projectPromotion.findMany({
+        where: {
+          status: "VISIBLE",
+          promotion: {
+            studentPromotions: {
+              some: {
+                userId: studentId,
+              },
+            },
+          },
+        },
+        include: {
+          project: true,
+          promotion: true,
+          groups: {
+            where: {
+              members: {
+                some: {
+                  studentId,
                 },
               },
             },
-          });
+            take: 1,
+          },
+        },
+        skip,
+        take: pageSize,
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-          const groups = settings.flatMap((gs) => gs.projectPromotion.groups);
+      const data: getAllStudentProjects[] = projectPromotions.map((projectPromotion) => {
+        const studentGroup = projectPromotion.groups[0] || null;
 
-          let status: GroupStatus = "no_groups";
-          let ownGroup: Group | undefined;
+        return {
+          id: projectPromotion.project.id,
+          name: projectPromotion.project.name,
+          description: projectPromotion.project.description,
+          creatorId: projectPromotion.project.creatorId,
+          createdAt: projectPromotion.project.createdAt,
+          updatedAt: projectPromotion.project.updatedAt,
+          group: studentGroup
+            ? {
+                id: studentGroup.id,
+                name: studentGroup.name,
+              }
+            : null,
+          promotion: {
+            id: projectPromotion.promotion.id,
+            name: projectPromotion.promotion.name,
+          },
+        };
+      });
 
-          if (groups.length > 0) {
-            const found = groups.find((g) => g.members.some((m) => m.studentId === studentId));
-            status = found ? "in_group" : "not_in_group";
-            if (found) {
-              ownGroup = {
-                id: found.id,
-                name: found.name,
-                members: found.members.map((m) => ({ studentId: m.studentId })),
-              };
-            }
-          }
+      const pagination = await this.getPaginationMeta(totalRecords, currentPage, pageSize);
 
-          return {
-            project: proj,
-            groupStatus: status,
-            group: ownGroup,
-          };
-        }),
-      );
-
-      const meta: PaginationMeta = {
-        totalRecords,
-        currentPage: page,
-        totalPages,
-        nextPage: page < totalPages ? page + 1 : null,
-        prevPage: page > 1 ? page - 1 : null,
+      return {
+        data,
+        pagination,
       };
-
-      return [pid, { promotionName: promoNamesMap[pid], data: enriched, pagination: meta }] as const;
-    });
-
-    // On exécute tous les tasks en parallèle
-    const entries = await Promise.all(tasks);
-
-    // On reconstruit un objet à partir des tuples [pid, Paginated<…>]
-    const result: ProjectsByPromotion = Object.fromEntries(entries);
-
-    return result;
+    } catch (error) {
+      console.error("Error fetching student projects:", error);
+      throw new Error("Failed to fetch student projects");
+    }
   }
 
   async update(id: number, updateDto: UpdateProjectDto) {
