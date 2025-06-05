@@ -69,14 +69,13 @@ const downloadTemplateCSV = () => {
   document.body.removeChild(link);
 };
 
-const parseCSV = (csvText: string): StudentData[] => {
-  const lines = csvText.split("\n").filter((line) => line.trim() !== "");
-  const data = lines.map((line) => {
-    const [nom, prenom, email] = line.split(",").map((item) => item.trim());
-    return { nom, prenom, email };
-  });
-  return data;
-};
+const parseCSV = (csvText: string): StudentData[] =>
+  csvText.split("\n").reduce<StudentData[]>((acc, line) => {
+    if (!line.trim()) return acc;
+    const [nom = "", prenom = "", email = ""] = line.split(",").map((item) => item.trim());
+    acc.push({ nom, prenom, email });
+    return acc;
+  }, []);
 
 const validateCSVData = (data: StudentData[]): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
