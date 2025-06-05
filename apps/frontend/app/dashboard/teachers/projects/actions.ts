@@ -274,9 +274,9 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
       mode: "",
       deadline: "",
     },
-    groups: null,
+    groups: [],
     deliverables: [],
-    submissions: null,
+    submissions: [],
   };
 
   const [deliverables, groupSettings, groups] = await Promise.all([
