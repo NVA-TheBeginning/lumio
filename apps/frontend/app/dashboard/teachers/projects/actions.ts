@@ -32,18 +32,16 @@ interface CreateProjectData {
   }[];
 }
 
-export interface MemberType {
+interface GroupType {
   id: number;
   name: string;
+  members: {
+    id: number;
+    name: string;
+  }[];
 }
 
-export interface GroupType {
-  id: number;
-  name: string;
-  members: MemberType[];
-}
-
-export interface GroupSettingsType {
+interface GroupSettingsType {
   projectId: number;
   promotionId: number;
   minMembers: number;
@@ -62,7 +60,7 @@ export interface PromotionType {
   groups: GroupType[];
 }
 
-export interface SubmissionType {
+interface SubmissionType {
   groupId: number;
   status: string;
   submittedAt: string | null;
@@ -77,19 +75,6 @@ export interface DeliverableType {
   status: string;
   promotionId: number;
   submissions: SubmissionType[];
-}
-
-export interface ProjectType {
-  id: number;
-  name: string;
-  description: string;
-  creatorId: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  status: string;
-  promotions: PromotionType[];
-  deliverables: DeliverableType[];
 }
 
 export interface getAllStudentProjects {
@@ -137,69 +122,92 @@ export async function createProject(data: CreateProjectData): Promise<void> {
   await authPostData(`${API_URL}/projects`, data);
 }
 
+interface PromotionDto {
+  id: number;
+  name: string;
+  description: string;
+  status: string;
+}
+
+interface getProjectTeacher {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  promotions: PromotionDto[];
+}
+
+export interface ProjectType {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  promotions: PromotionType[];
+  deliverables: DeliverableType[];
+}
+
 export async function getProjectById(id: number): Promise<ProjectType> {
-  const data = await authFetchData(`${API_URL}/projects/${id}`);
+  const data = await authFetchData<getProjectTeacher>(`${API_URL}/projects/${id}/teacher`);
 
   if (!data) {
     throw new Error(`Project with ID ${id} not found`);
   }
 
-  const mockPromoId = 1;
-  const groupSettings = await authFetchData<GroupSettingsType>(
-    `${API_URL}/projects/${id}/promotions/${mockPromoId}/group-settings`,
-  );
-  const groups = await authFetchData<GroupType[]>(`${API_URL}/projects/${id}/promotions/${mockPromoId}/groups`);
-
-  const baseProject = data as Omit<ProjectType, "promotions" | "deliverables">;
-
-  const mockPromotions: PromotionType[] = [
-    {
-      id: 1,
-      name: "Promotion 2025",
-      description: "Étudiants de la promotion 2025",
-      status: "VISIBLE",
-      groupSettings,
-      groups,
-    },
-  ];
-
-  const mockDeliverables: DeliverableType[] = [
-    {
-      id: 401,
-      title: "Rapport initial",
-      description: "Soumission du rapport de cadrage du projet.",
-      deadline: "2025-06-15T23:59:59Z",
-      status: "due",
-      promotionId: 101,
-      submissions: [{ groupId: 201, status: "submitted", submittedAt: "2025-06-14T10:00:00Z", grade: null }],
-    },
-    {
-      id: 402,
-      title: "Démonstration finale",
-      description: "Démonstration du projet fonctionnel.",
-      deadline: "2025-08-30T23:59:59Z",
-      status: "upcoming",
-      promotionId: 101,
-      submissions: [],
-    },
-    {
-      id: 403,
-      title: "Présentation",
-      description: "Présentation orale des résultats.",
-      deadline: "2025-09-15T23:59:59Z",
-      status: "upcoming",
-      promotionId: 102,
-      submissions: [],
-    },
-  ];
-
-  const projectWithMocks: ProjectType = {
-    ...baseProject,
-    promotions: mockPromotions,
-    deliverables: mockDeliverables,
+  const result: ProjectType = {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    creatorId: data.creatorId,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    deletedAt: data.deletedAt,
+    promotions: [],
+    deliverables: [],
   };
 
-  return projectWithMocks;
+  result.deliverables = await authFetchData<DeliverableType[]>(`${API_URL}/projects/${id}/deliverables`);
+
+  const promotionPromises = data.promotions.map(async (promotion) => {
+    // TODO: create a single route to fetch both group settings and groups
+    const [groupSettings, groups] = await Promise.all([
+      authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${promotion.id}/group-settings`),
+      authFetchData<GroupType[]>(`${API_URL}/projects/${id}/promotions/${promotion.id}/groups`),
+    ]);
+
+    return {
+      id: promotion.id,
+      name: promotion.name,
+      description: promotion.description,
+      status: promotion.status,
+      groupSettings: {
+        projectId: id,
+        promotionId: groupSettings.promotionId,
+        minMembers: groupSettings.minMembers,
+        maxMembers: groupSettings.maxMembers,
+        mode: groupSettings.mode,
+        deadline: groupSettings.deadline,
+        updatedAt: groupSettings.updatedAt,
+      },
+      groups: groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        members: group.members.map((member: { id: number; name: string }) => ({
+          id: member.id,
+          name: member.name,
+        })),
+      })),
+    };
+  });
+
+  result.promotions = await Promise.all(promotionPromises);
+
+  return result;
 }
 
 export async function deleteProject(id: number): Promise<void> {

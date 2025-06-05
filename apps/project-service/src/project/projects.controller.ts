@@ -84,10 +84,9 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async findOneProjectTeacher(
     @Param("id", ParseIntPipe) id: number,
-    @GetUser() user: JwtUser,
+    @Query("userId") userId: number,
   ): Promise<ProjectTeacherDto> {
-    const userId = Number(user.sub);
-    return this.projectService.getProjectInfoTeacher(id, userId);
+    return this.projectService.getProjectInfoTeacher(id, Number(userId));
   }
 
   @Get(":id/student")
