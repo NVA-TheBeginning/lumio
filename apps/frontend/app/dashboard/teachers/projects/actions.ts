@@ -162,7 +162,6 @@ export async function getProjectById(id: number): Promise<ProjectType> {
       groups,
     },
   ];
-  console.log("mockPromotions", mockPromotions);
 
   const mockDeliverables: DeliverableType[] = [
     {
