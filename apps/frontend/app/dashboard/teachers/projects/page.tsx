@@ -52,13 +52,15 @@ export default function ProjectList() {
   const [itemsPerPage, setItemsPerPage] = useState<number>(9);
 
   const {
-    data: projects = [],
+    data: { data: projects } = { pagination: {}, data: [] },
     isLoading: isLoadingProjects,
     isError: isErrorProjects,
     error: projectsError,
   } = useQuery({
     queryKey: ["projects"],
-    queryFn: getAllProjects,
+    queryFn: async () => {
+      return await getAllProjects(currentPage, itemsPerPage);
+    },
     staleTime: 5 * 60 * 1000,
   });
 

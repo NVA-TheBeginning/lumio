@@ -3,7 +3,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Filter, Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getAllProjects } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
+import { getAllStudentProjects } from "../../teachers/projects/actions";
 
 interface FilterState {
   promotions: string[];
@@ -50,29 +50,26 @@ export default function ProjectList() {
   const [itemsPerPage, setItemsPerPage] = useState<number>(9);
 
   const {
-    data: projects = [],
+    data: { data: projects } = { pagination: {}, data: [] },
     isLoading: isLoadingProjects,
     isError: isErrorProjects,
     error: projectsError,
   } = useQuery({
     queryKey: ["projects"],
-    queryFn: getAllProjects,
+    queryFn: async () => {
+      return await getAllStudentProjects(currentPage, itemsPerPage);
+    },
     staleTime: 5 * 60 * 1000,
   });
 
   const promotions = useMemo(() => {
-    if (!projects || projects.length === 0) return [];
-
-    const promotionSet = new Set<string>();
-
+    if (isLoadingProjects || isErrorProjects) return [];
+    const allPromotions = new Set<string>();
     projects.forEach((project) => {
-      project.promotions.forEach((promotion) => {
-        promotionSet.add(promotion.name);
-      });
+      allPromotions.add(project.promotion.name);
     });
-
-    return Array.from(promotionSet);
-  }, [projects]);
+    return Array.from(allPromotions).sort();
+  }, [projects, isLoadingProjects, isErrorProjects]);
 
   useEffect(() => {
     let count = 0;
@@ -99,10 +96,6 @@ export default function ProjectList() {
     }
 
     return projects.filter((project) => {
-      const matchesPromotion =
-        filters.promotions.length === 0 ||
-        project.promotions.some((promotion) => filters.promotions.includes(promotion.name));
-
       const matchesSearch =
         filters.search === "" ||
         project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -111,7 +104,7 @@ export default function ProjectList() {
       const projectDate = new Date(project.createdAt);
       const matchesDate = filters.dateRange === "all" || (dateLimit && projectDate >= dateLimit);
 
-      return matchesPromotion && matchesSearch && matchesDate;
+      return matchesSearch && matchesDate;
     });
   }, [filters, projects, isLoadingProjects]);
 
@@ -392,20 +385,11 @@ export default function ProjectList() {
                   <CardTitle className="text-xl line-clamp-2">{project.name}</CardTitle>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <CardDescription className="text-sm">{formatDate(project.createdAt)}</CardDescription>
+                  <CardDescription className="text-sm">{formatDate(project.createdAt.toString())}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="grow pb-3">
                 <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {project.promotions.length > 0 &&
-                    project.promotions.map((promotion) => (
-                      <Badge key={promotion.id} variant="secondary" className="text-xs">
-                        {promotion.name}
-                      </Badge>
-                    ))}
-                </div>
               </CardContent>
             </Card>
           ))}

@@ -149,3 +149,11 @@ export function formatBytes(bytes: number, decimals = 2): string {
 
   return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`;
 }
+
+export interface PaginationMeta {
+  totalRecords: number;
+  currentPage: number;
+  totalPages: number;
+  nextPage: number | null;
+  prevPage: number | null;
+}

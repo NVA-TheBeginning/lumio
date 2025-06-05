@@ -63,9 +63,9 @@ export class ProjectController {
       throw new BadRequestException("userId and userRole are required query parameters.");
     }
     if (userRole === "TEACHER" || userRole === "ADMIN") {
-      return this.projectService.findByCreator(userId, page, size);
+      return this.projectService.findByCreator(Number(userId), Number(page), Number(size));
     }
-    return this.projectService.findProjectsForStudent(userId, page, size);
+    return this.projectService.findProjectsForStudent(Number(userId), Number(page), Number(size));
   }
 
   @Get()
