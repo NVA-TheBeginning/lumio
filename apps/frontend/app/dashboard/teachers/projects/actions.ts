@@ -102,7 +102,7 @@ export interface getAllStudentProjects {
   group: {
     id: number;
     name: string;
-  };
+  } | null;
   promotion: {
     id: number;
     name: string;
