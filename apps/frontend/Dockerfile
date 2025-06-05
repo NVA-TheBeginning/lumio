@@ -16,8 +16,8 @@ RUN bun --bun run build -F frontend
 FROM oven/bun:1.2 AS production
 WORKDIR /app
 
-RUN apt update && apt install curl -y --no-install-recommends \
-    && apt clean \
+RUN apt-get update && apt-get install curl -y --no-install-recommends \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=base /app/apps/frontend/package.json ./apps/frontend/package.json
