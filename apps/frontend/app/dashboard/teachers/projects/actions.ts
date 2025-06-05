@@ -60,12 +60,12 @@ export interface PromotionType {
   groups: GroupType[];
 }
 
-interface SubmissionType {
-  groupId: number;
-  status: string;
-  submittedAt: string | null;
-  grade: number | null;
-}
+// interface SubmissionType {
+//   groupId: number;
+//   status: string;
+//   submittedAt: string | null;
+//   grade: number | null;
+// }
 
 export interface DeliverableType {
   id: number;
@@ -74,7 +74,6 @@ export interface DeliverableType {
   deadline: string;
   status: string;
   promotionId: number;
-  submissions: SubmissionType[];
 }
 
 export interface getAllStudentProjects {
@@ -152,28 +151,29 @@ export interface ProjectType {
   deliverables: DeliverableType[];
 }
 
-export async function getProjectById(id: number): Promise<ProjectType> {
-  const data = await authFetchData<getProjectTeacher>(`${API_URL}/projects/${id}/teacher`);
+export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
+  const [projectData, deliverablesData] = await Promise.all([
+    authFetchData<getProjectTeacher>(`${API_URL}/projects/${id}/teacher`),
+    authFetchData<DeliverableType[]>(`${API_URL}/projects/${id}/deliverables`),
+  ]);
 
-  if (!data) {
+  if (!projectData) {
     throw new Error(`Project with ID ${id} not found`);
   }
 
   const result: ProjectType = {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    creatorId: data.creatorId,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-    deletedAt: data.deletedAt,
+    id: projectData.id,
+    name: projectData.name,
+    description: projectData.description,
+    creatorId: projectData.creatorId,
+    createdAt: projectData.createdAt,
+    updatedAt: projectData.updatedAt,
+    deletedAt: projectData.deletedAt,
     promotions: [],
-    deliverables: [],
+    deliverables: deliverablesData || [],
   };
 
-  result.deliverables = await authFetchData<DeliverableType[]>(`${API_URL}/projects/${id}/deliverables`);
-
-  const promotionPromises = data.promotions.map(async (promotion) => {
+  const promotionPromises = projectData.promotions.map(async (promotion) => {
     // TODO: create a single route to fetch both group settings and groups
     const [groupSettings, groups] = await Promise.all([
       authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${promotion.id}/group-settings`),
@@ -206,6 +206,104 @@ export async function getProjectById(id: number): Promise<ProjectType> {
   });
 
   result.promotions = await Promise.all(promotionPromises);
+
+  return result;
+}
+
+interface getProjectStudent {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  promotionId: number;
+}
+
+export interface ProjectStudentType {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  promotionId: number;
+  groupSettings: {
+    minMembers: number;
+    maxMembers: number;
+    mode: string;
+    deadline: string;
+  };
+  groups: {
+    id: number;
+    name: string;
+    members: {
+      id: number;
+      name: string;
+    }[];
+  }[];
+  deliverables: DeliverableType[];
+  submissions: {
+    groupId: number;
+    status: string;
+    submittedAt: string | null;
+    grade: number | null;
+  }[];
+}
+
+export async function getProjectByIdStudent(id: number): Promise<ProjectStudentType> {
+  const data = await authFetchData<getProjectStudent>(`${API_URL}/projects/${id}/student`);
+  if (!data) {
+    throw new Error(`Project with ID ${id} not found`);
+  }
+
+  const result: ProjectStudentType = {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    creatorId: data.creatorId,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    deletedAt: data.deletedAt,
+    promotionId: data.promotionId,
+    groupSettings: {
+      minMembers: 0,
+      maxMembers: 0,
+      mode: "",
+      deadline: "",
+    },
+    groups: null,
+    deliverables: [],
+    submissions: null,
+  };
+
+  const [deliverables, groupSettings, groups] = await Promise.all([
+    authFetchData<DeliverableType[]>(`${API_URL}/projects/${id}/deliverables`),
+    authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${data.promotionId}/group-settings`),
+    authFetchData<GroupType[]>(`${API_URL}/projects/${id}/promotions/${data.promotionId}/groups`),
+  ]);
+
+  result.deliverables = deliverables || [];
+  result.submissions = [];
+  result.groupSettings = groupSettings || {
+    minMembers: 0,
+    maxMembers: 0,
+    mode: "",
+    deadline: "",
+  };
+
+  if (groups) {
+    result.groups = groups.map((group: { id: number; name: string; members: { id: number; name: string }[] }) => ({
+      id: group.id,
+      name: group.name,
+      members: group.members.map((member: { id: number; name: string }) => ({
+        id: member.id,
+        name: member.name,
+      })),
+    }));
+  }
 
   return result;
 }

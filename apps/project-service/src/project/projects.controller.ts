@@ -13,7 +13,6 @@ import {
   Query,
 } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { ProjectStudentDto } from "./dto/project-student.dto";
 import { ProjectTeacherDto } from "./dto/project-teacher.dto";
@@ -97,10 +96,9 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async findOneProjectStudent(
     @Param("id", ParseIntPipe) id: number,
-    @GetUser() user: JwtUser,
+    @Query("userId") userId: number,
   ): Promise<ProjectStudentDto> {
-    const userId = Number(user.sub);
-    return this.projectService.getProjectInfoStudent(id, userId);
+    return this.projectService.getProjectInfoStudent(id, Number(userId));
   }
 
   @Patch(":id")

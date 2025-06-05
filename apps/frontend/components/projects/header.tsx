@@ -6,7 +6,6 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteProject, ProjectType } from "@/app/dashboard/teachers/projects/actions";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -65,32 +64,6 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
     },
   });
 
-  const getStatusBadgeVariant = (status: ProjectStatus | string) => {
-    switch (status) {
-      case ProjectStatus.VISIBLE:
-        return "default";
-      case ProjectStatus.DRAFT:
-        return "secondary";
-      case ProjectStatus.HIDDEN:
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
-  const getStatusDisplayText = (status: ProjectStatus | string) => {
-    switch (status) {
-      case ProjectStatus.VISIBLE:
-        return "Visible";
-      case ProjectStatus.DRAFT:
-        return "Brouillon";
-      case ProjectStatus.HIDDEN:
-        return "Masqué";
-      default:
-        return status;
-    }
-  };
-
   const handleSaveChanges = () => {
     setIsEditing(false);
   };
@@ -125,10 +98,6 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
             </Breadcrumb>
           </div>
           <div className="flex items-center gap-2">
-            {project.status && (
-              <Badge variant={getStatusBadgeVariant(project.status)}>{getStatusDisplayText(project.status)}</Badge>
-            )}
-
             <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier

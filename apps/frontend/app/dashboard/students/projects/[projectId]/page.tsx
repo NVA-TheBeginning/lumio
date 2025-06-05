@@ -1,20 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { use, useState } from "react";
-import { getProjectById, ProjectType } from "@/app/dashboard/teachers/projects/actions";
-import { ProjectHeader } from "@/components/projects/header";
-import { ProjectTabs } from "@/components/projects/tabs";
+import { use } from "react";
+import { getProjectByIdStudent, ProjectStudentType } from "@/app/dashboard/teachers/projects/actions";
 
-export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
+export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: number }> }) {
   const { projectId } = use(params);
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("overview");
+  //   const router = useRouter();
+  //   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: ProjectData, isLoading } = useQuery<ProjectType>({
+  const { data: ProjectData, isLoading } = useQuery<ProjectStudentType>({
     queryKey: ["projects", Number(projectId)],
-    queryFn: () => getProjectById(Number(projectId)),
+    queryFn: () => getProjectByIdStudent(Number(projectId)),
   });
 
   if (isLoading || !ProjectData) {
@@ -31,9 +28,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <ProjectHeader project={ProjectData} router={router} />
-      <ProjectTabs project={ProjectData} activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="min-h-screen bg-background p-4">
+      {" "}
+      <pre className="whitespace-pre-wrap break-words bg-gray-100 p-4 rounded-md text-sm">
+        {JSON.stringify(ProjectData, null, 2)}
+      </pre>
     </div>
   );
 }

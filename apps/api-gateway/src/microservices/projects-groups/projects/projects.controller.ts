@@ -163,9 +163,7 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async findOneProjectStudent(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser) {
     const userId = Number(user.sub);
-    return this.proxy.forwardRequest("project", `/projects/${id}/student`, "GET", undefined, {
-      userId,
-    });
+    return this.proxy.forwardRequest("project", `/projects/${id}/student?userId=${userId}`, "GET", undefined);
   }
 
   @Get()
