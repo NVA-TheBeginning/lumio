@@ -204,64 +204,59 @@ export class ProjectService {
   }
 
   async getProjectInfoStudent(projectId: number, userId: number): Promise<ProjectStudentDto> {
-    try {
-      const canAccess = await this.prisma.projectPromotion.findFirst({
-        where: {
-          projectId,
-          promotion: {
-            studentPromotions: {
-              some: {
-                userId,
-              },
-            },
-          },
-          status: "VISIBLE",
-        },
-        select: {
-          project: {
-            select: {
-              id: true,
+    const canAccess = await this.prisma.projectPromotion.findFirst({
+      where: {
+        projectId,
+        promotion: {
+          studentPromotions: {
+            some: {
+              userId,
             },
           },
         },
-      });
-      if (!canAccess) {
-        throw new NotFoundException("Project not found or you are not authorized to access it");
-      }
-
-      const projectData = await this.prisma.project.findUnique({
-        where: {
-          id: projectId,
-        },
-        include: {
-          projectPromotions: {
-            include: {
-              promotion: true,
-            },
+        status: "VISIBLE",
+      },
+      select: {
+        project: {
+          select: {
+            id: true,
           },
         },
-      });
-
-      if (!projectData) {
-        throw new NotFoundException("Project not found");
-      }
-
-      const result: ProjectStudentDto = {
-        id: projectData.id,
-        name: projectData.name,
-        description: projectData.description,
-        creatorId: projectData.creatorId,
-        createdAt: projectData.createdAt.toISOString(),
-        updatedAt: projectData.updatedAt.toISOString(),
-        deletedAt: projectData.deletedAt?.toISOString() || null,
-        promotionId: projectData.projectPromotions[0]?.promotionId || 1,
-      };
-
-      return result;
-    } catch (error) {
-      console.error("Error fetching project info for teacher:", error);
-      throw new Error("Failed to fetch project information");
+      },
+    });
+    if (!canAccess) {
+      throw new NotFoundException("Project not found or you are not authorized to access it");
     }
+
+    const projectData = await this.prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+      include: {
+        projectPromotions: {
+          include: {
+            promotion: true,
+          },
+        },
+      },
+    });
+
+    if (!projectData) {
+      throw new NotFoundException("Project not found");
+    }
+
+    const result: ProjectStudentDto = {
+      id: projectData.id,
+      name: projectData.name,
+      description: projectData.description,
+      creatorId: projectData.creatorId,
+      createdAt: projectData.createdAt.toISOString(),
+      updatedAt: projectData.updatedAt.toISOString(),
+      deletedAt: projectData.deletedAt?.toISOString() || null,
+      promotionId: projectData.projectPromotions[0]?.promotionId || 1,
+    };
+
+    return result;
   }
 
   private async getStudentProjectCount(studentId: number): Promise<number> {

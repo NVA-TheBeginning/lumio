@@ -13,7 +13,9 @@ describe("PromotionsController", () => {
     proxy = { forwardRequest: mock(async () => []) } as unknown as MicroserviceProxyService;
     service = {
       create: mock(async () => ({})),
-      findAllWithStudents: mock(async () => []),
+      findAllWithStudents: mock(async () => {
+        return [] as PromotionWithStudentsDto[];
+      }),
     } as unknown as PromotionsService;
     controller = new PromotionsController(proxy, service);
   });
@@ -37,7 +39,7 @@ describe("PromotionsController", () => {
 
       const result = await controller.getPromotionStudents(1, undefined, undefined);
       expect(proxy.forwardRequest).toHaveBeenCalledWith("project", "/promotions/1", "GET");
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
     });
 
     it("fetches students when promotion has studentPromotions", async () => {
@@ -53,7 +55,7 @@ describe("PromotionsController", () => {
       };
       (proxy.forwardRequest as Mock<() => Promise<unknown>>)
         .mockResolvedValueOnce(promo)
-        .mockResolvedValueOnce([student]);
+        .mockResolvedValueOnce({ data: [student] });
 
       const result = await controller.getPromotionStudents(1, 2, 5);
       expect(proxy.forwardRequest).toHaveBeenNthCalledWith(1, "project", "/promotions/1", "GET");
@@ -61,7 +63,7 @@ describe("PromotionsController", () => {
         page: 2,
         size: 5,
       });
-      expect(result).toEqual([student]);
+      expect(result).toEqual({ data: [student] });
     });
   });
 

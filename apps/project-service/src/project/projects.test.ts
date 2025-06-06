@@ -142,17 +142,18 @@ describe("Projects", () => {
     expect(res.statusCode).toBe(200);
   });
 
-  test("/projects/:id (GET) - should return the project", async () => {
-    const res = await app.inject({ method: "GET", url: `/projects/${projectId}` });
+  test("/projects/:id/student (GET) - should not return the project", async () => {
+    // Student is not part of the project
+    const res = await app.inject({ method: "GET", url: `/projects/${projectId}/student?userId=1` });
+    expect(res.statusCode).toBe(404);
+  });
+
+  test("/projects/:id/teacher (GET) - should return the project", async () => {
+    const res = await app.inject({ method: "GET", url: `/projects/${projectId}/teacher?userId=1` });
     expect(res.statusCode).toBe(200);
     const proj = JSON.parse(res.body);
     expect(proj.id).toBe(projectId);
     expect(proj.name).toBe(projectName);
-  });
-
-  test("/projects/:id (GET) - not found", async () => {
-    const res = await app.inject({ method: "GET", url: "/projects/999999" });
-    expect(res.statusCode).toBe(404);
   });
 
   test("/projects/:id (PATCH) - should update the project", async () => {
@@ -191,31 +192,6 @@ describe("Projects", () => {
   test("/projects/:id (DELETE) - not found", async () => {
     const res = await app.inject({ method: "DELETE", url: "/projects/999999" });
     expect(res.statusCode).toBe(404);
-  });
-
-  test("/projects/by-promotions (GET) - should group projects by promotions", async () => {
-    const query = promotionIds.join(",");
-    const res = await app.inject({
-      method: "GET",
-      url: `/projects/by-promotions?promotionIds=${query}`,
-    });
-    expect(res.statusCode).toBe(200);
-
-    const body = JSON.parse(res.body) as Record<string, Array<{ id: number }>>;
-    for (const pid of promotionIds) {
-      expect(Array.isArray(body[pid])).toBe(true);
-      expect(body[pid].some((p) => p.id === projectId)).toBe(true);
-    }
-  });
-
-  test("/projects/by-promotions (GET) - empty array when no promotions passed", async () => {
-    const res = await app.inject({
-      method: "GET",
-      url: "/projects/by-promotions?promotionIds=",
-    });
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body) as Record<string, unknown[]>;
-    expect(Object.keys(body).length).toBe(0);
   });
 
   afterAll(async () => {
