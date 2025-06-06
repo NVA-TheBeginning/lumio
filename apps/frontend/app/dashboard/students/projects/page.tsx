@@ -126,7 +126,7 @@ export default function ProjectList() {
   };
 
   const handleViewProject = (projectId: number) => {
-    router.push(`/dashboard/student/projects/${projectId}`);
+    router.push(`/dashboard/students/projects/${projectId}`);
   };
 
   const handleItemsPerPageChange = (newSize: string) => {

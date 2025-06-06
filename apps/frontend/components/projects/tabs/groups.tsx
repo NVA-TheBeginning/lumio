@@ -443,7 +443,9 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                           <ul className="space-y-1">
                             {group.members.map((member) => (
                               <li key={member.id} className="text-sm flex justify-between items-center">
-                                <span>{member.name}</span>
+                                <span>
+                                  {member.firstname} {member.lastname}
+                                </span>
                               </li>
                             ))}
                           </ul>

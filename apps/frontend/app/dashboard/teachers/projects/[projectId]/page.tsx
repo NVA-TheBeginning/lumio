@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { ProjectHeader } from "@/components/projects/header";
 import { ProjectTabs } from "@/components/projects/tabs";
-import { getProjectById, type ProjectType } from "../actions";
+import { getProjectByIdTeacher, type ProjectType } from "../actions";
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
@@ -14,7 +14,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const { data: ProjectData, isLoading } = useQuery<ProjectType>({
     queryKey: ["projects", Number(projectId)],
-    queryFn: () => getProjectById(Number(projectId)),
+    queryFn: () => getProjectByIdTeacher(Number(projectId)),
   });
 
   if (isLoading || !ProjectData) {

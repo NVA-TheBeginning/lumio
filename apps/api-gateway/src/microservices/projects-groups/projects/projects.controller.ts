@@ -11,8 +11,6 @@ import {
   Post,
   Query,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -38,7 +36,6 @@ import {
 } from "class-validator";
 import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator.js";
 import { AuthGuard } from "@/jwt/guards/auth.guard.js";
-import { ProjectsByPromotion } from "@/microservices/projects-groups/projects/projects.service.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { UpdateProjectStatusDto } from "../dto/project.dto.js";
 
@@ -145,42 +142,36 @@ export class ProjectsController {
     });
   }
 
+  @Get(":id/teacher")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: "Retrieve a project with detailed info as a teacher" })
+  @ApiParam({ name: "id", type: Number, description: "Project ID" })
+  @ApiResponse({ status: 200, description: "Detailed project info" })
+  @ApiResponse({ status: 404, description: "Project not found" })
+  async findOneProjectTeacher(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser) {
+    const userId = Number(user.sub);
+    return this.proxy.forwardRequest("project", `/projects/${id}/teacher?userId=${userId}`, "GET", undefined);
+  }
+
+  @Get(":id/student")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: "Retrieve a project with detailed info as a student" })
+  @ApiParam({ name: "id", type: Number, description: "Project ID" })
+  @ApiResponse({ status: 200, description: "Detailed project info" })
+  @ApiResponse({ status: 404, description: "Project not found" })
+  async findOneProjectStudent(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser) {
+    const userId = Number(user.sub);
+    return this.proxy.forwardRequest("project", `/projects/${id}/student?userId=${userId}`, "GET", undefined);
+  }
+
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Get all projects" })
   @ApiResponse({ status: 200, description: "Array of projects", type: [Object] })
   async findAll() {
     return this.proxy.forwardRequest("project", "/projects", "GET");
-  }
-
-  @Get(":id")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get a single project by ID" })
-  @ApiParam({ name: "id", description: "Project ID", type: Number })
-  @ApiResponse({ status: 200, description: "The project", type: Object })
-  @ApiResponse({ status: 404, description: "Project not found" })
-  async findOne(@Param("id", ParseIntPipe) id: number) {
-    return this.proxy.forwardRequest("project", `/projects/${id}`, "GET");
-  }
-
-  @Get("by-promotions")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Get projects grouped by promotions" })
-  @ApiQuery({
-    name: "promotionIds",
-    description: "Comma-separated list of promotion IDs",
-    required: true,
-    type: String,
-  })
-  @ApiResponse({
-    status: 200,
-    description: "Map of promotionId to array of projects",
-    schema: {
-      example: { "1": [{ id: 5, name: "Proj A" }], "2": [{ id: 6, name: "Proj B" }] },
-    },
-  })
-  findByPromotions(@Query("promotionIds") promotionIds: string) {
-    return this.proxy.forwardRequest("project", "/projects/by-promotions", "GET", undefined, { promotionIds });
   }
 
   @Patch(":id")
@@ -227,55 +218,5 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: "Project not found" })
   async remove(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("project", `/projects/${id}`, "DELETE");
-  }
-
-  @Get("student/:studentId/detailed")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: "Get student's projects with group status, grouped by promotion, with pagination",
-  })
-  @ApiParam({ name: "studentId", type: Number, description: "Student user ID" })
-  @ApiQuery({ name: "page", type: Number, required: false, example: 1 })
-  @ApiQuery({ name: "size", type: Number, required: false, example: 10 })
-  @ApiResponse({
-    status: 200,
-    description: "Map of promotionId → paginated projects",
-    schema: {
-      example: {
-        "10": {
-          data: [
-            {
-              project: { id: 100, name: "Foo" /*…*/ },
-              groupStatus: "in_group",
-              group: {
-                id: 200,
-                name: "G1",
-                members: [
-                  /*…*/
-                ],
-              },
-            },
-          ],
-          pagination: {
-            totalRecords: 25,
-            currentPage: 1,
-            totalPages: 3,
-            nextPage: 2,
-            prevPage: null,
-          },
-        },
-      },
-    },
-  })
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async findByStudentDetailed(
-    @Param("studentId", ParseIntPipe) studentId: number,
-    @Query("page") page?: number,
-    @Query("size") size?: number,
-  ): Promise<ProjectsByPromotion> {
-    return this.proxy.forwardRequest("project", `/projects/student/${studentId}/detailed`, "GET", undefined, {
-      page,
-      size,
-    });
   }
 }

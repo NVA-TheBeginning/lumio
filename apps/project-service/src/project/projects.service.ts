@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, ProjectStatus } from "@prisma-project/client";
-import { JwtUser } from "@/common/decorators/get-user.decorator";
 import { GroupMode } from "@/groups/dto/group.dto";
 import { Paginated, PaginationMeta } from "@/interfaces/pagination.interface";
 import { PrismaService } from "@/prisma.service";
-import { GroupDto, GroupMemberDto, ProjectDetailedDto, PromotionInfo } from "@/project/dto/project-detailed.dto";
 import { CreateProjectDto, GroupSettingDto } from "./dto/create-project.dto";
+import { ProjectStudentDto } from "./dto/project-student.dto";
+import { ProjectTeacherDto } from "./dto/project-teacher.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
 
 export type GroupStatus = "no_groups" | "not_in_group" | "in_group";
@@ -149,97 +149,113 @@ export class ProjectService {
     return this.prisma.project.findMany({ where: { deletedAt: null } });
   }
 
-  async findOne(id: number) {
-    const project = await this.prisma.project.findUnique({
-      where: { id, deletedAt: null },
-    });
-    if (!project) throw new NotFoundException(`Project ${id} not found`);
-    return project;
-  }
-
-  async findOneDetailed(id: number, user: JwtUser): Promise<ProjectDetailedDto> {
-    const project = await this.prisma.project.findUnique({
-      where: { id, deletedAt: null },
-    });
-    if (!project) {
-      throw new NotFoundException(`Project ${id} not found`);
-    }
-
-    const dto: ProjectDetailedDto = {
-      id: project.id,
-      name: project.name,
-      description: project.description,
-    };
-
-    if (user.role === "TEACHER" || user.role === "ADMIN") {
-      const pps = await this.prisma.projectPromotion.findMany({
-        where: { projectId: id },
-        include: { promotion: true },
-      });
-      dto.promotions = pps.map(
-        (pp): PromotionInfo => ({
-          id: pp.promotionId,
-          name: pp.promotion.name,
-          status: pp.status,
-        }),
-      );
-
-      const groups = await this.prisma.group.findMany({
-        where: { projectId: id },
-        include: { members: true },
-      });
-      dto.groups = groups.map(
-        (g): GroupDto => ({
-          id: g.id,
-          name: g.name,
-          members: g.members.map((m): GroupMemberDto => ({ studentId: m.studentId })),
-        }),
-      );
-    } /* STUDENT */ else {
-      const membership = await this.prisma.groupMember.findFirst({
+  async getProjectInfoTeacher(projectId: number, userId: number): Promise<ProjectTeacherDto> {
+    try {
+      const project = await this.prisma.project.findFirst({
         where: {
-          studentId: user.sub,
-          group: { projectId: id },
+          id: projectId,
+          creatorId: userId,
+          deletedAt: null,
+        },
+      });
+
+      if (!project) {
+        throw new Error("Project not found or you are not authorized to access it");
+      }
+
+      const projectData = await this.prisma.project.findUnique({
+        where: {
+          id: projectId,
         },
         include: {
-          group: {
-            include: { members: true },
+          projectPromotions: {
+            include: {
+              promotion: true,
+            },
           },
         },
       });
-      if (membership) {
-        const g = membership.group;
-        dto.groups = [
-          {
-            id: g.id,
-            name: g.name,
-            members: g.members.map((m) => ({ studentId: m.studentId })),
-          },
-        ];
-      } else {
-        dto.groups = [];
-      }
-    }
 
-    return dto;
+      if (!projectData) {
+        throw new Error("Project not found");
+      }
+
+      const result: ProjectTeacherDto = {
+        id: projectData.id,
+        name: projectData.name,
+        description: projectData.description,
+        creatorId: projectData.creatorId,
+        createdAt: projectData.createdAt.toISOString(),
+        updatedAt: projectData.updatedAt.toISOString(),
+        deletedAt: projectData.deletedAt?.toISOString() || null,
+        promotions: projectData.projectPromotions.map((projectPromotion) => ({
+          id: projectPromotion.promotion.id,
+          name: projectPromotion.promotion.name,
+          description: projectPromotion.promotion.description,
+          status: projectPromotion.status,
+        })),
+      };
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching project info for teacher:", error);
+      throw new Error("Failed to fetch project information");
+    }
   }
 
-  async findByPromotions(promotionIds: number[]) {
-    const links = await this.prisma.projectPromotion.findMany({
-      where: { promotionId: { in: promotionIds } },
-      include: { project: true },
+  async getProjectInfoStudent(projectId: number, userId: number): Promise<ProjectStudentDto> {
+    const canAccess = await this.prisma.projectPromotion.findFirst({
+      where: {
+        projectId,
+        promotion: {
+          studentPromotions: {
+            some: {
+              userId,
+            },
+          },
+        },
+        status: "VISIBLE",
+      },
+      select: {
+        project: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    if (!canAccess) {
+      throw new NotFoundException("Project not found or you are not authorized to access it");
+    }
+
+    const projectData = await this.prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+      include: {
+        projectPromotions: {
+          include: {
+            promotion: true,
+          },
+        },
+      },
     });
 
-    const result: Record<number, unknown[]> = {};
-    for (const pid of promotionIds) {
-      result[pid] = [];
+    if (!projectData) {
+      throw new NotFoundException("Project not found");
     }
-    for (const link of links) {
-      if (!result[link.promotionId]) {
-        result[link.promotionId] = [];
-      }
-      result[link.promotionId].push(link.project);
-    }
+
+    const result: ProjectStudentDto = {
+      id: projectData.id,
+      name: projectData.name,
+      description: projectData.description,
+      creatorId: projectData.creatorId,
+      createdAt: projectData.createdAt.toISOString(),
+      updatedAt: projectData.updatedAt.toISOString(),
+      deletedAt: projectData.deletedAt?.toISOString() || null,
+      promotionId: projectData.projectPromotions[0]?.promotionId || 1,
+    };
+
     return result;
   }
 

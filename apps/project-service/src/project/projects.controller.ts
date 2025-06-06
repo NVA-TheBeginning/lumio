@@ -13,9 +13,9 @@ import {
   Query,
 } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator";
-import { ProjectDetailedDto } from "@/project/dto/project-detailed.dto";
 import { CreateProjectDto } from "./dto/create-project.dto";
+import { ProjectStudentDto } from "./dto/project-student.dto";
+import { ProjectTeacherDto } from "./dto/project-teacher.dto";
 import { UpdateProjectDto, UpdateProjectStatusDto } from "./dto/update-project.dto";
 import { ProjectService } from "./projects.service";
 
@@ -75,22 +75,30 @@ export class ProjectController {
     return this.projectService.findAll();
   }
 
-  @Get(":id")
-  @ApiOperation({ summary: "Retrieve a single project by ID" })
-  @ApiResponse({ status: 200, description: "The project." })
-  @ApiResponse({ status: 404, description: "Project not found." })
-  async findOne(@Param("id", ParseIntPipe) id: number) {
-    return this.projectService.findOne(id);
+  @Get(":id/teacher")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Retrieve a project with detailed info as a teacher" })
+  @ApiParam({ name: "id", type: Number, description: "Project ID" })
+  @ApiResponse({ status: 200, description: "Detailed project info", type: ProjectTeacherDto })
+  @ApiResponse({ status: 404, description: "Project not found" })
+  async findOneProjectTeacher(
+    @Param("id", ParseIntPipe) id: number,
+    @Query("userId") userId: number,
+  ): Promise<ProjectTeacherDto> {
+    return this.projectService.getProjectInfoTeacher(id, Number(userId));
   }
 
-  @Get(":id/detailed")
+  @Get(":id/student")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Retrieve a project with detailed info (role-based)" })
+  @ApiOperation({ summary: "Retrieve a project with detailed info as a student" })
   @ApiParam({ name: "id", type: Number, description: "Project ID" })
-  @ApiResponse({ status: 200, description: "Detailed project info", type: ProjectDetailedDto })
+  @ApiResponse({ status: 200, description: "Detailed project info", type: ProjectStudentDto })
   @ApiResponse({ status: 404, description: "Project not found" })
-  async findOneDetailed(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser): Promise<ProjectDetailedDto> {
-    return this.projectService.findOneDetailed(id, user);
+  async findOneProjectStudent(
+    @Param("id", ParseIntPipe) id: number,
+    @Query("userId") userId: number,
+  ): Promise<ProjectStudentDto> {
+    return this.projectService.getProjectInfoStudent(id, Number(userId));
   }
 
   @Patch(":id")
@@ -121,26 +129,5 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: "Project not found." })
   async remove(@Param("id", ParseIntPipe) id: number) {
     return this.projectService.remove(id);
-  }
-
-  @Get("by-promotions")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Retrieve projects grouped by promotion IDs" })
-  @ApiResponse({
-    status: 200,
-    description: "Map of promotionId to array of projects.",
-    schema: {
-      example: {
-        "1": [{ id: 5, name: "Proj A" /* … */ }],
-        "2": [{ id: 6, name: "Proj B" /* … */ }],
-      },
-    },
-  })
-  async findByPromotions(@Query("promotionIds") promotionIds: string) {
-    const ids = promotionIds
-      .split(",")
-      .map((s) => Number.parseInt(s, 10))
-      .filter((n) => !Number.isNaN(n));
-    return this.projectService.findByPromotions(ids);
   }
 }
