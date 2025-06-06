@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { CreateDeliverableDto, DeliverableIdParams, ProjectIdParams, UpdateDeliverableDto } from "./dto.js";
+import { CreateDeliverableDto, ProjectIdParams, UpdateDeliverableDto } from "./dto.js";
 
 @ApiTags("deliverables")
 @Controller()
@@ -42,15 +42,11 @@ export class DeliverablesController {
     return this.proxy.forwardRequest("files", "/projects/deliverables", "PUT", updateDeliverableDto);
   }
 
-  @Delete("projects/deliverables/:projectId/:promotionId")
+  @Delete("projects/deliverables/:id")
   @ApiOperation({ summary: "Delete a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async remove(@Param() params: DeliverableIdParams): Promise<void> {
-    return this.proxy.forwardRequest(
-      "files",
-      `/projects/deliverables/${params.projectId}/${params.promotionId}`,
-      "DELETE",
-    );
+  async remove(@Param("id") id: number): Promise<void> {
+    return this.proxy.forwardRequest("files", `/projects/deliverables/${id}`, "DELETE");
   }
 }

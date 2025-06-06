@@ -29,7 +29,7 @@ model Deliverables {
   type                  DeliverableType[]
   createdAt             DateTime          @default(now())
 
-  @@id([projectId, promotionId])
+  @@id([id])
   @@map("DELIVERABLES")
   @@schema("files_schema")
 }

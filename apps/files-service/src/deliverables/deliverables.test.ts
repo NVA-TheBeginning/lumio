@@ -4,7 +4,6 @@ import { Test } from "@nestjs/testing";
 import { DeliverableType } from "@prisma-files/client";
 import { AppModule } from "@/app.module.js";
 import { CreateDeliverableDto } from "@/deliverables/dto/deliverables.dto.js";
-import { PrismaService } from "@/prisma.service";
 
 export const createDeliverableDto = (
   deliverableName = `Test Deliverable ${Date.now()}`,
@@ -21,12 +20,25 @@ export const createDeliverableDto = (
   projectId: projectId,
 });
 
+interface DeliverableResponse {
+  id: number;
+  name: string;
+  description?: string;
+  projectId: number;
+  promotionId: number;
+  deadline: string;
+  allowLateSubmission: boolean;
+  lateSubmissionPenalty: number;
+  type: DeliverableType[];
+}
+
 describe("Deliverables", () => {
   let app: NestFastifyApplication;
-  let prisma: PrismaService;
   let deliverableName = `Test Deliverable ${Date.now()}`;
   const projectId = Math.floor(Math.random() * 1000) + 1;
   const promotionId = Math.floor(Math.random() * 1000) + 1;
+  let deliverableId: number;
+  const createdDeliverableIds: number[] = [];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -36,8 +48,6 @@ describe("Deliverables", () => {
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
-
-    prisma = app.get(PrismaService);
   });
 
   test("/projects/deliverables (POST) - should create a new deliverable", async () => {
@@ -50,8 +60,18 @@ describe("Deliverables", () => {
 
     expect(response.statusCode).toEqual(201);
 
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as DeliverableResponse;
     expect(body).toHaveProperty("name", deliverableDto.name);
+    expect(body).toHaveProperty("projectId", projectId);
+    expect(body).toHaveProperty("promotionId", promotionId);
+    expect(body).toHaveProperty("description", deliverableDto.description);
+    expect(body).toHaveProperty("allowLateSubmission", deliverableDto.allowLateSubmission);
+    expect(body).toHaveProperty("type");
+    expect(Array.isArray(body.type)).toBe(true);
+    expect(body.type).toContain(DeliverableType.FILE);
+
+    deliverableId = body.id;
+    createdDeliverableIds.push(body.id);
   });
 
   test("/projects/:id/deliverables (GET) - should return all deliverables for a project", async () => {
@@ -61,9 +81,15 @@ describe("Deliverables", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as DeliverableResponse[];
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
+
+    const deliverable = body.find((d) => d.id === deliverableId);
+    expect(deliverable).toBeDefined();
+    expect(deliverable?.name).toBe(deliverableName);
+    expect(deliverable?.projectId).toBe(projectId);
+    expect(deliverable?.promotionId).toBe(promotionId);
   });
 
   test("/projects/:id/deliverables (GET) - should filter by promotionId query param", async () => {
@@ -73,9 +99,13 @@ describe("Deliverables", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as DeliverableResponse[];
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
+
+    body.forEach((deliverable) => {
+      expect(deliverable.promotionId).toBe(promotionId);
+    });
   });
 
   test("/projects/deliverables (PUT) - should update a deliverable", async () => {
@@ -84,6 +114,7 @@ describe("Deliverables", () => {
       method: "PUT",
       url: "/projects/deliverables",
       payload: {
+        id: deliverableId,
         projectId: projectId,
         promotionId: promotionId,
         name: updatedName,
@@ -93,7 +124,8 @@ describe("Deliverables", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as DeliverableResponse;
+    expect(body).toHaveProperty("id", deliverableId);
     expect(body).toHaveProperty("projectId", projectId);
     expect(body).toHaveProperty("promotionId", promotionId);
     expect(body).toHaveProperty("name", updatedName);
@@ -102,10 +134,10 @@ describe("Deliverables", () => {
     deliverableName = updatedName;
   });
 
-  test("/projects/deliverables/:projectId/:promotionId (DELETE) - should delete a deliverable", async () => {
+  test("/projects/deliverables/:id (DELETE) - should delete a deliverable", async () => {
     const response = await app.inject({
       method: "DELETE",
-      url: `/projects/deliverables/${projectId}/${promotionId}`,
+      url: `/projects/deliverables/${deliverableId}`,
     });
 
     expect(response.statusCode).toEqual(200);
@@ -115,20 +147,18 @@ describe("Deliverables", () => {
       url: `/projects/${projectId}/deliverables`,
     });
     expect(checkResponse.statusCode).toEqual(200);
+
+    const body = JSON.parse(checkResponse.body) as DeliverableResponse[];
+    const deletedDeliverable = body.find((d) => d.id === deliverableId);
+    expect(deletedDeliverable).toBeUndefined();
+
+    const index = createdDeliverableIds.indexOf(deliverableId);
+    if (index > -1) {
+      createdDeliverableIds.splice(index, 1);
+    }
   });
 
   afterAll(async () => {
-    try {
-      await prisma.deliverables.deleteMany({
-        where: {
-          projectId: projectId,
-          promotionId: promotionId,
-        },
-      });
-    } catch (error) {
-      console.error("Error in cleanup:", error);
-    }
-
     await app.close();
   });
 });

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { DeliverablesRules } from "@prisma-files/client";
 import {
@@ -45,10 +45,10 @@ export class DeliverableRulesController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Rule not found." })
   async update(
-    @Param() params: RuleIdParam,
+    @Param("id", ParseIntPipe) id: number,
     @Body() updateRuleDto: UpdateDeliverableRuleDto,
   ): Promise<DeliverablesRules> {
-    return this.deliverableRulesService.update(Number(params.id), updateRuleDto);
+    return this.deliverableRulesService.update(id, updateRuleDto);
   }
 
   @Delete("rules/:id")
@@ -56,7 +56,7 @@ export class DeliverableRulesController {
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: "The rule has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Rule not found." })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param() params: RuleIdParam): Promise<void> {
-    return this.deliverableRulesService.remove(Number(params.id));
+  async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {
+    return this.deliverableRulesService.remove(id);
   }
 }

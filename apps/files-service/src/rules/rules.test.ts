@@ -7,12 +7,23 @@ import { createDeliverableDto } from "@/deliverables/deliverables.test";
 import { PrismaService } from "@/prisma.service";
 import { CreateDeliverableRuleDto } from "./dto/rules.dto";
 
-const createRuleDto = (projectId: number, promoId: number): CreateDeliverableRuleDto => ({
+const createRuleDto = (deliverableId: number, projectId: number, promoId: number): CreateDeliverableRuleDto => ({
+  id: deliverableId,
   projectId,
   promotionId: promoId,
   ruleType: RuleType.SIZE_LIMIT,
   ruleDetails: JSON.stringify({ maxSize: 10485760, unit: "MB" }),
 });
+
+interface RuleResponse {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  ruleType: RuleType;
+  ruleDetails: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 describe("Deliverable Rules", () => {
   let app: NestFastifyApplication;
@@ -20,6 +31,8 @@ describe("Deliverable Rules", () => {
   const projectId = Math.floor(Math.random() * 1000) + 1;
   const promotionId = Math.floor(Math.random() * 1000) + 1;
   let ruleId: number;
+  let deliverableId: number;
+  const createdRuleIds: number[] = [];
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -33,13 +46,14 @@ describe("Deliverable Rules", () => {
     prisma = app.get(PrismaService);
 
     const deliverable = createDeliverableDto(`Test Deliverable ${Date.now()}`, projectId, promotionId);
-    await prisma.deliverables.create({
+    const createdDeliverable = await prisma.deliverables.create({
       data: deliverable,
     });
+    deliverableId = createdDeliverable.id;
   });
 
   test("/deliverables/rules (POST) - should fail with invalid projectId", async () => {
-    const invalidRuleDto = createRuleDto(-1, promotionId);
+    const invalidRuleDto = createRuleDto(deliverableId, -1, promotionId);
     const response = await app.inject({
       method: "POST",
       url: "/deliverables/rules",
@@ -50,7 +64,7 @@ describe("Deliverable Rules", () => {
   });
 
   test("/deliverables/rules (POST) - should create a new rule", async () => {
-    const ruleDto = createRuleDto(projectId, promotionId);
+    const ruleDto = createRuleDto(deliverableId, projectId, promotionId);
     const response = await app.inject({
       method: "POST",
       url: "/deliverables/rules",
@@ -59,14 +73,16 @@ describe("Deliverable Rules", () => {
 
     expect(response.statusCode).toEqual(201);
 
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as RuleResponse;
     expect(body).toHaveProperty("id");
     expect(body).toHaveProperty("projectId", projectId);
     expect(body).toHaveProperty("promotionId", promotionId);
     expect(body).toHaveProperty("ruleType", RuleType.SIZE_LIMIT);
     expect(body).toHaveProperty("ruleDetails");
+    expect(typeof body.id).toBe("number");
 
     ruleId = body.id;
+    createdRuleIds.push(body.id);
   });
 
   test("/deliverables/rules/:projectId/:promotionId (GET) - should return all rules for a project/promo", async () => {
@@ -76,9 +92,15 @@ describe("Deliverable Rules", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as RuleResponse[];
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
+
+    const rule = body.find((r) => r.id === ruleId);
+    expect(rule).toBeDefined();
+    expect(rule?.projectId).toBe(projectId);
+    expect(rule?.promotionId).toBe(promotionId);
+    expect(rule?.ruleType).toBe(RuleType.SIZE_LIMIT);
   });
 
   test("/rules/:id (GET) - should return a specific rule", async () => {
@@ -88,11 +110,12 @@ describe("Deliverable Rules", () => {
     });
 
     expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as RuleResponse;
     expect(body).toHaveProperty("id", ruleId);
     expect(body).toHaveProperty("projectId", projectId);
     expect(body).toHaveProperty("promotionId", promotionId);
     expect(body).toHaveProperty("ruleType", RuleType.SIZE_LIMIT);
+    expect(body).toHaveProperty("ruleDetails");
   });
 
   test("/rules/:id (PUT) - should update a rule", async () => {
@@ -101,12 +124,14 @@ describe("Deliverable Rules", () => {
       method: "PUT",
       url: `/rules/${ruleId}`,
       payload: {
+        projectId: projectId,
+        promotionId: promotionId,
         ruleDetails: updatedRuleDetails,
       },
     });
 
     expect(response.statusCode).toEqual(200);
-    const body = JSON.parse(response.body);
+    const body = JSON.parse(response.body) as RuleResponse;
     expect(body).toHaveProperty("id", ruleId);
     expect(body).toHaveProperty("ruleDetails", updatedRuleDetails);
     expect(body).toHaveProperty("projectId", projectId);
@@ -126,17 +151,33 @@ describe("Deliverable Rules", () => {
       url: `/rules/${ruleId}`,
     });
     expect(checkResponse.statusCode).toEqual(404);
+
+    const index = createdRuleIds.indexOf(ruleId);
+    if (index > -1) {
+      createdRuleIds.splice(index, 1);
+    }
   });
 
   afterAll(async () => {
     try {
-      await prisma.deliverables.deleteMany({
+      if (createdRuleIds.length > 0) {
+        await prisma.deliverablesRules.deleteMany({
+          where: {
+            id: {
+              in: createdRuleIds,
+            },
+          },
+        });
+      }
+
+      await prisma.deliverablesRules.deleteMany({
         where: {
           projectId: projectId,
           promotionId: promotionId,
         },
       });
-      await prisma.deliverablesRules.deleteMany({
+
+      await prisma.deliverables.deleteMany({
         where: {
           projectId: projectId,
           promotionId: promotionId,

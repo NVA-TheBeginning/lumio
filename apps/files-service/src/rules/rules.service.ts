@@ -10,10 +10,9 @@ export class DeliverableRulesService {
   async create(createRuleDto: CreateDeliverableRuleDto): Promise<DeliverablesRules> {
     const deliverable = await this.prisma.deliverables.findUnique({
       where: {
-        projectId_promotionId: {
-          projectId: Number(createRuleDto.projectId),
-          promotionId: Number(createRuleDto.promotionId),
-        },
+        id: createRuleDto.id,
+        projectId: Number(createRuleDto.projectId),
+        promotionId: Number(createRuleDto.promotionId),
       },
     });
 
@@ -32,25 +31,18 @@ export class DeliverableRulesService {
   }
 
   async findAllByProjectPromo(projectId: number, promotionId: number): Promise<DeliverablesRules[]> {
-    const deliverable = await this.prisma.deliverables.findUnique({
-      where: {
-        projectId_promotionId: {
-          projectId,
-          promotionId,
-        },
-      },
-    });
-
-    if (!deliverable) {
-      throw new NotFoundException("Deliverable not found");
-    }
-
-    return this.prisma.deliverablesRules.findMany({
+    const rules = await this.prisma.deliverablesRules.findMany({
       where: {
         projectId,
         promotionId,
       },
     });
+
+    if (rules.length === 0) {
+      throw new NotFoundException("No rules found for this project and promotion");
+    }
+
+    return rules;
   }
 
   async findOne(id: number): Promise<DeliverablesRules> {
