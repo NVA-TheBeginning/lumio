@@ -54,12 +54,14 @@ export class UsersController {
   @ApiOperation({ summary: "Find multiple users by their IDs" })
   @ApiOkResponse({ description: "Users found successfully" })
   @ApiQuery({ name: "ids", type: [Number], description: "Array of user IDs to find", required: true })
+  @ApiQuery({ name: "page", type: Number, required: false, description: "Page number" })
+  @ApiQuery({ name: "size", type: Number, required: false, description: "Items per page" })
   async findUsers(@Query("ids") ids: string, @Query("page") page?: string, @Query("size") size?: string) {
     if (!ids) {
       return [];
     }
 
-    const userIds = ids.split(",").map((id) => Number.parseInt(id, 10));
-    return await this.usersService.findUsersByIds(userIds, page, size);
+    const uniqueIds = Array.from(new Set(ids.split(",").map((id) => Number.parseInt(id.trim(), 10))));
+    return await this.usersService.findUsersByIds(uniqueIds, page, size);
   }
 }
