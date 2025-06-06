@@ -4,6 +4,11 @@ import { Type } from "class-transformer";
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateDeliverableRuleDto {
+  @ApiProperty({ description: "Deliverable ID" })
+  @IsInt()
+  @Type(() => Number)
+  id: number;
+
   @ApiProperty({ description: "Project ID" })
   @IsInt()
   @Type(() => Number)

@@ -10,6 +10,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
 } from "class-validator";
@@ -43,7 +44,7 @@ export class CreateDeliverableDto {
   allowLateSubmission: boolean;
 
   @ApiProperty({ description: "Late submission penalty" })
-  @IsDecimal()
+  @IsNumber()
   @Type(() => Number)
   lateSubmissionPenalty: number;
 
@@ -59,6 +60,11 @@ export class CreateDeliverableDto {
 }
 
 export class UpdateDeliverableDto {
+  @ApiProperty({ description: "Deliverable ID" })
+  @IsInt()
+  @Type(() => Number)
+  id: number;
+
   @ApiProperty({ description: "Project ID" })
   @IsInt()
   projectId: number;

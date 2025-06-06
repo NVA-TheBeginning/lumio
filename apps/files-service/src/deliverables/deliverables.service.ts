@@ -32,10 +32,7 @@ export class DeliverablesService {
     try {
       const existingDeliverable = await this.prisma.deliverables.findUnique({
         where: {
-          projectId_promotionId: {
-            projectId: updateDeliverableDto.projectId,
-            promotionId: updateDeliverableDto.promotionId,
-          },
+          id: updateDeliverableDto.id,
         },
       });
       if (!existingDeliverable) {
@@ -52,10 +49,7 @@ export class DeliverablesService {
 
       return await this.prisma.deliverables.update({
         where: {
-          projectId_promotionId: {
-            projectId: existingDeliverable.projectId,
-            promotionId: existingDeliverable.promotionId,
-          },
+          id: existingDeliverable.id,
         },
         data: updateDeliverableDto,
       });
@@ -67,14 +61,11 @@ export class DeliverablesService {
     }
   }
 
-  async remove(projectId: number, promotionId: number): Promise<void> {
+  async remove(id: number): Promise<void> {
     try {
       const existingDeliverable = await this.prisma.deliverables.findUnique({
         where: {
-          projectId_promotionId: {
-            projectId,
-            promotionId,
-          },
+          id,
         },
       });
       if (!existingDeliverable) {
@@ -83,17 +74,14 @@ export class DeliverablesService {
 
       await this.prisma.deliverables.delete({
         where: {
-          projectId_promotionId: {
-            projectId,
-            promotionId,
-          },
+          id: existingDeliverable.id,
         },
       });
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new NotFoundException(`Failed to delete deliverable with ID ${promotionId}`);
+      throw new NotFoundException(`Failed to delete deliverable with ID ${id}`);
     }
   }
 }

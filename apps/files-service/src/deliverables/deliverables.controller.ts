@@ -2,12 +2,7 @@ import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query } fr
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Deliverables } from "@prisma-files/client";
 import { DeliverablesService } from "@/deliverables/deliverables.service";
-import {
-  CreateDeliverableDto,
-  DeliverableIdParams,
-  ProjectIdParams,
-  UpdateDeliverableDto,
-} from "@/deliverables/dto/deliverables.dto";
+import { CreateDeliverableDto, ProjectIdParams, UpdateDeliverableDto } from "@/deliverables/dto/deliverables.dto";
 
 @ApiTags("deliverables")
 @Controller()
@@ -47,11 +42,11 @@ export class DeliverablesController {
     return this.deliverablesService.update(updateDeliverableDto);
   }
 
-  @Delete("projects/deliverables/:projectId/:promotionId")
+  @Delete("projects/deliverables/:id")
   @ApiOperation({ summary: "Delete a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async remove(@Param() params: DeliverableIdParams): Promise<void> {
-    return this.deliverablesService.remove(Number(params.projectId), Number(params.promotionId));
+  async remove(@Param() id: number): Promise<void> {
+    return this.deliverablesService.remove(id);
   }
 }
