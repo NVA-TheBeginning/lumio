@@ -74,7 +74,7 @@ export class DeliverablesService {
 
       await this.prisma.deliverables.delete({
         where: {
-          id: existingDeliverable.id,
+          id,
         },
       });
     } catch (error) {

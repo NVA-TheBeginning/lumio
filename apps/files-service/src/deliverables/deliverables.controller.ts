@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Deliverables } from "@prisma-files/client";
 import { DeliverablesService } from "@/deliverables/deliverables.service";
@@ -46,7 +46,7 @@ export class DeliverablesController {
   @ApiOperation({ summary: "Delete a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async remove(@Param() id: number): Promise<void> {
+  async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {
     return this.deliverablesService.remove(id);
   }
 }
