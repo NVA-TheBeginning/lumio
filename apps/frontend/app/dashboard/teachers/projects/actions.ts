@@ -190,12 +190,12 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
       status: promotion.status,
       groupSettings: {
         projectId: id,
-        promotionId: groupSettings.promotionId,
-        minMembers: groupSettings.minMembers,
-        maxMembers: groupSettings.maxMembers,
-        mode: groupSettings.mode,
-        deadline: groupSettings.deadline,
-        updatedAt: groupSettings.updatedAt,
+        promotionId: promotion.id,
+        minMembers: groupSettings?.minMembers ?? 1,
+        maxMembers: groupSettings?.maxMembers ?? 10,
+        mode: groupSettings?.mode ?? "MANUAL",
+        deadline: groupSettings?.deadline ?? null,
+        updatedAt: groupSettings?.updatedAt ?? new Date().toISOString(),
       },
       groups: groups.map((group) => ({
         id: group.id,
@@ -214,8 +214,6 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
   });
 
   result.promotions = await Promise.all(promotionPromises);
-
-  console.log("ProjectType result:", JSON.stringify(result, null, 2));
   return result;
 }
 
