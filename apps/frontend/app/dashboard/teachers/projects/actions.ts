@@ -175,12 +175,8 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     promotions: [],
     deliverables: deliverablesData || [],
   };
-  console.log("Promo?:", JSON.stringify(projectData, null, 2));
 
   const promotionPromises = projectData.promotions.map(async (promotion) => {
-    if (!promotion.id) {
-      throw new Error(`Promotion with ID ${promotion.id} not found`);
-    }
     // TODO: create a single route to fetch both group settings and groups
     const [groupSettings, groups] = await Promise.all([
       authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${promotion.id}/group-settings`),
@@ -194,12 +190,12 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
       status: promotion.status,
       groupSettings: {
         projectId: id,
-        promotionId: groupSettings.promotionId,
-        minMembers: groupSettings.minMembers,
-        maxMembers: groupSettings.maxMembers,
-        mode: groupSettings.mode,
-        deadline: groupSettings.deadline,
-        updatedAt: groupSettings.updatedAt,
+        promotionId: promotion.id,
+        minMembers: groupSettings?.minMembers ?? 1,
+        maxMembers: groupSettings?.maxMembers ?? 10,
+        mode: groupSettings?.mode ?? "MANUAL",
+        deadline: groupSettings?.deadline ?? null,
+        updatedAt: groupSettings?.updatedAt ?? new Date().toISOString(),
       },
       groups: groups.map((group) => ({
         id: group.id,
@@ -218,8 +214,6 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
   });
 
   result.promotions = await Promise.all(promotionPromises);
-
-  console.log("ProjectType result:", JSON.stringify(result, null, 2));
   return result;
 }
 
