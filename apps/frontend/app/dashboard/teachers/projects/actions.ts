@@ -175,7 +175,7 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     promotions: [],
     deliverables: deliverablesData || [],
   };
-  console.log("ProjectType initial result:", JSON.stringify(result, null, 2));
+  console.log("Promo?:", JSON.stringify(projectData, null, 2));
 
   const promotionPromises = projectData.promotions.map(async (promotion) => {
     if (!promotion.id) {
