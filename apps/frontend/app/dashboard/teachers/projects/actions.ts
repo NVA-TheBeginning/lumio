@@ -175,8 +175,12 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     promotions: [],
     deliverables: deliverablesData || [],
   };
+  console.log("ProjectType initial result:", JSON.stringify(result, null, 2));
 
   const promotionPromises = projectData.promotions.map(async (promotion) => {
+    if (!promotion.id) {
+      throw new Error(`Promotion with ID ${promotion.id} not found`);
+    }
     // TODO: create a single route to fetch both group settings and groups
     const [groupSettings, groups] = await Promise.all([
       authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${promotion.id}/group-settings`),
