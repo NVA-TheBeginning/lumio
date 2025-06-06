@@ -95,16 +95,22 @@ export class PromotionsController {
     @Param("id", ParseIntPipe) id: number,
     @Query("page") page?: number,
     @Query("size") size?: number,
-  ): Promise<StudentDto[]> {
+  ): Promise<{ data: StudentDto[] }> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
 
     const studentIds = promotion.studentPromotions.map((sp) => sp.userId);
-    if (!studentIds.length) return [];
+    if (!studentIds.length) return { data: [] };
 
-    return this.proxy.forwardRequest<StudentDto[]>("auth", `/users?ids=${studentIds.join(",")}`, "GET", undefined, {
-      page,
-      size,
-    });
+    return this.proxy.forwardRequest<{ data: StudentDto[] }>(
+      "auth",
+      `/users?ids=${studentIds.join(",")}`,
+      "GET",
+      undefined,
+      {
+        page,
+        size,
+      },
+    );
   }
 
   @Patch(":id")

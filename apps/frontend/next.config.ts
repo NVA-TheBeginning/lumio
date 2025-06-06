@@ -2,6 +2,8 @@ import { env } from "node:process";
 import type { NextConfig } from "next";
 
 const isProduction = env.NODE_ENV === "production" || env.BUN_ENV === "production";
+// One page is broken with React compiler, so we disable it for now
+const enableReactCompiler = isProduction && env.ENABLE_REACT_COMPILER === "true";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -21,7 +23,7 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60,
   },
   experimental: {
-    reactCompiler: isProduction,
+    reactCompiler: enableReactCompiler,
     optimizePackageImports: ["@radix-ui/*"],
     ppr: "incremental",
     nodeMiddleware: true,

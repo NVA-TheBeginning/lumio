@@ -167,11 +167,11 @@ export class UsersService {
   async findUsersByIds(
     ids: number[],
     page: string | undefined,
-    size: string = String(DEFAULT_ROWS_PER_PAGE),
+    size: string | undefined,
   ): Promise<PaginatedResponse<UserResponse>> {
     const currentPage = page ? Number.parseInt(page, 10) || 1 : 1;
-    const itemsPerPage = Number.parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE;
-    const skipAmount = (currentPage - 1) * itemsPerPage;
+    const itemsPerPage = size ? Number.parseInt(size, 10) || DEFAULT_ROWS_PER_PAGE : -1;
+    const skipAmount = itemsPerPage > 0 ? (currentPage - 1) * itemsPerPage : 0;
 
     const users = await this.prisma.user.findMany({
       where: {
@@ -187,8 +187,8 @@ export class UsersService {
         role: true,
         createdAt: true,
       },
-      skip: skipAmount,
-      take: itemsPerPage,
+      skip: skipAmount > 0 ? skipAmount : undefined,
+      take: itemsPerPage > 0 ? itemsPerPage : undefined,
     });
 
     const totalRows = await this.prisma.user.count({
@@ -200,13 +200,14 @@ export class UsersService {
     });
 
     const totalPages = Math.ceil(totalRows / itemsPerPage);
+    const pageSize = itemsPerPage > 0 ? itemsPerPage : totalRows;
 
     return {
       data: users,
       size: totalRows,
       page: currentPage,
-      pageSize: itemsPerPage,
-      totalPages: totalPages,
+      pageSize,
+      totalPages,
     };
   }
 }

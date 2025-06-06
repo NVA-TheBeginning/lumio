@@ -37,7 +37,10 @@ interface GroupType {
   name: string;
   members: {
     id: number;
-    name: string;
+    firstname: string;
+    lastname: string;
+    email: string;
+    addedAt: string;
   }[];
 }
 
@@ -197,16 +200,22 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
       groups: groups.map((group) => ({
         id: group.id,
         name: group.name,
-        members: group.members.map((member: { id: number; name: string }) => ({
-          id: member.id,
-          name: member.name,
-        })),
+        members: group.members.map(
+          (member: { id: number; firstname: string; lastname: string; email: string; addedAt: string }) => ({
+            id: member.id,
+            firstname: member.firstname,
+            lastname: member.lastname,
+            email: member.email,
+            addedAt: member.addedAt,
+          }),
+        ),
       })),
     };
   });
 
   result.promotions = await Promise.all(promotionPromises);
 
+  console.log("ProjectType result:", JSON.stringify(result, null, 2));
   return result;
 }
 
@@ -236,14 +245,7 @@ export interface ProjectStudentType {
     mode: string;
     deadline: string;
   };
-  groups: {
-    id: number;
-    name: string;
-    members: {
-      id: number;
-      name: string;
-    }[];
-  }[];
+  groups: GroupType[];
   deliverables: DeliverableType[];
   submissions: {
     groupId: number;
@@ -295,15 +297,22 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
   };
 
   if (groups) {
-    result.groups = groups.map((group: { id: number; name: string; members: { id: number; name: string }[] }) => ({
+    result.groups = groups.map((group) => ({
       id: group.id,
       name: group.name,
-      members: group.members.map((member: { id: number; name: string }) => ({
-        id: member.id,
-        name: member.name,
-      })),
+      members: group.members.map(
+        (member: { id: number; firstname: string; lastname: string; email: string; addedAt: string }) => ({
+          id: member.id,
+          firstname: member.firstname,
+          lastname: member.lastname,
+          email: member.email,
+          addedAt: member.addedAt,
+        }),
+      ),
     }));
   }
+
+  console.log("ProjectStudentType result:", result);
 
   return result;
 }

@@ -14,6 +14,36 @@ import {
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { AddMembersDto, CreateGroupDto, GroupSettingsDto, UpdateGroupDto } from "../dto/group.dto.js";
+import { StudentDto } from "../dto/promotions.dto.js";
+
+interface GroupMember {
+  studentId: number;
+  addedAt: Date;
+  groupId: number;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  promotionId: number;
+  projectId: number;
+  members: GroupMember[];
+}
+
+interface EnrichedGroupMember {
+  id: number;
+  lastname: string;
+  firstname: string;
+  email: string;
+  addedAt: Date;
+  groupId: number;
+}
+
+interface EnrichedGroup extends Omit<Group, "members"> {
+  members: EnrichedGroupMember[];
+}
 
 @ApiTags("groups")
 @Controller()
@@ -41,11 +71,65 @@ export class GroupsController {
   @ApiParam({ name: "projectId", type: Number })
   @ApiParam({ name: "promotionId", type: Number })
   @ApiOkResponse({ description: "Array of groups" })
-  findAll(
+  async findAll(
     @Param("projectId", ParseIntPipe) projectId: number,
     @Param("promotionId", ParseIntPipe) promotionId: number,
   ) {
-    return this.proxy.forwardRequest("project", `/projects/${projectId}/promotions/${promotionId}/groups`, "GET");
+    try {
+      const groups = await this.proxy.forwardRequest<Group[]>(
+        "project",
+        `/projects/${projectId}/promotions/${promotionId}/groups`,
+        "GET",
+      );
+
+      if (!groups?.length) {
+        return [];
+      }
+
+      const studentIds = Array.from(
+        new Set(groups.flatMap((group) => group.members?.map((member) => member.studentId) ?? [])),
+      );
+
+      if (!studentIds.length) {
+        return groups.map((group) => ({
+          ...group,
+          members: [],
+        }));
+      }
+
+      const students = await this.proxy.forwardRequest<{ data: StudentDto[] }>(
+        "auth",
+        `/users?ids=${studentIds.join(",")}`,
+        "GET",
+      );
+      const studentsData = students?.data ?? [];
+
+      const studentsMap = new Map<number, StudentDto>();
+      studentsData.forEach((student) => {
+        studentsMap.set(student.id, student);
+      });
+
+      const enrichedGroups: EnrichedGroup[] = groups.map((group) => ({
+        ...group,
+        members:
+          group.members?.map((member) => {
+            const student = studentsMap.get(member.studentId);
+            return {
+              id: member.studentId,
+              lastname: student?.lastname ?? "",
+              firstname: student?.firstname ?? "",
+              email: student?.email ?? "",
+              addedAt: member.addedAt,
+              groupId: member.groupId,
+            };
+          }) ?? [],
+      }));
+
+      return enrichedGroups;
+    } catch (error) {
+      console.error("Failed to fetch groups with members:", error);
+      throw new Error(`Unable to retrieve groups for project ${projectId} and promotion ${promotionId}`);
+    }
   }
 
   @Put("groups/:id")
