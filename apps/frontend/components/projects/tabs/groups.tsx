@@ -49,19 +49,19 @@ const updateGroupSchema = z.object({
 
 export function ProjectGroups({ project }: { project: ProjectType }) {
   const queryClient = useQueryClient();
-  const [activePromotionId, setActivePromotionId] = useState<string>(project.promotions[0]?.id.toString() || "");
-  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [showCreateGroupsDialog, setShowCreateGroupsDialog] = useState(false);
+  const [activePromotionId, setActivePromotionId] = useState<number>(project.promotions[0]?.id || 0);
+  const [showSettingsDialog, setShowSettingsDialog] = useState<boolean>(false);
+  const [showCreateGroupsDialog, setShowCreateGroupsDialog] = useState<boolean>(false);
   const [editingGroup, setEditingGroup] = useState<{
     id: number;
     name: string;
   } | null>(null);
   const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
 
-  const activePromotion = project.promotions.find((p) => p.id.toString() === activePromotionId);
+  const activePromotion = project.promotions.find((p) => p.id === activePromotionId);
 
   const updateSettingsMutation = useMutation({
-    mutationFn: (data: GroupSettingsUpdateDto) => updateGroupSettings(project.id, Number(activePromotionId), data),
+    mutationFn: (data: GroupSettingsUpdateDto) => updateGroupSettings(project.id, activePromotionId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["projects", Number(project.id)],
@@ -69,7 +69,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
       queryClient.setQueryData(["projects", Number(project.id)], (oldData: ProjectType | undefined) => {
         if (!oldData) return oldData;
         const updatedPromotions = oldData.promotions.map((p) => {
-          if (p.id === Number(activePromotionId)) {
+          if (p.id === activePromotionId) {
             return { ...p, groupSettings: { ...p.groupSettings, ...settingsForm.getValues() } };
           }
           return p;
@@ -80,8 +80,9 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
       setShowSettingsDialog(false);
     },
   });
+
   const createGroupsMutation = useMutation({
-    mutationFn: (data: CreateGroupsDto) => createGroups(project.id, Number(activePromotionId), data),
+    mutationFn: (data: CreateGroupsDto) => createGroups(project.id, activePromotionId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["projects", Number(project.id)],
@@ -165,13 +166,18 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     }
   };
 
-  const handleDeleteGroup = () => {
+  const handleDeleteGroup = (): void => {
     if (groupToDelete !== null) {
       deleteGroupMutation.mutate(groupToDelete);
     }
   };
 
-  const getGroupModeText = (mode: string) => {
+  const handlePromotionChange = (value: string): void => {
+    const promotionId = Number(value);
+    setActivePromotionId(promotionId);
+  };
+
+  const getGroupModeText = (mode: string): string => {
     switch (mode) {
       case "RANDOM":
         return "Aléatoire";
@@ -189,7 +195,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   }
 
-  const currentPromotion = project.promotions.find((p) => p.id.toString() === activePromotionId);
+  const currentPromotion = project.promotions.find((p) => p.id === activePromotionId);
 
   const groups = currentPromotion?.groups;
   const groupSettings = currentPromotion?.groupSettings;
@@ -205,9 +211,9 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
       <Card>
         <CardContent className="pt-6">
           <Tabs
-            defaultValue={activePromotionId}
-            value={activePromotionId}
-            onValueChange={setActivePromotionId}
+            defaultValue={activePromotionId.toString()}
+            value={activePromotionId.toString()}
+            onValueChange={handlePromotionChange}
             className="w-full"
           >
             <TabsList className="mb-4 w-full justify-start overflow-x-auto">
@@ -260,7 +266,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                       <Input
                                         type="number"
                                         {...field}
-                                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                                        onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -277,7 +283,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                       <Input
                                         type="number"
                                         {...field}
-                                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                                        onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -397,7 +403,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                     <Input
                                       type="number"
                                       {...field}
-                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
                                     />
                                   </FormControl>
                                   <FormMessage />
