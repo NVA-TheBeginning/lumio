@@ -315,8 +315,6 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
     }));
   }
 
-  console.log("ProjectStudentType result:", result);
-
   return result;
 }
 

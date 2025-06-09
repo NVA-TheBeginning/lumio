@@ -51,8 +51,6 @@ export async function setUserCookie(data: {
         maxAge: sevenDays,
       });
     }
-
-    console.log("User cookie set successfully");
   } catch (error) {
     console.error("Error setting user cookie:", error);
     throw new Error("Failed to set authentication cookie");
