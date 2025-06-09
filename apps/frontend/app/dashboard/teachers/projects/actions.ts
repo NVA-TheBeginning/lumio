@@ -77,6 +77,10 @@ export interface DeliverableType {
   deadline: string;
   status: string;
   promotionId: number;
+  allowLateSubmission: boolean;
+  lateSubmissionPenalty: number;
+  type: string[];
+  createdAt: string;
 }
 
 export interface getAllStudentProjects {
@@ -250,6 +254,7 @@ export interface ProjectStudentType {
     status: string;
     submittedAt: string | null;
     grade: number | null;
+    deliverableId: number;
   }[];
 }
 
@@ -309,8 +314,6 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
       ),
     }));
   }
-
-  console.log("ProjectStudentType result:", result);
 
   return result;
 }
