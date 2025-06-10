@@ -1,12 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { DeliverablesRules } from "@prisma-files/client";
-import {
-  CreateDeliverableRuleDto,
-  DeliverableIdParam,
-  RuleIdParam,
-  UpdateDeliverableRuleDto,
-} from "@/rules/dto/rules.dto";
+import { CreateDeliverableRuleDto, RuleIdParam, UpdateDeliverableRuleDto } from "@/rules/dto/rules.dto";
 import { DeliverableRulesService } from "@/rules/rules.service";
 
 @ApiTags("deliverable-rules")
@@ -23,12 +18,12 @@ export class DeliverableRulesController {
     return this.deliverableRulesService.create(createRuleDto);
   }
 
-  @Get("deliverables/rules/:projectId/:promotionId")
-  @ApiOperation({ summary: "Get all rules for a project/promo" })
+  @Get("deliverables/:deliverableId/rules")
+  @ApiOperation({ summary: "Get all rules for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "Returns all rules for the deliverable." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAll(@Param() params: DeliverableIdParam): Promise<DeliverablesRules[]> {
-    return this.deliverableRulesService.findAllByProjectPromo(Number(params.projectId), Number(params.promotionId));
+  async findAll(@Param("deliverableId", ParseIntPipe) deliverableId: number): Promise<DeliverablesRules[]> {
+    return this.deliverableRulesService.findAllByDeliverable(deliverableId);
   }
 
   @Get("rules/:id")

@@ -7,17 +7,7 @@ export class CreateDeliverableRuleDto {
   @ApiProperty({ description: "Deliverable ID" })
   @IsInt()
   @Type(() => Number)
-  id: number;
-
-  @ApiProperty({ description: "Project ID" })
-  @IsInt()
-  @Type(() => Number)
-  projectId: number;
-
-  @ApiProperty({ description: "Promotion ID" })
-  @IsInt()
-  @Type(() => Number)
-  promotionId: number;
+  deliverableId: number;
 
   @ApiProperty({ description: "Rule type", enum: RuleType })
   @IsEnum(RuleType)
@@ -30,16 +20,6 @@ export class CreateDeliverableRuleDto {
 }
 
 export class UpdateDeliverableRuleDto {
-  @ApiProperty({ description: "Project ID" })
-  @IsInt()
-  @Type(() => Number)
-  projectId: number;
-
-  @ApiProperty({ description: "Promotion ID" })
-  @IsInt()
-  @Type(() => Number)
-  promotionId: number;
-
   @ApiPropertyOptional({ description: "Rule type", enum: RuleType })
   @IsEnum(RuleType)
   @IsOptional()
@@ -49,18 +29,6 @@ export class UpdateDeliverableRuleDto {
   @IsString()
   @IsOptional()
   ruleDetails?: string;
-}
-
-export class DeliverableIdParam {
-  @ApiProperty({ description: "Project ID" })
-  @IsInt()
-  @Type(() => Number)
-  projectId: number;
-
-  @ApiProperty({ description: "Promotion ID" })
-  @IsInt()
-  @Type(() => Number)
-  promotionId: number;
 }
 
 export class RuleIdParam {
