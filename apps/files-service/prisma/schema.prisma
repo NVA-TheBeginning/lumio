@@ -44,8 +44,6 @@ enum DeliverableType {
 model DeliverablesRules {
   id            Int      @id @default(autoincrement())
   deliverableId Int
-  projectId     Int
-  promotionId   Int
   ruleType      RuleType
   ruleDetails   String
 
