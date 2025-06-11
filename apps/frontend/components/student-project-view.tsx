@@ -222,7 +222,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                         <div className="flex items-start justify-between mb-4">
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-lg">{deliverable.title}</h4>
+                              <h4 className="font-semibold text-lg">{deliverable.name}</h4>
                               <Badge variant={status.variant} className="flex items-center gap-1">
                                 <StatusIcon className="h-3 w-3" />
                                 {status.label}

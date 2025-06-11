@@ -16,6 +16,10 @@ export class DeliverablesService {
       throw new BadRequestException("Late submission penalty cannot be negative");
     }
 
+    if (createDeliverableDto.lateSubmissionPenalty && !createDeliverableDto.allowLateSubmission) {
+      createDeliverableDto.lateSubmissionPenalty = 0.0;
+    }
+
     return this.prisma.deliverables.create({
       data: createDeliverableDto,
     });
@@ -45,6 +49,10 @@ export class DeliverablesService {
 
       if (updateDeliverableDto.lateSubmissionPenalty && updateDeliverableDto.lateSubmissionPenalty < 0) {
         throw new BadRequestException("Late submission penalty cannot be negative");
+      }
+
+      if (updateDeliverableDto.lateSubmissionPenalty && !updateDeliverableDto.allowLateSubmission) {
+        updateDeliverableDto.lateSubmissionPenalty = 0.0;
       }
 
       return await this.prisma.deliverables.update({

@@ -6,7 +6,6 @@ import {
   IsArray,
   IsBoolean,
   IsDate,
-  IsDecimal,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -95,7 +94,7 @@ export class UpdateDeliverableDto {
   allowLateSubmission?: boolean;
 
   @ApiPropertyOptional({ description: "Late submission penalty" })
-  @IsDecimal()
+  @IsNumber()
   @IsOptional()
   @Type(() => Number)
   lateSubmissionPenalty?: number;

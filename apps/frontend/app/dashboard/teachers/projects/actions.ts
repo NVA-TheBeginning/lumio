@@ -72,11 +72,12 @@ export interface PromotionType {
 
 export interface DeliverableType {
   id: number;
-  title: string;
-  description: string;
+  name: string;
+  description?: string;
   deadline: string;
   status: string;
   promotionId: number;
+  projectId: number;
   allowLateSubmission: boolean;
   lateSubmissionPenalty: number;
   type: string[];
@@ -368,4 +369,39 @@ export async function addMembersToGroup(groupId: number, studentIds: number[]) {
 
 export async function removeMemberFromGroup(groupId: number, userId: number) {
   return await authDeleteData(`${API_URL}/groups/${groupId}/students/${userId}`);
+}
+
+export interface CreateDeliverableData {
+  projectId: number;
+  promotionId: number;
+  name: string;
+  description?: string;
+  deadline: string;
+  allowLateSubmission: boolean;
+  lateSubmissionPenalty: number;
+  type: string[];
+}
+
+export interface UpdateDeliverableData {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  name?: string;
+  description?: string;
+  deadline?: string;
+  allowLateSubmission?: boolean;
+  lateSubmissionPenalty?: number;
+  type: string[];
+}
+
+export async function createDeliverable(data: CreateDeliverableData): Promise<DeliverableType> {
+  return await authPostData(`${API_URL}/projects/deliverables`, data);
+}
+
+export async function updateDeliverable(data: UpdateDeliverableData): Promise<DeliverableType> {
+  return await authPutData(`${API_URL}/projects/deliverables`, data);
+}
+
+export async function deleteDeliverable(id: number): Promise<void> {
+  return await authDeleteData(`${API_URL}/projects/deliverables/${id}`);
 }
