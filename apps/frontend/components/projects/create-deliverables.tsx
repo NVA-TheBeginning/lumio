@@ -52,7 +52,6 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
         type: deliverableType,
       });
 
-      // Reset form
       setName("");
       setDescription("");
       setDeadline("");

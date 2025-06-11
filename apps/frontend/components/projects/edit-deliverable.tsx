@@ -61,12 +61,10 @@ export function EditDeliverableDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Reset form when deliverable changes
   useEffect(() => {
     if (deliverable) {
       setName(deliverable.name);
       setDescription(deliverable.description || "");
-      // Convert from ISO string to datetime-local format
       const date = new Date(deliverable.deadline);
       const offset = date.getTimezoneOffset();
       const localDate = new Date(date.getTime() - offset * 60 * 1000);

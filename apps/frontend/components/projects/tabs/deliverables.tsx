@@ -1,12 +1,13 @@
 "use client";
 
-import { Clock, Filter, Plus, SlidersHorizontal } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Clock, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JSX, useState } from "react";
 import { DeliverableType, ProjectType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { CreateDeliverableDialog } from "../create-deliverables";
@@ -18,10 +19,17 @@ interface ProjectDeliverablesProps {
 
 export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activePromotion, setActivePromotion] = useState<string | undefined>(project.promotions[0]?.id.toString());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedDeliverable, setSelectedDeliverable] = useState<DeliverableType | null>(null);
+
+  const refreshProjectData = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["projects", Number(project.id)],
+    });
+  };
 
   const getDeliverableStatusBadge = (status: string) => {
     switch (status) {
@@ -65,21 +73,6 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-xl">Livrables par promotion</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrer
-              </Button>
-              <Button variant="outline" size="sm">
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Trier
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
         <CardContent>
           <Tabs value={activePromotion} onValueChange={setActivePromotion}>
             <TabsList className="mb-6">
@@ -109,7 +102,7 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         project={project}
-        onSuccess={() => {}}
+        onSuccess={refreshProjectData}
       />
 
       <EditDeliverableDialog
@@ -117,7 +110,7 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
         onOpenChange={setShowEditDialog}
         deliverable={selectedDeliverable}
         project={project}
-        onSuccess={() => {}}
+        onSuccess={refreshProjectData}
       />
     </div>
   );
@@ -134,7 +127,6 @@ interface PromotionDeliverablesProps {
 function PromotionDeliverables({
   promotion,
   deliverables,
-  onViewDeliverable,
   onEditDeliverable,
   getDeliverableStatusBadge,
 }: PromotionDeliverablesProps) {
@@ -181,7 +173,7 @@ function PromotionDeliverables({
             <Button variant="outline" size="sm" onClick={() => onEditDeliverable(deliverable)}>
               Modifier
             </Button>
-            <Button variant="outline" size="sm" onClick={() => onViewDeliverable(deliverable.id)}>
+            <Button variant="outline" size="sm" disabled>
               Gérer
             </Button>
           </div>

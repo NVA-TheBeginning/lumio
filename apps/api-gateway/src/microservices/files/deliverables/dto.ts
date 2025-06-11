@@ -1,16 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import {
-  ArrayNotEmpty,
-  IsBoolean,
-  IsDate,
-  IsDecimal,
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from "class-validator";
+import { ArrayNotEmpty, IsBoolean, IsDate, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateDeliverableDto {
   @ApiProperty({ description: "Project ID" })
@@ -89,7 +79,7 @@ export class UpdateDeliverableDto {
   allowLateSubmission?: boolean;
 
   @ApiPropertyOptional({ description: "Late submission penalty" })
-  @IsDecimal()
+  @IsNumber()
   @IsOptional()
   @Type(() => Number)
   lateSubmissionPenalty?: number;
