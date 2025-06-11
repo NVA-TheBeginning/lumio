@@ -166,7 +166,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{deliverable.title}</h3>
+                        <h3 className="font-medium">{deliverable.name}</h3>
                         {getDeliverableStatusBadge(deliverable.status)}
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">{deliverable.description}</p>

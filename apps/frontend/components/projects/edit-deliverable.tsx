@@ -1,9 +1,26 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createDeliverable, ProjectType } from "@/app/dashboard/teachers/projects/actions";
+import {
+  DeliverableType,
+  deleteDeliverable,
+  ProjectType,
+  updateDeliverable,
+} from "@/app/dashboard/teachers/projects/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -19,14 +36,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-interface CreateDeliverableDialogProps {
+interface EditDeliverableDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  deliverable: DeliverableType | null;
   project: ProjectType;
   onSuccess: () => void;
 }
 
-export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess }: CreateDeliverableDialogProps) {
+export function EditDeliverableDialog({
+  open,
+  onOpenChange,
+  deliverable,
+  project,
+  onSuccess,
+}: EditDeliverableDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
@@ -35,13 +59,34 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
   const [lateSubmissionPenalty, setLateSubmissionPenalty] = useState(0);
   const [deliverableType, setDeliverableType] = useState<string[]>(["FILE"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Reset form when deliverable changes
+  useEffect(() => {
+    if (deliverable) {
+      setName(deliverable.name);
+      setDescription(deliverable.description || "");
+      // Convert from ISO string to datetime-local format
+      const date = new Date(deliverable.deadline);
+      const offset = date.getTimezoneOffset();
+      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+      setDeadline(localDate.toISOString().slice(0, 16));
+      setPromotionId(deliverable.promotionId.toString());
+      setAllowLateSubmission(deliverable.allowLateSubmission);
+      setLateSubmissionPenalty(deliverable.lateSubmissionPenalty);
+      setDeliverableType(deliverable.type);
+    }
+  }, [deliverable]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!deliverable) return;
+
     setIsSubmitting(true);
 
     try {
-      await createDeliverable({
+      await updateDeliverable({
+        id: deliverable.id,
         projectId: project.id,
         promotionId: Number(promotionId),
         name,
@@ -52,33 +97,44 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
         type: deliverableType,
       });
 
-      // Reset form
-      setName("");
-      setDescription("");
-      setDeadline("");
-      setPromotionId("");
-      setAllowLateSubmission(false);
-      setLateSubmissionPenalty(0);
-      setDeliverableType(["FILE"]);
-
       onOpenChange(false);
       onSuccess();
-      toast.success("Livrable créé avec succès !");
+      toast.success("Livrable modifié avec succès !");
     } catch (error) {
-      console.error("Erreur lors de la création du livrable:", error);
-      toast.error("Erreur lors de la création du livrable");
+      console.error("Erreur lors de la modification du livrable:", error);
+      toast.error("Erreur lors de la modification du livrable");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!deliverable) return;
+
+    setIsDeleting(true);
+
+    try {
+      await deleteDeliverable(deliverable.id);
+      onOpenChange(false);
+      onSuccess();
+      toast.success("Livrable supprimé avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de la suppression du livrable:", error);
+      toast.error("Erreur lors de la suppression du livrable");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (!deliverable) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Créer un nouveau livrable</DialogTitle>
-            <DialogDescription>Définissez un nouveau livrable pour une promotion spécifique.</DialogDescription>
+            <DialogTitle>Modifier le livrable</DialogTitle>
+            <DialogDescription>Modifiez les détails de ce livrable.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -153,13 +209,36 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Création en cours..." : "Créer le livrable"}
-            </Button>
+          <DialogFooter className="gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" size="sm" disabled={isDeleting}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? "Suppression..." : "Supprimer"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action ne peut pas être annulée. Cela supprimera définitivement ce livrable et toutes les
+                    soumissions associées.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>Supprimer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Modification..." : "Modifier"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

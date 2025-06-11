@@ -3,7 +3,6 @@
 import { Clock, Filter, Plus, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JSX, useState } from "react";
-import { toast } from "sonner";
 import { DeliverableType, ProjectType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { CreateDeliverableDialog } from "../create-deliverables";
+import { EditDeliverableDialog } from "../edit-deliverable";
 
 interface ProjectDeliverablesProps {
   project: ProjectType;
@@ -20,6 +20,8 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
   const router = useRouter();
   const [activePromotion, setActivePromotion] = useState<string | undefined>(project.promotions[0]?.id.toString());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedDeliverable, setSelectedDeliverable] = useState<DeliverableType | null>(null);
 
   const getDeliverableStatusBadge = (status: string) => {
     switch (status) {
@@ -36,6 +38,11 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
 
   const handleViewDeliverable = (deliverableId: number) => {
     router.push(`/dashboard/teachers/projects/${project.id}/deliverables/${deliverableId}`);
+  };
+
+  const handleEditDeliverable = (deliverable: DeliverableType) => {
+    setSelectedDeliverable(deliverable);
+    setShowEditDialog(true);
   };
 
   const getPromotionDeliverables = (promotionId: string) => {
@@ -89,6 +96,7 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
                   promotion={promotion}
                   deliverables={getPromotionDeliverables(promotion.id.toString())}
                   onViewDeliverable={handleViewDeliverable}
+                  onEditDeliverable={handleEditDeliverable}
                   getDeliverableStatusBadge={getDeliverableStatusBadge}
                 />
               </TabsContent>
@@ -101,9 +109,15 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         project={project}
-        onSuccess={(): void => {
-          toast.success("Livrable créé avec succès !");
-        }}
+        onSuccess={() => {}}
+      />
+
+      <EditDeliverableDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        deliverable={selectedDeliverable}
+        project={project}
+        onSuccess={() => {}}
       />
     </div>
   );
@@ -113,6 +127,7 @@ interface PromotionDeliverablesProps {
   promotion: PromotionType;
   deliverables: DeliverableType[];
   onViewDeliverable: (id: number) => void;
+  onEditDeliverable: (deliverable: DeliverableType) => void;
   getDeliverableStatusBadge: (status: string) => JSX.Element;
 }
 
@@ -120,6 +135,7 @@ function PromotionDeliverables({
   promotion,
   deliverables,
   onViewDeliverable,
+  onEditDeliverable,
   getDeliverableStatusBadge,
 }: PromotionDeliverablesProps) {
   if (deliverables.length === 0) {
@@ -143,7 +159,7 @@ function PromotionDeliverables({
         >
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium">{deliverable.title}</h3>
+              <h3 className="font-medium">{deliverable.name}</h3>
               {getDeliverableStatusBadge(deliverable.status)}
             </div>
             <p className="text-sm text-muted-foreground mt-1">{deliverable.description}</p>
@@ -161,9 +177,14 @@ function PromotionDeliverables({
               </div> */}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => onViewDeliverable(deliverable.id)}>
-            Gérer
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => onEditDeliverable(deliverable)}>
+              Modifier
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onViewDeliverable(deliverable.id)}>
+              Gérer
+            </Button>
+          </div>
         </div>
       ))}
     </div>
