@@ -1,7 +1,10 @@
 "use client";
 
 import { AlertCircle, Award, Calendar, CheckCircle, Clock, Download, Eye, FileText, Upload, Users } from "lucide-react";
+import { useState } from "react";
 import { DeliverableType } from "@/app/dashboard/teachers/projects/actions";
+import { SubmissionDetailsDialog } from "@/components/students/submission-details-dialog";
+import { SubmissionDialog } from "@/components/students/submission-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +23,74 @@ interface StudentProjectViewProps {
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
+type ProjectSubmission = {
+  groupId: number;
+  status: string;
+  submittedAt: string | null;
+  grade: number | null;
+  deliverableId: number;
+};
+
+type DialogSubmission = {
+  id: number;
+  deliverableId: number;
+  status: string;
+  penalty: number;
+  submissionDate: string;
+  fileUrl?: string;
+  gitUrl?: string;
+};
+
 export default function StudentProjectView({ projectId, currentUserId }: StudentProjectViewProps) {
-  const { data: project, isLoading } = useProjectStudent(projectId);
+  const { data: project, isLoading, refetch } = useProjectStudent(projectId);
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
+
+  const [submissionDialog, setSubmissionDialog] = useState<{
+    open: boolean;
+    deliverable: DeliverableType | null;
+  }>({ open: false, deliverable: null });
+
+  const [submissionDetailsDialog, setSubmissionDetailsDialog] = useState<{
+    open: boolean;
+    submission: DialogSubmission | null;
+    deliverable: DeliverableType | null;
+  }>({ open: false, submission: null, deliverable: null });
+
+  const handleOpenSubmissionDialog = (deliverable: DeliverableType) => {
+    setSubmissionDialog({ open: true, deliverable });
+  };
+
+  const handleCloseSubmissionDialog = () => {
+    setSubmissionDialog({ open: false, deliverable: null });
+  };
+
+  const handleOpenSubmissionDetailsDialog = async (submission: ProjectSubmission, deliverable: DeliverableType) => {
+    const compatibleSubmission = {
+      id: 0,
+      deliverableId: submission.deliverableId,
+      status: submission.status,
+      penalty: 0,
+      submissionDate: submission.submittedAt || new Date().toISOString(),
+      fileUrl: undefined,
+      gitUrl: undefined,
+    };
+    setSubmissionDetailsDialog({ open: true, submission: compatibleSubmission, deliverable });
+  };
+
+  const handleCloseSubmissionDetailsDialog = () => {
+    setSubmissionDetailsDialog({ open: false, submission: null, deliverable: null });
+  };
+
+  const handleSubmissionSuccess = () => {
+    handleCloseSubmissionDialog();
+    refetch();
+  };
+
+  const handleSubmissionDeleted = () => {
+    handleCloseSubmissionDetailsDialog();
+    refetch();
+  };
 
   if (isLoading || !project) {
     return (
@@ -107,7 +174,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           </div>
         </CardHeader>
       </Card>
-
       {!currentUserGroup && groupDeadlineStatus && (
         <Alert variant={groupDeadlineStatus.isOverdue ? "destructive" : "default"}>
           <AlertCircle className="h-4 w-4" />
@@ -118,7 +184,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           </AlertDescription>
         </Alert>
       )}
-
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -262,11 +327,20 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                           <div className="flex gap-2">
                             {submission?.status === "SUBMITTED" ? (
                               <>
-                                <Button size="sm" variant="outline">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenSubmissionDetailsDialog(submission, deliverable)}
+                                >
                                   <Eye className="h-4 w-4 mr-2" />
                                   Voir la soumission
                                 </Button>
-                                <Button size="sm" variant="outline">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenSubmissionDialog(deliverable)}
+                                  disabled={!currentUserGroup}
+                                >
                                   <Upload className="h-4 w-4 mr-2" />
                                   Soumettre à nouveau
                                 </Button>
@@ -276,6 +350,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                                 size="sm"
                                 disabled={!currentUserGroup}
                                 variant={currentUserGroup ? "default" : "outline"}
+                                onClick={() => handleOpenSubmissionDialog(deliverable)}
                               >
                                 <Upload className="h-4 w-4 mr-2" />
                                 {currentUserGroup ? "Soumettre" : "Rejoignez un groupe pour soumettre"}
@@ -464,6 +539,28 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           </Card>
         </TabsContent>
       </Tabs>
+      {submissionDialog.deliverable && currentUserGroup && (
+        <SubmissionDialog
+          open={submissionDialog.open}
+          onOpenChange={(open) => {
+            if (!open) {
+              handleCloseSubmissionDialog();
+            }
+          }}
+          deliverable={submissionDialog.deliverable}
+          groupId={currentUserGroup.id}
+          onSuccess={handleSubmissionSuccess}
+        />
+      )}
+      {submissionDetailsDialog.submission && submissionDetailsDialog.deliverable && (
+        <SubmissionDetailsDialog
+          open={submissionDetailsDialog.open}
+          onOpenChange={handleCloseSubmissionDetailsDialog}
+          submission={submissionDetailsDialog.submission}
+          deliverable={submissionDetailsDialog.deliverable}
+          onSuccess={handleSubmissionDeleted}
+        />
+      )}
     </div>
   );
 }
