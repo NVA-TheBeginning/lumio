@@ -39,7 +39,7 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (!(selectedFile.type.includes("zip") && selectedFile.name.endsWith(".zip"))) {
+      if (!selectedFile.name.endsWith(".zip")) {
         toast.error("Veuillez sélectionner un fichier ZIP");
         return;
       }
