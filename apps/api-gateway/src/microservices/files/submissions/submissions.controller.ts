@@ -66,12 +66,12 @@ export class SubmissionsController {
     });
   }
 
-  @Get("deliverables/:idDeliverable/submissions")
+  @Get("deliverables/:groupId/submissions")
   @ApiOperation({ summary: "Get all submissions for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: number) {
-    return this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submissions`, "GET");
+  async findAllByDeliverable(@Param("groupId") groupId: number) {
+    return this.proxy.forwardRequest("files", `/deliverables/${groupId}/submissions`, "GET");
   }
 
   @Get("deliverables/:idDeliverable/submissions/:idSubmission")

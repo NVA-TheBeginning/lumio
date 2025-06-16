@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { File } from "@nest-lab/fastify-multer";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { DeliverableType } from "@prisma-files/client";
 import type { PrismaService } from "@/prisma.service";
 import type { S3Service } from "@/s3.service";
@@ -39,11 +39,13 @@ describe("SubmissionsController", () => {
   const mockPrismaService = {
     deliverables: {
       findUnique: mock(),
+      findUniqueOrThrow: mock(),
     },
     submissions: {
       create: mock(),
       findMany: mock(),
       findUnique: mock(),
+      findUniqueOrThrow: mock(),
       delete: mock(),
     },
   };
@@ -164,13 +166,8 @@ describe("SubmissionsController", () => {
     });
   });
 
-  describe("findAllByDeliverable", () => {
-    test("should get all submissions for a deliverable", async () => {
-      const mockDeliverable = {
-        id: 1,
-        type: [DeliverableType.FILE],
-      };
-
+  describe("find all submissions of a group", () => {
+    test("should return all submissions for a group", async () => {
       const mockSubmissions = [
         {
           id: 1,
@@ -178,61 +175,182 @@ describe("SubmissionsController", () => {
           groupId: 123,
           status: "PASSED",
           penalty: 0,
-          fileUrl: "mocked-zip-key-1",
-          submissionDate: new Date(),
+          fileUrl: "mocked-file-key-1",
+          submissionDate: new Date("2025-06-15T10:00:00Z"),
         },
         {
           id: 2,
-          deliverableId: 1,
-          groupId: 124,
+          deliverableId: 2,
+          groupId: 123,
           status: "LATE",
           penalty: 5,
-          fileUrl: "mocked-zip-key-2",
+          fileUrl: "mocked-file-key-2",
+          submissionDate: new Date("2025-06-14T14:30:00Z"),
+        },
+      ];
+
+      const mockDeliverable = {
+        id: 1,
+        type: [DeliverableType.FILE],
+      };
+
+      const expectedResponse = [
+        {
+          submissionId: 1,
+          deliverableId: 1,
+          fileKey: "mocked-file-key-1",
+          mimeType: "application/zip",
+          buffer: Buffer.from("test data 1"),
+          submissionDate: new Date("2025-06-15T10:00:00Z"),
+          groupId: 123,
+          penalty: 0,
+          type: [DeliverableType.FILE],
+          status: "PASSED",
+        },
+        {
+          submissionId: 2,
+          deliverableId: 2,
+          fileKey: "mocked-file-key-2",
+          mimeType: "application/zip",
+          buffer: Buffer.from("test data 2"),
+          submissionDate: new Date("2025-06-14T14:30:00Z"),
+          groupId: 123,
+          penalty: 5,
+          type: [DeliverableType.FILE],
+          status: "LATE",
+        },
+      ];
+
+      mockPrismaService.submissions.findMany.mockResolvedValue(mockSubmissions);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockS3Service.getFile
+        .mockResolvedValueOnce(Buffer.from("test data 1"))
+        .mockResolvedValueOnce(Buffer.from("test data 2"));
+
+      const result = await controller.findAllByDeliverable(123);
+
+      expect(result).toEqual(expectedResponse);
+      expect(mockPrismaService.submissions.findMany).toHaveBeenCalledWith({
+        where: { groupId: 123 },
+        orderBy: { submissionDate: "desc" },
+      });
+      expect(mockS3Service.getFile).toHaveBeenCalledTimes(2);
+      expect(mockS3Service.getFile).toHaveBeenCalledWith("mocked-file-key-1");
+      expect(mockS3Service.getFile).toHaveBeenCalledWith("mocked-file-key-2");
+    });
+
+    test("should return empty array when group has no submissions", async () => {
+      mockPrismaService.submissions.findMany.mockResolvedValue([]);
+
+      const result = await controller.findAllByDeliverable(123);
+
+      expect(result).toEqual([]);
+      expect(mockPrismaService.submissions.findMany).toHaveBeenCalledWith({
+        where: { groupId: 123 },
+        orderBy: { submissionDate: "desc" },
+      });
+    });
+
+    test("should throw BadRequestException when submission has missing fileUrl", async () => {
+      const mockSubmissions = [
+        {
+          id: 1,
+          deliverableId: 1,
+          groupId: 123,
+          status: "PASSED",
+          penalty: 0,
+          fileUrl: null,
           submissionDate: new Date(),
         },
       ];
 
-      const mockFileResponses = mockSubmissions.map((submission) => ({
-        submissionId: submission.id,
-        deliverableId: 1,
-        fileKey: submission.fileUrl,
-        mimeType: "application/zip",
-        buffer: Buffer.from("test data"),
-        submissionDate: submission.submissionDate,
-        groupId: submission.groupId,
-        penalty: Number(submission.penalty),
-        type: mockDeliverable.type,
-        status: submission.status,
-      }));
-
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
       mockPrismaService.submissions.findMany.mockResolvedValue(mockSubmissions);
-      mockS3Service.getFile.mockResolvedValue(Buffer.from("test data"));
-
-      const result = await controller.findAllByDeliverable(1);
-
-      expect(result).toEqual(mockFileResponses);
-      expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
-      expect(mockPrismaService.submissions.findMany).toHaveBeenCalledWith({
-        where: { deliverableId: 1 },
-        orderBy: { submissionDate: "desc" },
-      });
-      expect(mockS3Service.getFile).toHaveBeenCalledTimes(mockSubmissions.length);
-    });
-
-    test("should throw NotFoundException when deliverable doesn't exist", async () => {
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(null);
 
       let error: Error | null = null;
       try {
-        await controller.findAllByDeliverable(1);
+        await controller.findAllByDeliverable(123);
       } catch (e) {
         error = e as Error;
       }
 
-      expect(error).toBeInstanceOf(NotFoundException);
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error?.message).toContain("File not found for submission");
+    });
+
+    test("should throw BadRequestException when file retrieval fails", async () => {
+      const mockSubmissions = [
+        {
+          id: 1,
+          deliverableId: 1,
+          groupId: 123,
+          status: "PASSED",
+          penalty: 0,
+          fileUrl: "mocked-file-key",
+          submissionDate: new Date(),
+        },
+      ];
+
+      const mockDeliverable = {
+        id: 1,
+        type: [DeliverableType.FILE],
+      };
+
+      mockPrismaService.submissions.findMany.mockResolvedValue(mockSubmissions);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockS3Service.getFile.mockRejectedValue(new Error("S3 error"));
+
+      let error: Error | null = null;
+      try {
+        await controller.findAllByDeliverable(123);
+      } catch (e) {
+        error = e as Error;
+      }
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error?.message).toContain("File not found for submission");
+    });
+
+    test("should handle submissions with different deliverable types", async () => {
+      const mockSubmissions = [
+        {
+          id: 1,
+          deliverableId: 1,
+          groupId: 123,
+          status: "PASSED",
+          penalty: 0,
+          fileUrl: "mocked-file-key",
+          submissionDate: new Date(),
+        },
+      ];
+
+      const mockDeliverable = {
+        id: 1,
+        type: [DeliverableType.GIT],
+      };
+
+      const expectedResponse = [
+        {
+          submissionId: 1,
+          deliverableId: 1,
+          fileKey: "mocked-file-key",
+          mimeType: "application/zip",
+          buffer: Buffer.from("test data"),
+          submissionDate: mockSubmissions[0].submissionDate,
+          groupId: 123,
+          penalty: 0,
+          type: [DeliverableType.GIT],
+          status: "PASSED",
+        },
+      ];
+
+      mockPrismaService.submissions.findMany.mockResolvedValue(mockSubmissions);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockS3Service.getFile.mockResolvedValue(Buffer.from("test data"));
+
+      const result = await controller.findAllByDeliverable(123);
+
+      expect(result).toEqual(expectedResponse);
+      expect(result[0].type).toEqual([DeliverableType.GIT]);
     });
   });
 
@@ -266,33 +384,34 @@ describe("SubmissionsController", () => {
         status: mockSubmission.status,
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.findUnique.mockResolvedValue(mockSubmission);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockPrismaService.submissions.findUniqueOrThrow.mockResolvedValue(mockSubmission);
       mockS3Service.getFile.mockResolvedValue(Buffer.from("test data"));
 
       const result = await controller.findOne(1, 1);
 
       expect(result).toEqual(mockFileResponse);
-      expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.deliverables.findUniqueOrThrow).toHaveBeenCalledWith({
         where: { id: 1 },
       });
-      expect(mockPrismaService.submissions.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.submissions.findUniqueOrThrow).toHaveBeenCalledWith({
         where: { id: 1 },
       });
       expect(mockS3Service.getFile).toHaveBeenCalledWith(mockSubmission.fileUrl);
     });
 
     test("should throw NotFoundException when deliverable doesn't exist", async () => {
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(null);
+      const error = new Error("Record not found");
+      mockPrismaService.deliverables.findUniqueOrThrow.mockRejectedValue(error);
 
-      let error: Error | null = null;
+      let caughtError: Error | null = null;
       try {
         await controller.findOne(1, 1);
       } catch (e) {
-        error = e as Error;
+        caughtError = e as Error;
       }
 
-      expect(error).toBeInstanceOf(NotFoundException);
+      expect(caughtError).toBe(error);
     });
 
     test("should throw NotFoundException when submission doesn't exist", async () => {
@@ -301,17 +420,18 @@ describe("SubmissionsController", () => {
         type: DeliverableType.FILE,
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.findUnique.mockResolvedValue(null);
+      const error = new Error("Record not found");
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockPrismaService.submissions.findUniqueOrThrow.mockRejectedValue(error);
 
-      let error: Error | null = null;
+      let caughtError: Error | null = null;
       try {
         await controller.findOne(1, 1);
       } catch (e) {
-        error = e as Error;
+        caughtError = e as Error;
       }
 
-      expect(error).toBeInstanceOf(NotFoundException);
+      expect(caughtError).toBe(error);
     });
 
     test("should throw BadRequestException when fileUrl is missing", async () => {
@@ -330,8 +450,8 @@ describe("SubmissionsController", () => {
         submissionDate: new Date(),
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.findUnique.mockResolvedValue(mockSubmission);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockPrismaService.submissions.findUniqueOrThrow.mockResolvedValue(mockSubmission);
 
       let error: Error | null = null;
       try {
@@ -362,17 +482,17 @@ describe("SubmissionsController", () => {
         submissionDate: new Date(),
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.findUnique.mockResolvedValue(mockSubmission);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockPrismaService.submissions.findUniqueOrThrow.mockResolvedValue(mockSubmission);
       mockPrismaService.submissions.delete.mockResolvedValue({});
       mockS3Service.deleteFile.mockResolvedValue(undefined);
 
       await controller.deleteSubmission(1, 1);
 
-      expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.deliverables.findUniqueOrThrow).toHaveBeenCalledWith({
         where: { id: 1 },
       });
-      expect(mockPrismaService.submissions.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.submissions.findUniqueOrThrow).toHaveBeenCalledWith({
         where: { id: 1 },
       });
       expect(mockS3Service.deleteFile).toHaveBeenCalledWith(mockSubmission.fileUrl);
@@ -382,16 +502,17 @@ describe("SubmissionsController", () => {
     });
 
     test("should throw NotFoundException when deliverable doesn't exist", async () => {
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(null);
+      const error = new Error("Record not found");
+      mockPrismaService.deliverables.findUniqueOrThrow.mockRejectedValue(error);
 
-      let error: Error | null = null;
+      let caughtError: Error | null = null;
       try {
         await controller.deleteSubmission(1, 1);
       } catch (e) {
-        error = e as Error;
+        caughtError = e as Error;
       }
 
-      expect(error).toBeInstanceOf(NotFoundException);
+      expect(caughtError).toBe(error);
     });
 
     test("should throw NotFoundException when submission doesn't exist", async () => {
@@ -400,17 +521,18 @@ describe("SubmissionsController", () => {
         type: DeliverableType.FILE,
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.findUnique.mockResolvedValue(null);
+      const error = new Error("Record not found");
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockPrismaService.submissions.findUniqueOrThrow.mockRejectedValue(error);
 
-      let error: Error | null = null;
+      let caughtError: Error | null = null;
       try {
         await controller.deleteSubmission(1, 1);
       } catch (e) {
-        error = e as Error;
+        caughtError = e as Error;
       }
 
-      expect(error).toBeInstanceOf(NotFoundException);
+      expect(caughtError).toBe(error);
     });
 
     test("should handle submission with missing fileUrl", async () => {
@@ -429,8 +551,8 @@ describe("SubmissionsController", () => {
         submissionDate: new Date(),
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
-      mockPrismaService.submissions.findUnique.mockResolvedValue(mockSubmission);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockPrismaService.submissions.findUniqueOrThrow.mockResolvedValue(mockSubmission);
       mockPrismaService.submissions.delete.mockResolvedValue({});
 
       await controller.deleteSubmission(1, 1);

@@ -63,12 +63,12 @@ export class SubmissionsController {
     return this.submissionsService.submit(Number(idDeliverable), Number(groupId), file?.buffer as Buffer, gitUrl);
   }
 
-  @Get("deliverables/:idDeliverable/submissions")
-  @ApiOperation({ summary: "Get all submissions for a deliverable" })
+  @Get("deliverables/:groupId/submissions")
+  @ApiOperation({ summary: "Get all submissions for a group" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("idDeliverable") idDeliverable: number): Promise<SubmissionFileResponse[]> {
-    return this.submissionsService.findAllSubmissions(Number(idDeliverable));
+  async findAllByDeliverable(@Param("groupId") groupId: number): Promise<SubmissionFileResponse[]> {
+    return this.submissionsService.findAllGroupSubmissions(Number(groupId));
   }
 
   @Get("deliverables/:idDeliverable/submissions/:idSubmission")

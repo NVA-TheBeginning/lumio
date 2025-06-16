@@ -66,7 +66,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   };
 
   const handleOpenSubmissionDetailsDialog = async (submission: ProjectSubmission, deliverable: DeliverableType) => {
-    const compatibleSubmission = {
+    const sub = {
       id: 0,
       deliverableId: submission.deliverableId,
       status: submission.status,
@@ -75,7 +75,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
       fileUrl: undefined,
       gitUrl: undefined,
     };
-    setSubmissionDetailsDialog({ open: true, submission: compatibleSubmission, deliverable });
+    setSubmissionDetailsDialog({ open: true, submission: sub, deliverable });
   };
 
   const handleCloseSubmissionDetailsDialog = () => {
@@ -128,7 +128,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     const submission = project.submissions?.find(
       (s) => s.groupId === currentUserGroup?.id && s.deliverableId === deliverable.id,
     );
-
+    console.log("Submission:", project.submissions);
     if (submission?.status === "SUBMITTED") {
       return {
         label: submission.grade ? `Noté (${submission.grade}/20)` : "Soumis",
@@ -492,7 +492,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
               <CardDescription>Consultez vos notes, commentaires et soutenances à venir</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Presentations section */}
               <div>
                 <h4 className="font-medium mb-3">Soutenances</h4>
                 <div className="text-center py-8 text-muted-foreground">
@@ -503,7 +502,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
               <Separator />
 
-              {/* Grades section */}
               <div>
                 <h4 className="font-medium mb-3">Notes et commentaires</h4>
                 {project.submissions?.some((s) => s.grade) ? (

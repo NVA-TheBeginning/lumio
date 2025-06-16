@@ -141,17 +141,9 @@ export class SubmissionsService {
     });
   }
 
-  async findAllSubmissions(idDeliverable: number): Promise<SubmissionFileResponse[]> {
-    const deliverable = await this.prisma.deliverables.findUnique({
-      where: { id: Number(idDeliverable) },
-    });
-
-    if (!deliverable) {
-      throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
-    }
-
+  async findAllGroupSubmissions(groupId: number): Promise<SubmissionFileResponse[]> {
     const submissions = await this.prisma.submissions.findMany({
-      where: { deliverableId: idDeliverable },
+      where: { groupId },
       orderBy: { submissionDate: "desc" },
     });
 
@@ -162,10 +154,15 @@ export class SubmissionsService {
           if (!submission.fileUrl) {
             throw new BadRequestException("File URL is missing for submission");
           }
+          const deliverable = await this.prisma.deliverables.findUniqueOrThrow({
+            where: { id: submission.deliverableId },
+            select: { type: true },
+          });
+
           const file = await this.s3Service.getFile(submission.fileUrl);
           submissionFileResponses.push({
             submissionId: submission.id,
-            deliverableId: idDeliverable,
+            deliverableId: submission.deliverableId,
             fileKey: submission.fileUrl,
             mimeType: "application/zip",
             buffer: file,
@@ -186,23 +183,15 @@ export class SubmissionsService {
   }
 
   async findSubmissionById(idDeliverable: number, idSubmission: number): Promise<SubmissionFileResponse> {
-    const deliverable = await this.prisma.deliverables.findUnique({
+    const deliverable = await this.prisma.deliverables.findUniqueOrThrow({
       where: { id: Number(idDeliverable) },
     });
 
-    if (!deliverable) {
-      throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
-    }
-
-    const submission = await this.prisma.submissions.findUnique({
+    const submission = await this.prisma.submissions.findUniqueOrThrow({
       where: { id: Number(idSubmission) },
     });
 
-    if (!submission) {
-      throw new NotFoundException(`Submission with ID ${idSubmission} not found`);
-    }
-
-    if (!submission.fileUrl) {
+    if (!submission?.fileUrl) {
       throw new BadRequestException("File URL is missing for submission");
     }
 
@@ -223,21 +212,13 @@ export class SubmissionsService {
   }
 
   async deleteSubmission(idDeliverable: number, idSubmission: number): Promise<void> {
-    const deliverable = await this.prisma.deliverables.findUnique({
+    await this.prisma.deliverables.findUniqueOrThrow({
       where: { id: Number(idDeliverable) },
     });
 
-    if (!deliverable) {
-      throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
-    }
-
-    const submission = await this.prisma.submissions.findUnique({
+    const submission = await this.prisma.submissions.findUniqueOrThrow({
       where: { id: Number(idSubmission) },
     });
-
-    if (!submission) {
-      throw new NotFoundException(`Submission with ID ${idSubmission} not found`);
-    }
 
     if (submission?.fileUrl) {
       await this.s3Service.deleteFile(submission.fileUrl);
