@@ -141,9 +141,9 @@ export class SubmissionsService {
     });
   }
 
-  async findAllGroupSubmissions(groupId: number): Promise<SubmissionFileResponse[]> {
+  async findAllGroupSubmissions(groupId: number, idDeliverable?: number): Promise<SubmissionFileResponse[]> {
     const submissions = await this.prisma.submissions.findMany({
-      where: { groupId },
+      where: { groupId, ...(idDeliverable && { deliverableId: idDeliverable }) },
       orderBy: { submissionDate: "desc" },
     });
 

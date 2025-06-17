@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
@@ -70,7 +71,14 @@ export class SubmissionsController {
   @ApiOperation({ summary: "Get all submissions for a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("groupId") groupId: number) {
+  async findAllByDeliverable(@Param("groupId") groupId: number, @Query("idDeliverable") idDeliverable?: number) {
+    if (idDeliverable) {
+      return this.proxy.forwardRequest(
+        "files",
+        `/deliverables/${groupId}/submissions?idDeliverable=${idDeliverable}`,
+        "GET",
+      );
+    }
     return this.proxy.forwardRequest("files", `/deliverables/${groupId}/submissions`, "GET");
   }
 

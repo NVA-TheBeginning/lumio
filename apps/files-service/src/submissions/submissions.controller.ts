@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
@@ -67,8 +68,11 @@ export class SubmissionsController {
   @ApiOperation({ summary: "Get all submissions for a group" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
-  async findAllByDeliverable(@Param("groupId") groupId: number): Promise<SubmissionFileResponse[]> {
-    return this.submissionsService.findAllGroupSubmissions(Number(groupId));
+  async findAllByDeliverable(
+    @Param("groupId") groupId: number,
+    @Query("idDeliverable") idDeliverable?: number,
+  ): Promise<SubmissionFileResponse[]> {
+    return this.submissionsService.findAllGroupSubmissions(Number(groupId), idDeliverable);
   }
 
   @Get("deliverables/:idDeliverable/submissions/:idSubmission")
