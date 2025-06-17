@@ -10,6 +10,13 @@ interface S3Config {
   endpoint: string;
 }
 
+interface S3Stat {
+  etag: string;
+  lastModified: Date;
+  size: number;
+  type: string;
+}
+
 @Injectable()
 export class S3Service {
   private s3Client: S3Client;
@@ -53,12 +60,81 @@ export class S3Service {
   }
 
   /**
+   * Get file metadata from S3 bucket using stat()
+   * @param key The object key in S3
+   * @returns File metadata including size, lastModified, and contentType
+   */
+  async getFileMetadata(key: string): Promise<{ size: number; lastModified: Date; contentType: string }> {
+    try {
+      const s3file = this.s3Client.file(key);
+      const stat: S3Stat = await s3file.stat();
+
+      return {
+        size: stat.size || 0,
+        lastModified: stat.lastModified || new Date(),
+        contentType: stat.type || "application/zip",
+      };
+    } catch (error) {
+      console.error(`S3 metadata retrieval failed for key: ${key}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if a file exists in S3 bucket
+   * @param key The object key in S3
+   * @returns True if file exists, false otherwise
+   */
+  async fileExists(key: string): Promise<boolean> {
+    try {
+      const s3file = this.s3Client.file(key);
+      return await s3file.exists();
+    } catch (error) {
+      console.error(`S3 file existence check failed for key: ${key}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get file size from S3 bucket
+   * @param key The object key in S3
+   * @returns File size in bytes
+   */
+  async getFileSize(key: string): Promise<number> {
+    try {
+      return await this.s3Client.size(key);
+    } catch (error) {
+      console.error(`S3 file size retrieval failed for key: ${key}`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Delete a file from S3 bucket
    * @param key The object key in S3
    */
   async deleteFile(key: string): Promise<void> {
     const s3file = this.s3Client.file(key);
     await s3file.delete();
+  }
+
+  /**
+   * Generate a presigned URL for S3 file
+   * @param key The object key in S3
+   * @param expiresIn Expiration time in seconds (default: 24 hours)
+   * @param method HTTP method (default: "GET")
+   * @returns Presigned URL
+   */
+  generatePresignedUrl(
+    key: string,
+    expiresIn: number = 24 * 60 * 60,
+    method: "GET" | "PUT" | "DELETE" = "GET",
+  ): string {
+    const s3file = this.s3Client.file(key);
+    return s3file.presign({
+      expiresIn,
+      method,
+    });
   }
 
   /**
@@ -121,6 +197,40 @@ export class S3Service {
       return zipFiles;
     } catch (error) {
       console.error("Failed to retrieve zip files:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Get metadata for all submissions in a folder (optimized version)
+   * @param projectId The project ID
+   * @param promotionId The promotion ID
+   * @param stepId The step ID
+   * @returns An array of file metadata
+   */
+  async getAllSubmissionsMetadata(
+    projectId: number,
+    promotionId: number,
+    stepId: number,
+  ): Promise<Array<{ key: string; size: number; lastModified: Date }>> {
+    const folderPath = `project-${projectId}/promo-${promotionId}/step-${stepId}/`;
+
+    try {
+      const objects = await this.s3Client.list({ prefix: folderPath });
+
+      if (!objects?.contents) {
+        return [];
+      }
+
+      return objects.contents
+        .filter((obj) => obj.key.endsWith(".zip"))
+        .map((obj) => ({
+          key: obj.key,
+          size: obj.size || 0,
+          lastModified: obj.lastModified ? new Date(obj.lastModified) : new Date(),
+        }));
+    } catch (error) {
+      console.error("Failed to retrieve zip files metadata:", error);
       return [];
     }
   }

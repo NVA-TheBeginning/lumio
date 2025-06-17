@@ -1,7 +1,11 @@
 "use client";
 
 import { AlertCircle, Award, Calendar, CheckCircle, Clock, Download, Eye, FileText, Upload, Users } from "lucide-react";
+import { useState } from "react";
+import { SubmissionMetadataResponse } from "@/app/dashboard/students/projects/actions";
 import { DeliverableType } from "@/app/dashboard/teachers/projects/actions";
+import { SubmissionDetailsDialog } from "@/components/students/submission-details-dialog";
+import { SubmissionDialog } from "@/components/students/submission-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJoinGroup, useLeaveGroup, useProjectStudent } from "@/hooks/use-project-student";
+import { useSubmissions } from "@/hooks/use-submissions";
 import { formatDate } from "@/lib/utils";
 
 interface StudentProjectViewProps {
@@ -20,10 +25,95 @@ interface StudentProjectViewProps {
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
+type DialogSubmission = {
+  submissionId: number;
+  deliverableId: number;
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  submissionDate: Date;
+  groupId: number;
+  penalty: number;
+  type: string[];
+  status: string;
+  lastModified: Date;
+  gitUrl?: string;
+  error?: boolean;
+};
+
 export default function StudentProjectView({ projectId, currentUserId }: StudentProjectViewProps) {
-  const { data: project, isLoading } = useProjectStudent(projectId);
+  const { data: project, isLoading, refetch } = useProjectStudent(projectId);
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
+
+  const currentUserGroup = project?.groups.find((group) => group.members.some((member) => member.id === currentUserId));
+
+  const { data: submissions, refetch: refetchSubmissions } = useSubmissions(
+    currentUserGroup?.id || 0,
+    undefined,
+    !!currentUserGroup,
+  );
+
+  const [submissionDialog, setSubmissionDialog] = useState<{
+    open: boolean;
+    deliverable: DeliverableType | null;
+  }>({ open: false, deliverable: null });
+
+  const [submissionDetailsDialog, setSubmissionDetailsDialog] = useState<{
+    open: boolean;
+    submission: DialogSubmission | null;
+    deliverable: DeliverableType | null;
+  }>({ open: false, submission: null, deliverable: null });
+
+  const handleOpenSubmissionDialog = (deliverable: DeliverableType) => {
+    setSubmissionDialog({ open: true, deliverable });
+  };
+
+  const handleCloseSubmissionDialog = () => {
+    setSubmissionDialog({ open: false, deliverable: null });
+  };
+
+  const handleOpenSubmissionDetailsDialog = (submission: SubmissionMetadataResponse, deliverable: DeliverableType) => {
+    const dialogSubmission: DialogSubmission = {
+      submissionId: submission.submissionId,
+      deliverableId: submission.deliverableId,
+      fileKey: submission.fileKey,
+      fileName: submission.fileName,
+      mimeType: submission.mimeType,
+      fileSize: submission.fileSize,
+      submissionDate: new Date(submission.submissionDate),
+      groupId: submission.groupId,
+      penalty: submission.penalty,
+      type: submission.type || deliverable.type,
+      status: submission.status,
+      lastModified: new Date(submission.lastModified),
+      gitUrl: submission.gitUrl || "",
+      error: submission.error,
+    };
+
+    setSubmissionDetailsDialog({
+      open: true,
+      submission: dialogSubmission,
+      deliverable,
+    });
+  };
+
+  const handleCloseSubmissionDetailsDialog = () => {
+    setSubmissionDetailsDialog({ open: false, submission: null, deliverable: null });
+  };
+
+  const handleSubmissionSuccess = () => {
+    handleCloseSubmissionDialog();
+    refetch();
+    refetchSubmissions();
+  };
+
+  const handleSubmissionDeleted = () => {
+    handleCloseSubmissionDetailsDialog();
+    refetch();
+    refetchSubmissions();
+  };
 
   if (isLoading || !project) {
     return (
@@ -38,9 +128,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     );
   }
 
-  const currentUserGroup = project.groups.find((group) => group.members.some((member) => member.id === currentUserId));
-
-  const completedDeliverables = project.submissions?.filter((s) => s.status === "SUBMITTED").length || 0;
+  const completedDeliverables = submissions?.length || 0;
   const totalDeliverables = project.deliverables.length;
   const projectProgress = totalDeliverables > 0 ? (completedDeliverables / totalDeliverables) * 100 : 0;
 
@@ -58,15 +146,16 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     const isOverdue = now > deadlineDate;
     const isUpcoming = deadlineDate.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000;
 
-    const submission = project.submissions?.find(
-      (s) => s.groupId === currentUserGroup?.id && s.deliverableId === deliverable.id,
+    // Use the new submissions data from React Query
+    const submission = submissions?.find(
+      (s) => s.deliverableId === deliverable.id && s.groupId === currentUserGroup?.id,
     );
 
-    if (submission?.status === "SUBMITTED") {
+    if (submission) {
       return {
-        label: submission.grade ? `Noté (${submission.grade}/20)` : "Soumis",
-        variant: (submission.grade ? "default" : "secondary") as BadgeVariant,
-        icon: submission.grade ? Award : CheckCircle,
+        label: "Soumis",
+        variant: "secondary" as BadgeVariant,
+        icon: CheckCircle,
       };
     }
     if (isOverdue) return { label: "En retard", variant: "destructive" as BadgeVariant, icon: AlertCircle };
@@ -107,7 +196,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           </div>
         </CardHeader>
       </Card>
-
       {!currentUserGroup && groupDeadlineStatus && (
         <Alert variant={groupDeadlineStatus.isOverdue ? "destructive" : "default"}>
           <AlertCircle className="h-4 w-4" />
@@ -118,7 +206,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           </AlertDescription>
         </Alert>
       )}
-
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -212,8 +299,9 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                 project.deliverables.map((deliverable) => {
                   const status = getDeliverableStatus(deliverable);
                   const StatusIcon = status.icon;
-                  const submission = project.submissions?.find(
-                    (s) => s.groupId === currentUserGroup?.id && s.deliverableId === deliverable.id,
+                  // Use the new submissions data
+                  const submission = submissions?.find(
+                    (s) => s.deliverableId === deliverable.id && s.groupId === currentUserGroup?.id,
                   );
 
                   return (
@@ -248,25 +336,29 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            {submission?.submittedAt && (
+                            {submission?.submissionDate && (
                               <span className="text-sm text-muted-foreground">
-                                Soumis le : {formatDate(submission.submittedAt)}
+                                Soumis le : {formatDate(submission.submissionDate.toString())}
                               </span>
-                            )}
-                            {submission?.grade && (
-                              <Badge variant="outline" className="text-base">
-                                Note : {submission.grade}/20
-                              </Badge>
                             )}
                           </div>
                           <div className="flex gap-2">
-                            {submission?.status === "SUBMITTED" ? (
+                            {submission ? (
                               <>
-                                <Button size="sm" variant="outline">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenSubmissionDetailsDialog(submission, deliverable)}
+                                >
                                   <Eye className="h-4 w-4 mr-2" />
                                   Voir la soumission
                                 </Button>
-                                <Button size="sm" variant="outline">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenSubmissionDialog(deliverable)}
+                                  disabled={!currentUserGroup}
+                                >
                                   <Upload className="h-4 w-4 mr-2" />
                                   Soumettre à nouveau
                                 </Button>
@@ -276,6 +368,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                                 size="sm"
                                 disabled={!currentUserGroup}
                                 variant={currentUserGroup ? "default" : "outline"}
+                                onClick={() => handleOpenSubmissionDialog(deliverable)}
                               >
                                 <Upload className="h-4 w-4 mr-2" />
                                 {currentUserGroup ? "Soumettre" : "Rejoignez un groupe pour soumettre"}
@@ -417,7 +510,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
               <CardDescription>Consultez vos notes, commentaires et soutenances à venir</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Presentations section */}
               <div>
                 <h4 className="font-medium mb-3">Soutenances</h4>
                 <div className="text-center py-8 text-muted-foreground">
@@ -428,7 +520,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
               <Separator />
 
-              {/* Grades section */}
               <div>
                 <h4 className="font-medium mb-3">Notes et commentaires</h4>
                 {project.submissions?.some((s) => s.grade) ? (
@@ -464,6 +555,28 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           </Card>
         </TabsContent>
       </Tabs>
+      {submissionDialog.deliverable && currentUserGroup && (
+        <SubmissionDialog
+          open={submissionDialog.open}
+          onOpenChange={(open) => {
+            if (!open) {
+              handleCloseSubmissionDialog();
+            }
+          }}
+          deliverable={submissionDialog.deliverable}
+          groupId={currentUserGroup.id}
+          onSuccess={handleSubmissionSuccess}
+        />
+      )}
+      {submissionDetailsDialog.submission && submissionDetailsDialog.deliverable && (
+        <SubmissionDetailsDialog
+          open={submissionDetailsDialog.open}
+          onOpenChange={handleCloseSubmissionDetailsDialog}
+          submission={submissionDetailsDialog.submission}
+          deliverable={submissionDetailsDialog.deliverable}
+          onSuccess={handleSubmissionDeleted}
+        />
+      )}
     </div>
   );
 }
