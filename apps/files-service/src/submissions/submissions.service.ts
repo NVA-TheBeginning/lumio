@@ -17,6 +17,7 @@ export interface SubmissionMetadataResponse {
   type: DeliverableType[];
   status: string;
   lastModified: Date;
+  gitUrl?: string;
   error?: boolean;
 }
 
@@ -200,6 +201,7 @@ export class SubmissionsService {
             penalty: Number(submission.penalty),
             type: submission.deliverable.type,
             status: submission.status,
+            gitUrl: submission.gitUrl || undefined,
             lastModified: metadata.lastModified,
           };
         }),

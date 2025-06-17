@@ -1,9 +1,8 @@
 "use client";
 
 import { Download, Eye, FileText, Github, Trash2 } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
-import { deleteSubmission } from "@/app/dashboard/students/projects/actions";
+import { downloadSubmission } from "@/app/dashboard/students/projects/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,18 +24,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useDeleteSubmission } from "@/hooks/use-submissions";
 
 interface SubmissionDetailsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   submission: {
-    id: number;
+    submissionId: number;
     deliverableId: number;
-    status: string;
+    fileKey: string;
+    fileName: string;
+    mimeType: string;
+    fileSize: number;
+    submissionDate: Date;
+    groupId: number;
     penalty: number;
-    submissionDate: string;
-    fileUrl?: string;
+    type: string[];
+    status: string;
+    lastModified: Date;
     gitUrl?: string;
+    error?: boolean;
   };
   deliverable: {
     id: number;
@@ -53,21 +60,17 @@ export function SubmissionDetailsDialog({
   deliverable,
   onSuccess,
 }: SubmissionDetailsProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteSubmissionMutation = useDeleteSubmission();
 
   const handleDelete = async () => {
-    setIsDeleting(true);
-
     try {
-      await deleteSubmission(submission.deliverableId, submission.id);
+      await deleteSubmissionMutation.mutateAsync(submission.submissionId);
       toast.success("Soumission supprimée avec succès");
       onOpenChange(false);
       onSuccess();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       toast.error("Erreur lors de la suppression");
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -84,14 +87,25 @@ export function SubmissionDetailsDialog({
     }
   };
 
-  const handleDownload = () => {
-    // TODO: Implémenter le téléchargement du fichier
-    toast.info("Téléchargement en cours...");
+  const handleDownload = async () => {
+    try {
+      toast.info("Téléchargement en cours...");
+      await downloadSubmission(submission.submissionId);
+      toast.success("Téléchargement terminé");
+    } catch (error) {
+      console.error("Erreur lors du téléchargement:", error);
+      toast.error("Erreur lors du téléchargement");
+    }
   };
 
   const openGitRepo = () => {
-    if (submission.gitUrl) {
-      window.open(submission.gitUrl, "_blank");
+    if (submission.type.includes("GIT") && submission.gitUrl) {
+      const gitUrl = submission.gitUrl.startsWith("https://") ? submission.gitUrl : null;
+      if (gitUrl) {
+        window.open(gitUrl, "_blank");
+      } else {
+        toast.error("URL Git non disponible");
+      }
     }
   };
 
@@ -136,11 +150,16 @@ export function SubmissionDetailsDialog({
           <div className="space-y-3">
             <div className="text-sm font-medium text-muted-foreground">Type de soumission</div>
 
-            {submission.fileUrl && (
+            {submission.type.includes("FILE") && submission.fileKey && (
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  <span className="text-sm">Fichier ZIP</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm">{submission.fileName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {(submission.fileSize / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                  </div>
                 </div>
                 <Button size="sm" variant="outline" onClick={handleDownload}>
                   <Download className="h-4 w-4 mr-1" />
@@ -149,11 +168,11 @@ export function SubmissionDetailsDialog({
               </div>
             )}
 
-            {submission.gitUrl && (
+            {submission.type.includes("GIT") && (
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-2">
                   <Github className="h-4 w-4" />
-                  <span className="text-sm truncate">{submission.gitUrl}</span>
+                  <span className="text-sm truncate">Dépôt Git</span>
                 </div>
                 <Button size="sm" variant="outline" onClick={openGitRepo}>
                   <Github className="h-4 w-4 mr-1" />
@@ -165,12 +184,12 @@ export function SubmissionDetailsDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          {submission.id > 0 && (
+          {submission.submissionId > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isDeleting}>
+                <Button variant="destructive" size="sm" disabled={deleteSubmissionMutation.isPending}>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  {isDeleting ? "Suppression..." : "Supprimer"}
+                  {deleteSubmissionMutation.isPending ? "Suppression..." : "Supprimer"}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>

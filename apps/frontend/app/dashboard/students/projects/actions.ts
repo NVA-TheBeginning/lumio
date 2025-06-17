@@ -1,4 +1,5 @@
 "use server";
+import { getTokens } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPostFormData } from "@/lib/utils";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
@@ -20,6 +21,23 @@ export interface SubmissionResponse {
   submissionDate: string;
 }
 
+export interface SubmissionMetadataResponse {
+  submissionId: number;
+  deliverableId: number;
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  submissionDate: Date;
+  groupId: number;
+  penalty: number;
+  type: string[];
+  status: string;
+  lastModified: Date;
+  gitUrl?: string;
+  error?: boolean;
+}
+
 export async function submitDeliverable(deliverableId: number, data: SubmissionData): Promise<SubmissionResponse> {
   const formData = new FormData();
 
@@ -36,14 +54,51 @@ export async function submitDeliverable(deliverableId: number, data: SubmissionD
   return await authPostFormData(`${API_URL}/deliverables/${deliverableId}/submit`, formData);
 }
 
-export async function getSubmissions(deliverableId: number) {
-  return await authFetchData(`${API_URL}/deliverables/${deliverableId}/submissions`);
+export async function getSubmissions(groupId: number, deliverableId?: number): Promise<SubmissionMetadataResponse[]> {
+  const url = deliverableId
+    ? `${API_URL}/deliverables/${groupId}/submissions?idDeliverable=${deliverableId}`
+    : `${API_URL}/deliverables/${groupId}/submissions`;
+  return await authFetchData(url);
 }
 
-export async function getSubmission(deliverableId: number, submissionId: number) {
-  return await authFetchData(`${API_URL}/deliverables/${deliverableId}/submissions/${submissionId}`);
+export async function downloadSubmission(submissionId: number): Promise<void> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
+
+  const response = await fetch(`${API_URL}/submissions/${submissionId}/download`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const contentDisposition = response.headers.get("content-disposition");
+  let filename = `submission-${submissionId}.zip`;
+
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch?.[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 }
 
-export async function deleteSubmission(deliverableId: number, submissionId: number): Promise<void> {
-  return await authDeleteData(`${API_URL}/deliverables/${deliverableId}/submissions/${submissionId}`);
+export async function deleteSubmission(submissionId: number): Promise<void> {
+  return await authDeleteData(`${API_URL}/submissions/${submissionId}`);
 }
