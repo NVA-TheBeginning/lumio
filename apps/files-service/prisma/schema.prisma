@@ -29,6 +29,8 @@ model Deliverables {
   type                  DeliverableType[]
   createdAt             DateTime          @default(now())
 
+  submissions Submissions[]
+
   @@id([id])
   @@map("DELIVERABLES")
   @@schema("files_schema")
@@ -69,6 +71,8 @@ model Submissions {
   penalty        Decimal
   fileUrl        String?
   gitUrl         String?
+
+  deliverable Deliverables @relation(fields: [deliverableId], references: [id])
 
   @@map("SUBMISSIONS")
   @@schema("files_schema")

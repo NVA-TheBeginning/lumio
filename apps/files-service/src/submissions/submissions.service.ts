@@ -4,6 +4,22 @@ import * as yauzl from "yauzl";
 import { PrismaService } from "@/prisma.service";
 import { S3Service } from "@/s3.service";
 
+export interface SubmissionMetadataResponse {
+  submissionId: number;
+  deliverableId: number;
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  submissionDate: Date;
+  groupId: number;
+  penalty: number;
+  type: DeliverableType[];
+  status: string;
+  lastModified: Date;
+  error?: boolean;
+}
+
 export interface SubmissionFileResponse {
   submissionId: number;
   deliverableId: number;
@@ -141,81 +157,122 @@ export class SubmissionsService {
     });
   }
 
-  async findAllGroupSubmissions(groupId: number, idDeliverable?: number): Promise<SubmissionFileResponse[]> {
+  async findAllGroupSubmissions(groupId: number, idDeliverable?: number): Promise<SubmissionMetadataResponse[]> {
     const submissions = await this.prisma.submissions.findMany({
-      where: { groupId, ...(idDeliverable && { deliverableId: idDeliverable }) },
+      where: {
+        groupId,
+        ...(idDeliverable && { deliverableId: idDeliverable }),
+        fileUrl: { not: null },
+      },
       orderBy: { submissionDate: "desc" },
+      include: {
+        deliverable: {
+          select: { type: true },
+        },
+      },
     });
 
-    const submissionFileResponses: SubmissionFileResponse[] = [];
-    await Promise.all(
-      submissions.map(async (submission) => {
-        try {
-          if (!submission.fileUrl) {
-            throw new BadRequestException("File URL is missing for submission");
-          }
-          const deliverable = await this.prisma.deliverables.findUniqueOrThrow({
-            where: { id: submission.deliverableId },
-            select: { type: true },
-          });
+    if (submissions.length === 0) {
+      return [];
+    }
 
-          const file = await this.s3Service.getFile(submission.fileUrl);
-          submissionFileResponses.push({
+    const BATCH_SIZE = 5;
+
+    const batchPromises = [];
+    for (let i = 0; i < submissions.length; i += BATCH_SIZE) {
+      const batch = submissions.slice(i, i + BATCH_SIZE);
+
+      const batchPromise = Promise.allSettled(
+        batch.map(async (submission): Promise<SubmissionMetadataResponse> => {
+          if (!submission.fileUrl) {
+            throw new BadRequestException(`File URL is missing for submission ${submission.id}`);
+          }
+          const metadata = await this.s3Service.getFileMetadata(submission.fileUrl);
+          return {
             submissionId: submission.id,
             deliverableId: submission.deliverableId,
             fileKey: submission.fileUrl,
-            mimeType: "application/zip",
-            buffer: file,
+            fileName: this.extractFileName(submission.fileUrl),
+            mimeType: metadata.contentType,
+            fileSize: metadata.size,
             submissionDate: submission.submissionDate,
             groupId: submission.groupId,
             penalty: Number(submission.penalty),
-            type: deliverable.type,
+            type: submission.deliverable.type,
             status: submission.status,
-          });
-        } catch (error) {
-          console.error(`Failed to retrieve file for submission ${submission.id}:`, error);
-          throw new BadRequestException("File not found for submission");
-        }
-      }),
-    );
+            lastModified: metadata.lastModified,
+          };
+        }),
+      ).then((batchResults) => ({ batchResults, batch }));
 
-    return submissionFileResponses;
+      batchPromises.push(batchPromise);
+    }
+
+    const allBatchResults = await Promise.all(batchPromises);
+
+    const results: SubmissionMetadataResponse[] = [];
+
+    allBatchResults.forEach(({ batchResults, batch }) => {
+      batchResults.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          results.push(result.value);
+        } else {
+          const submission = batch[index];
+          results.push({
+            submissionId: submission.id,
+            deliverableId: submission.deliverableId,
+            fileKey: "",
+            fileName: "",
+            mimeType: "application/zip",
+            fileSize: 0,
+            submissionDate: submission.submissionDate,
+            groupId: submission.groupId,
+            penalty: Number(submission.penalty),
+            type: submission.deliverable.type,
+            status: submission.status,
+            lastModified: submission.submissionDate,
+            error: true,
+          });
+        }
+      });
+    });
+
+    return results;
   }
 
-  async findSubmissionById(idDeliverable: number, idSubmission: number): Promise<SubmissionFileResponse> {
-    const deliverable = await this.prisma.deliverables.findUniqueOrThrow({
-      where: { id: Number(idDeliverable) },
-    });
-
+  async downloadSubmissionFile(submissionId: number): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
     const submission = await this.prisma.submissions.findUniqueOrThrow({
-      where: { id: Number(idSubmission) },
+      where: { id: submissionId },
+      select: {
+        fileUrl: true,
+      },
     });
 
-    if (!submission?.fileUrl) {
+    if (!submission.fileUrl) {
       throw new BadRequestException("File URL is missing for submission");
     }
 
-    const file = await this.s3Service.getFile(submission.fileUrl);
+    try {
+      const buffer = await this.s3Service.getFile(submission.fileUrl);
+      const fileName = this.extractFileName(submission.fileUrl);
 
-    return {
-      submissionId: submission.id,
-      deliverableId: idDeliverable,
-      fileKey: submission.fileUrl,
-      mimeType: "application/zip",
-      buffer: file,
-      submissionDate: submission.submissionDate,
-      groupId: submission.groupId,
-      penalty: Number(submission.penalty),
-      type: deliverable.type,
-      status: submission.status,
-    };
+      return {
+        buffer,
+        fileName,
+        mimeType: "application/zip",
+      };
+    } catch (error) {
+      console.error(`Failed to download file for submission ${submissionId}:`, error);
+      throw new BadRequestException("File not found for submission");
+    }
   }
 
-  async deleteSubmission(idDeliverable: number, idSubmission: number): Promise<void> {
-    await this.prisma.deliverables.findUniqueOrThrow({
-      where: { id: Number(idDeliverable) },
-    });
+  private extractFileName(fileUrl: string): string {
+    const fileName = fileUrl.split("/").pop() || "submission.zip";
+    return fileName;
+  }
 
+  async deleteSubmission(idSubmission: number): Promise<void> {
     const submission = await this.prisma.submissions.findUniqueOrThrow({
       where: { id: Number(idSubmission) },
     });

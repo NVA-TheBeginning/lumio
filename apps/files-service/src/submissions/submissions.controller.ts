@@ -12,9 +12,9 @@ import {
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
-import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Submissions } from "@prisma-files/client";
-import { SubmissionFileResponse, SubmissionsService } from "./submissions.service";
+import { SubmissionMetadataResponse, SubmissionsService } from "./submissions.service";
 
 @ApiTags("submissions")
 @Controller()
@@ -65,35 +65,37 @@ export class SubmissionsController {
   }
 
   @Get("deliverables/:groupId/submissions")
+  @ApiQuery({
+    name: "idDeliverable",
+    required: false,
+    type: Number,
+    description: "Filter submissions by deliverable ID",
+  })
   @ApiOperation({ summary: "Get all submissions for a group" })
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   async findAllByDeliverable(
     @Param("groupId") groupId: number,
     @Query("idDeliverable") idDeliverable?: number,
-  ): Promise<SubmissionFileResponse[]> {
-    return this.submissionsService.findAllGroupSubmissions(Number(groupId), idDeliverable);
+  ): Promise<SubmissionMetadataResponse[]> {
+    return await this.submissionsService.findAllGroupSubmissions(Number(groupId), Number(idDeliverable));
   }
 
-  @Get("deliverables/:idDeliverable/submissions/:idSubmission")
+  @Get("submissions/:idSubmission/download")
   @ApiOperation({ summary: "Get a specific submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission details." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
   async findOne(
-    @Param("idDeliverable") idDeliverable: number,
     @Param("idSubmission") idSubmission: number,
-  ): Promise<SubmissionFileResponse> {
-    return this.submissionsService.findSubmissionById(Number(idDeliverable), Number(idSubmission));
+  ): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
+    return this.submissionsService.downloadSubmissionFile(Number(idSubmission));
   }
 
-  @Delete("deliverables/:idDeliverable/submissions/:idSubmission")
+  @Delete("submissions/:idSubmission")
   @ApiOperation({ summary: "Delete a submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission deleted successfully." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
-  async deleteSubmission(
-    @Param("idDeliverable") idDeliverable: number,
-    @Param("idSubmission") idSubmission: number,
-  ): Promise<void> {
-    return this.submissionsService.deleteSubmission(Number(idDeliverable), Number(idSubmission));
+  async deleteSubmission(@Param("idSubmission") idSubmission: number): Promise<void> {
+    return this.submissionsService.deleteSubmission(Number(idSubmission));
   }
 }
