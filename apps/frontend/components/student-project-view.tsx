@@ -486,7 +486,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {project.groups.map((group) => {
                       const canJoin = group.members.length < project.groupSettings.maxMembers;
-                      const spotsLeft = project.groupSettings.maxMembers - group.members.length;
 
                       return (
                         <Card key={group.id} className="border-gray-200 h-full">
