@@ -256,133 +256,168 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Ressources du projet
-              </CardTitle>
-              <CardDescription>Téléchargez les documents, templates et ressources du projet</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-8 w-8 text-blue-500" />
-                  <div>
-                    <p className="font-medium">Sujet du projet</p>
-                    <p className="text-sm text-muted-foreground">Spécification officielle du projet</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Étapes du projet
+                </CardTitle>
+                <CardDescription>Gérez vos soumissions et suivez votre progression</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {project.deliverables.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune étape n'a encore été publiée</p>
                   </div>
-                </div>
-                <Button size="sm" variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Télécharger
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                ) : (
+                  project.deliverables.map((deliverable) => {
+                    const status = getDeliverableStatus(deliverable);
+                    const StatusIcon = status.icon;
+                    const submission = submissions?.find(
+                      (s) => s.deliverableId === deliverable.id && s.groupId === currentUserGroup?.id,
+                    );
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Étapes du projet
-              </CardTitle>
-              <CardDescription>Gérez vos soumissions et suivez votre progression</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {project.deliverables.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Aucune étape n'a encore été publiée</p>
-                </div>
-              ) : (
-                project.deliverables.map((deliverable) => {
-                  const status = getDeliverableStatus(deliverable);
-                  const StatusIcon = status.icon;
-                  // Use the new submissions data
-                  const submission = submissions?.find(
-                    (s) => s.deliverableId === deliverable.id && s.groupId === currentUserGroup?.id,
-                  );
-
-                  return (
-                    <Card key={deliverable.id} className="relative">
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-lg">{deliverable.name}</h4>
-                              <Badge variant={status.variant} className="flex items-center gap-1">
-                                <StatusIcon className="h-3 w-3" />
-                                {status.label}
-                              </Badge>
-                            </div>
-                            <p className="text-muted-foreground">{deliverable.description}</p>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                Échéance : {formatDate(deliverable.deadline)}
+                    return (
+                      <Card key={deliverable.id} className="relative">
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-lg">{deliverable.name}</h4>
+                                <Badge variant={status.variant} className="flex items-center gap-1">
+                                  <StatusIcon className="h-3 w-3" />
+                                  {status.label}
+                                </Badge>
                               </div>
-                              {deliverable.allowLateSubmission && (
+                              <p className="text-muted-foreground">{deliverable.description}</p>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
-                                  <Clock className="h-4 w-4" />
-                                  Soumission tardive autorisée (pénalité de {deliverable.lateSubmissionPenalty}%)
+                                  <Calendar className="h-4 w-4" />
+                                  Échéance : {formatDate(deliverable.deadline)}
                                 </div>
+                                {deliverable.allowLateSubmission && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4" />
+                                    Soumission tardive autorisée (pénalité de {deliverable.lateSubmissionPenalty}%)
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <Separator className="my-4" />
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {submission?.submissionDate && (
+                                <span className="text-sm text-muted-foreground">
+                                  Soumis le : {formatDate(submission.submissionDate.toString())}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              {submission ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenSubmissionDetailsDialog(submission, deliverable)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Voir la soumission
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenSubmissionDialog(deliverable)}
+                                    disabled={!currentUserGroup}
+                                  >
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Soumettre à nouveau
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  disabled={!currentUserGroup}
+                                  variant={currentUserGroup ? "default" : "outline"}
+                                  onClick={() => handleOpenSubmissionDialog(deliverable)}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  {currentUserGroup ? "Soumettre" : "Rejoignez un groupe pour soumettre"}
+                                </Button>
                               )}
                             </div>
                           </div>
-                        </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
 
-                        <Separator className="my-4" />
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="h-5 w-5" />
+                    Ressources
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="p-3 border rounded-lg flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-6 w-6 text-blue-500" />
+                      <div>
+                        <p className="font-medium text-sm">Sujet du projet</p>
+                        <p className="text-xs text-muted-foreground">Spécification officielle</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            {submission?.submissionDate && (
-                              <span className="text-sm text-muted-foreground">
-                                Soumis le : {formatDate(submission.submissionDate.toString())}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            {submission ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenSubmissionDetailsDialog(submission, deliverable)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Voir la soumission
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenSubmissionDialog(deliverable)}
-                                  disabled={!currentUserGroup}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Soumettre à nouveau
-                                </Button>
-                              </>
-                            ) : (
-                              <Button
-                                size="sm"
-                                disabled={!currentUserGroup}
-                                variant={currentUserGroup ? "default" : "outline"}
-                                onClick={() => handleOpenSubmissionDialog(deliverable)}
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                {currentUserGroup ? "Soumettre" : "Rejoignez un groupe pour soumettre"}
-                              </Button>
-                            )}
-                          </div>
+              {currentUserGroup && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Users className="h-5 w-5" />
+                      Membres du groupe
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {currentUserGroup.members.map((member) => (
+                      <div key={member.id} className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {member.firstname[0]}
+                            {member.lastname[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">
+                            {member.firstname} {member.lastname}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                        {member.id === currentUserId && (
+                          <Badge variant="secondary" className="text-xs">
+                            Vous
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="groups" className="space-y-6">
@@ -448,46 +483,48 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                     </AlertDescription>
                   </Alert>
 
-                  <div className="grid gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {project.groups.map((group) => {
                       const canJoin = group.members.length < project.groupSettings.maxMembers;
                       const spotsLeft = project.groupSettings.maxMembers - group.members.length;
 
                       return (
-                        <Card key={group.id} className={canJoin ? "border-green-200" : "border-gray-200"}>
-                          <CardContent className="pt-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-medium">{group.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={canJoin ? "default" : "secondary"}>
-                                  {group.members.length}/{project.groupSettings.maxMembers}
-                                </Badge>
-                                <Button
-                                  size="sm"
-                                  disabled={!canJoin || joinGroupMutation.isPending}
-                                  onClick={() => handleJoinGroup(group.id)}
-                                >
-                                  {canJoin ? `Rejoindre (${spotsLeft} places restantes)` : "Complet"}
-                                </Button>
-                              </div>
+                        <Card key={group.id} className="border-gray-200 h-full">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-sm">{group.name}</h4>
+                              <Badge variant={canJoin ? "default" : "secondary"} className="text-xs">
+                                {group.members.length}/{project.groupSettings.maxMembers}
+                              </Badge>
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-1.5 mb-3">
                               {group.members.map((member) => (
                                 <div
                                   key={member.id}
-                                  className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full"
+                                  className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full"
                                 >
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarFallback className="text-xs">
+                                  <Avatar className="h-4 w-4">
+                                    <AvatarFallback className="text-[10px]">
                                       {member.firstname[0]}
                                       {member.lastname[0]}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <span className="text-sm">
+                                  <span className="text-xs">
                                     {member.firstname} {member.lastname}
                                   </span>
                                 </div>
                               ))}
+                            </div>
+                            <div className="flex justify-end">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-3"
+                                disabled={!canJoin || joinGroupMutation.isPending}
+                                onClick={() => handleJoinGroup(group.id)}
+                              >
+                                {canJoin ? "Rejoindre" : "Complet"}
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
