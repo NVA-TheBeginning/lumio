@@ -504,7 +504,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                                   className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full"
                                 >
                                   <Avatar className="h-4 w-4">
-                                    <AvatarFallback className="text-[10px]">
+                                    <AvatarFallback className="text-xs">
                                       {member.firstname[0]}
                                       {member.lastname[0]}
                                     </AvatarFallback>
