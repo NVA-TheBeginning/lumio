@@ -1,6 +1,7 @@
 "use server";
 import { getUserFromCookie } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPatchData, authPostData, authPutData, PaginationMeta } from "@/lib/utils";
+import { Member, MembersResponse } from "../promotions/action";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
 
@@ -62,13 +63,6 @@ export interface PromotionType {
   groupSettings: GroupSettingsType;
   groups: GroupType[];
 }
-
-// interface SubmissionType {
-//   groupId: number;
-//   status: string;
-//   submittedAt: string | null;
-//   grade: number | null;
-// }
 
 export interface DeliverableType {
   id: number;
@@ -404,4 +398,9 @@ export async function updateDeliverable(data: UpdateDeliverableData): Promise<De
 
 export async function deleteDeliverable(id: number): Promise<void> {
   return await authDeleteData(`${API_URL}/projects/deliverables/${id}`);
+}
+
+export async function getPromoStudent(promotionId: number): Promise<Member[]> {
+  const response = await authFetchData<MembersResponse>(`${API_URL}/promotions/${promotionId}/students?all=true`);
+  return response.data;
 }

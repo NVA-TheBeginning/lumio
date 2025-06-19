@@ -95,6 +95,7 @@ export class PromotionsController {
     @Param("id", ParseIntPipe) id: number,
     @Query("page") page?: number,
     @Query("size") size?: number,
+    @Query("all") all?: boolean,
   ): Promise<{ data: StudentDto[] }> {
     const promotion = await this.proxy.forwardRequest<Promotion>("project", `/promotions/${id}`, "GET");
 
@@ -109,6 +110,7 @@ export class PromotionsController {
       {
         page,
         size,
+        all,
       },
     );
   }
