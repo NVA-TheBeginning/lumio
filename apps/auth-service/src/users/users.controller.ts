@@ -60,7 +60,7 @@ export class UsersController {
     @Query("ids") ids: string,
     @Query("page") page?: string,
     @Query("size") size?: string,
-    @Query("all") all?: boolean,
+    @Query("all", ParseBoolPipe) all?: boolean,
   ) {
     if (!ids) {
       return [];
