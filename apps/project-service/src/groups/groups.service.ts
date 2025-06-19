@@ -110,25 +110,6 @@ export class GroupsService {
     const totalStudents = shuffledStudents.length;
     const idealNumberOfGroups = Math.ceil(totalStudents / maxMembers);
 
-    if (totalStudents === 0) {
-      return await this.prisma.$transaction(async (tx) => {
-        await tx.groupMember.deleteMany({
-          where: {
-            group: {
-              promotionId: promotionId,
-              projectId: projectId,
-            },
-          },
-        });
-        await tx.group.deleteMany({
-          where: {
-            promotionId: promotionId,
-            projectId: projectId,
-          },
-        });
-      });
-    }
-
     return await this.prisma.$transaction(async (tx) => {
       await tx.groupMember.deleteMany({
         where: {
