@@ -11,12 +11,14 @@ import {
   MoreHorizontal,
   Plus,
   Settings,
+  Shuffle,
   Trash,
   UserPlus,
   Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm as useHookForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import {
   addMembersToGroup,
@@ -26,6 +28,7 @@ import {
   type GroupSettingsUpdateDto,
   getPromoStudent,
   type ProjectType,
+  randomizeStudentsToGroups,
   removeMemberFromGroup,
   updateGroup,
   updateGroupSettings,
@@ -81,6 +84,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     name: string;
   } | null>(null);
   const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
+  const [showRandomizeConfirm, setShowRandomizeConfirm] = useState<boolean>(false);
 
   const activePromotion = project.promotions.find((p) => p.id === activePromotionId);
 
@@ -163,6 +167,16 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     },
   });
 
+  const randomizeStudentsMutation = useMutation({
+    mutationFn: () => randomizeStudentsToGroups(project.id, activePromotionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", Number(project.id)],
+      });
+      toast.success("Les étudiants ont été répartis aléatoirement dans les groupes");
+    },
+  });
+
   const settingsForm = useHookForm<z.infer<typeof groupSettingsSchema>>({
     resolver: zodResolver(groupSettingsSchema),
     defaultValues: {
@@ -199,7 +213,21 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   }, [editingGroup, updateGroupForm]);
 
   const handleUpdateSettings = (data: z.infer<typeof groupSettingsSchema>) => {
+    const previousMode = groupSettings?.mode;
     updateSettingsMutation.mutate(data);
+
+    if (
+      data.mode === "RANDOM" &&
+      previousMode !== "RANDOM" &&
+      unassignedStudents.length > 0 &&
+      groups &&
+      groups.length > 0
+    ) {
+      setTimeout(() => {
+        toast.info("Répartition aléatoire en cours...");
+        randomizeStudentsMutation.mutate();
+      }, 1000);
+    }
   };
 
   const handleCreateGroups = (data: z.infer<typeof createGroupsSchema>) => {
@@ -263,6 +291,15 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
 
   const handleRemoveStudentFromGroup = (groupId: number, userId: number) => {
     removeMemberMutation.mutate({ groupId, userId });
+  };
+
+  const handleRandomizeStudents = () => {
+    setShowRandomizeConfirm(true);
+  };
+
+  const handleConfirmRandomize = () => {
+    randomizeStudentsMutation.mutate();
+    setShowRandomizeConfirm(false);
   };
 
   const progress = useMemo(() => {
@@ -485,6 +522,23 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                     Groupes d'étudiants ({groups?.length || 0})
                   </h4>
                   <div className="flex items-center gap-2">
+                    {groupSettings?.mode === "RANDOM" &&
+                      unassignedStudents.length > 0 &&
+                      groups &&
+                      groups.length > 0 && (
+                        <Button
+                          variant="outline"
+                          onClick={handleRandomizeStudents}
+                          disabled={randomizeStudentsMutation.isPending}
+                        >
+                          {randomizeStudentsMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Shuffle className="h-4 w-4 mr-2" />
+                          )}
+                          Répartir aléatoirement
+                        </Button>
+                      )}
                     <Dialog open={showCreateGroupsDialog} onOpenChange={setShowCreateGroupsDialog}>
                       <DialogTrigger asChild>
                         <Button>
@@ -605,7 +659,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                               ))}
                             </ul>
 
-                            {unassignedStudents.length > 0 && (
+                            {unassignedStudents.length > 0 && groupSettings?.mode !== "RANDOM" && (
                               <div className="mt-3 pt-3 border-t">
                                 <p className="text-xs text-muted-foreground mb-2">Ajouter un étudiant :</p>
                                 <Select onValueChange={(value) => handleAddStudentToGroup(group.id, Number(value))}>
@@ -630,10 +684,34 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                     {unassignedStudents.length > 0 && (
                       <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/50">
                         <CardHeader>
-                          <CardTitle className="text-lg flex items-center text-amber-800 dark:text-amber-200">
-                            <UserPlus className="h-5 w-5 mr-2" />
-                            Étudiants non assignés ({unassignedStudents.length})
-                          </CardTitle>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg flex items-center text-amber-800 dark:text-amber-200">
+                              <UserPlus className="h-5 w-5 mr-2" />
+                              Étudiants non assignés ({unassignedStudents.length})
+                            </CardTitle>
+                            {groupSettings?.mode === "RANDOM" && groups && groups.length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRandomizeStudents}
+                                disabled={randomizeStudentsMutation.isPending}
+                                className="bg-background"
+                              >
+                                {randomizeStudentsMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Shuffle className="h-4 w-4 mr-2" />
+                                )}
+                                Répartir
+                              </Button>
+                            )}
+                          </div>
+                          {groupSettings?.mode === "RANDOM" && (
+                            <p className="text-sm text-amber-700 dark:text-amber-300">
+                              En mode aléatoire, ces étudiants peuvent être automatiquement répartis dans les groupes
+                              existants.
+                            </p>
+                          )}
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -645,18 +723,20 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                 <span className="text-sm">
                                   {student.firstname} {student.lastname}
                                 </span>
-                                <Select onValueChange={(value) => handleAddStudentToGroup(Number(value), student.id)}>
-                                  <SelectTrigger className="w-32 h-7 text-xs">
-                                    <SelectValue placeholder="Ajouter à..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {groups?.map((group) => (
-                                      <SelectItem key={group.id} value={group.id.toString()}>
-                                        {group.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                {groupSettings?.mode !== "RANDOM" && (
+                                  <Select onValueChange={(value) => handleAddStudentToGroup(Number(value), student.id)}>
+                                    <SelectTrigger className="w-32 h-7 text-xs">
+                                      <SelectValue placeholder="Ajouter à..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {groups?.map((group) => (
+                                        <SelectItem key={group.id} value={group.id.toString()}>
+                                          {group.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -734,6 +814,27 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
             <Button variant="destructive" onClick={handleDeleteGroup} disabled={deleteGroupMutation.isPending}>
               {deleteGroupMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRandomizeConfirm} onOpenChange={setShowRandomizeConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la répartition aléatoire</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir répartir aléatoirement les {unassignedStudents.length} étudiants non assignés
+              dans les groupes existants ? Cette action peut modifier la composition actuelle des groupes.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRandomizeConfirm(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleConfirmRandomize} disabled={randomizeStudentsMutation.isPending}>
+              {randomizeStudentsMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirmer la répartition
             </Button>
           </DialogFooter>
         </DialogContent>

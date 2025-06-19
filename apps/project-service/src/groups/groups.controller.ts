@@ -94,6 +94,20 @@ export class GroupsController {
     return this.groupsService.getSettings(projectId, promotionId);
   }
 
+  @Post("projects/:projectId/promotions/:promotionId/groups/randomize")
+  @ApiOperation({ summary: "Randomize groups for a project‑promotion" })
+  @ApiParam({ name: "projectId", type: Number })
+  @ApiParam({ name: "promotionId", type: Number })
+  @ApiOkResponse({ description: "Groups randomized" })
+  @HttpCode(HttpStatus.OK)
+  async randomizeGroups(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+  ) {
+    await this.groupsService.randomizeGroups(projectId, promotionId);
+    return { message: "Groups randomized successfully" };
+  }
+
   @Patch("projects/:projectId/promotions/:promotionId/group-settings")
   @ApiOperation({ summary: "Update group settings" })
   @ApiParam({ name: "projectId", type: Number })

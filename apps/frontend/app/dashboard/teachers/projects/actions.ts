@@ -365,6 +365,10 @@ export async function removeMemberFromGroup(groupId: number, userId: number) {
   return await authDeleteData(`${API_URL}/groups/${groupId}/students/${userId}`);
 }
 
+export async function randomizeStudentsToGroups(projectId: number, promotionId: number) {
+  return await authPostData<unknown>(`${API_URL}/projects/${projectId}/promotions/${promotionId}/groups/randomize`, {});
+}
+
 export interface CreateDeliverableData {
   projectId: number;
   promotionId: number;
