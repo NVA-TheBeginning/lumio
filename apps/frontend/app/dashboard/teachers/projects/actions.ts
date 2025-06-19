@@ -322,7 +322,13 @@ export async function updateProjectStatus(
   idPromotion: number,
   status: "VISIBLE" | "DRAFT" | "HIDDEN" | string,
 ): Promise<void> {
-  return await authPatchData<void>(`${API_URL}/projects/${idProject}/${idPromotion}/status`, { status });
+  try {
+    await authPatchData<void>(`${API_URL}/projects/${idProject}/${idPromotion}/status`, { status });
+  } catch (error) {
+    if (!(error instanceof SyntaxError && error.message.includes("JSON Parse error"))) {
+      throw error;
+    }
+  }
 }
 
 export interface GroupSettingsUpdateDto {

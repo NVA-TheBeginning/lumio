@@ -34,7 +34,9 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       idPromotion: number;
       status: ProjectStatus;
     }) => {
-      await updateProjectStatus(idProject, idPromotion, status as ProjectStatus);
+      const a = await updateProjectStatus(idProject, idPromotion, status as ProjectStatus);
+      console.log("Mutation result:", a);
+      return a;
     },
     onSuccess: () => {
       toast.success("Statut du projet mis à jour");
@@ -42,23 +44,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
         queryKey: ["projects", project.id],
       });
     },
-    onError: () => {
-      toast.error("Erreur lors de la mise à jour du statut");
-    },
   });
-
-  const getDeliverableStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge className="bg-green-500">Terminé</Badge>;
-      case "active":
-        return <Badge className="bg-blue-500">En cours</Badge>;
-      case "upcoming":
-        return <Badge variant="outline">À venir</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   const getStatusDisplayText = (status: ProjectStatus | string) => {
     switch (status) {
@@ -81,6 +67,12 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
     });
   };
 
+  const upcomingDeliverables =
+    project.deliverables?.filter((deliverable) => {
+      const deadlineDate = new Date(deliverable.deadline);
+      return deadlineDate >= new Date();
+    }) || [];
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
@@ -99,7 +91,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Promotions associées</h3>
               <ul className="mt-2 space-y-2">
-                {project.promotions.map((promotion) => (
+                {project.promotions?.map((promotion) => (
                   <li
                     key={promotion.id}
                     className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
@@ -110,9 +102,9 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                         <Badge variant="secondary">{getStatusDisplayText(promotion.status)}</Badge>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {promotion.description.length > 50
+                        {promotion.description && promotion.description.length > 50
                           ? `${promotion.description.slice(0, 50)}...`
-                          : promotion.description}
+                          : promotion.description || "Aucune description"}
                       </p>
                     </div>
                     <DropdownMenu>
@@ -143,7 +135,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </li>
-                ))}
+                )) || []}
               </ul>
             </div>
           </CardContent>
@@ -156,20 +148,13 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-4">
-              {project.deliverables
-                .filter((d) => d.status === "active" || d.status === "upcoming")
-                .slice(0, 4)
-                .map((deliverable) => (
+              {upcomingDeliverables.length > 0 ? (
+                upcomingDeliverables.map((deliverable) => (
                   <div
                     key={deliverable.id}
                     className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{deliverable.name}</h3>
-                        {getDeliverableStatusBadge(deliverable.status)}
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{deliverable.description}</p>
                       <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-3.5 w-3.5" />
                         <span>
@@ -182,6 +167,13 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                           )
                         </span>
                       </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {deliverable.type?.map((type: string, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {type}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                     <Button
                       variant="ghost"
@@ -193,7 +185,16 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                       Détails
                     </Button>
                   </div>
-                ))}
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Clock className="h-12 w-12 text-muted-foreground/50" />
+                  <h3 className="mt-4 text-lg font-medium">Aucun livrable à venir</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Tous les livrables sont soit terminés, soit leur échéance est dépassée.
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

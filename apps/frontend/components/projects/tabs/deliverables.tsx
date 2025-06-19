@@ -64,12 +64,6 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
           <h1 className="text-2xl font-bold">Gestion des livrables</h1>
           <p className="text-muted-foreground">Définissez et suivez les livrables du projet pour chaque promotion</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter un livrable
-          </Button>
-        </div>
       </div>
 
       <Card>
@@ -91,6 +85,7 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
                   onViewDeliverable={handleViewDeliverable}
                   onEditDeliverable={handleEditDeliverable}
                   getDeliverableStatusBadge={getDeliverableStatusBadge}
+                  setShowCreateDialog={setShowCreateDialog}
                 />
               </TabsContent>
             ))}
@@ -122,6 +117,7 @@ interface PromotionDeliverablesProps {
   onViewDeliverable: (id: number) => void;
   onEditDeliverable: (deliverable: DeliverableType) => void;
   getDeliverableStatusBadge: (status: string) => JSX.Element;
+  setShowCreateDialog: (show: boolean) => void;
 }
 
 function PromotionDeliverables({
@@ -129,12 +125,13 @@ function PromotionDeliverables({
   deliverables,
   onEditDeliverable,
   getDeliverableStatusBadge,
+  setShowCreateDialog,
 }: PromotionDeliverablesProps) {
   if (deliverables.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
         <p className="text-muted-foreground mb-6">Aucun livrable n'a encore été défini pour cette promotion.</p>
-        <Button>
+        <Button onClick={() => setShowCreateDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Créer un livrable pour {promotion.name}
         </Button>
