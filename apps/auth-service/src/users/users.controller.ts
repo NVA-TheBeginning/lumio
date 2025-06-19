@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 import { UsersService } from "./users.service";
@@ -56,12 +56,17 @@ export class UsersController {
   @ApiQuery({ name: "ids", type: [Number], description: "Array of user IDs to find", required: true })
   @ApiQuery({ name: "page", type: Number, required: false, description: "Page number" })
   @ApiQuery({ name: "size", type: Number, required: false, description: "Items per page" })
-  async findUsers(@Query("ids") ids: string, @Query("page") page?: string, @Query("size") size?: string) {
+  async findUsers(
+    @Query("ids") ids: string,
+    @Query("page") page?: string,
+    @Query("size") size?: string,
+    @Query("all", ParseBoolPipe) all?: boolean,
+  ) {
     if (!ids) {
       return [];
     }
 
     const uniqueIds = Array.from(new Set(ids.split(",").map((id) => Number.parseInt(id.trim(), 10))));
-    return await this.usersService.findUsersByIds(uniqueIds, page, size);
+    return await this.usersService.findUsersByIds(uniqueIds, page, size, all);
   }
 }
