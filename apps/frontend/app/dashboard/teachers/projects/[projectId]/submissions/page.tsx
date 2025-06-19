@@ -5,10 +5,11 @@ import { ArrowLeft, Calendar, Download, FileText, Filter, GitBranch, Search } fr
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
-  downloadSubmission,
   getAllPromotionSubmissions,
   getProjectByIdTeacher,
+  getSubmissionDownloadData,
   PromotionSubmissionMetadataResponse,
 } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { downloadSubmission } from "@/lib/download-utils";
 import { formatBytes, formatDate } from "@/lib/utils";
 
 export default function ProjectSubmissionsPage() {
@@ -74,9 +76,12 @@ export default function ProjectSubmissionsPage() {
 
   const handleDownloadSubmission = async (submissionId: number) => {
     try {
-      await downloadSubmission(submissionId);
+      toast.info("Téléchargement en cours...");
+      await downloadSubmission(submissionId, getSubmissionDownloadData);
+      toast.success("Téléchargement terminé");
     } catch (error) {
-      console.error("Error downloading submission:", error);
+      console.error("Erreur lors du téléchargement:", error);
+      toast.error("Erreur lors du téléchargement");
     }
   };
 

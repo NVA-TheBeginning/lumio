@@ -2,7 +2,7 @@
 
 import { Download, Eye, FileText, Github, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { downloadSubmission } from "@/app/dashboard/students/projects/actions";
+import { getSubmissionDownloadData } from "@/app/dashboard/students/projects/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDeleteSubmission } from "@/hooks/use-submissions";
+import { downloadSubmission } from "@/lib/download-utils";
 
 interface SubmissionDetailsProps {
   open: boolean;
@@ -90,7 +91,7 @@ export function SubmissionDetailsDialog({
   const handleDownload = async () => {
     try {
       toast.info("Téléchargement en cours...");
-      await downloadSubmission(submission.submissionId);
+      await downloadSubmission(submission.submissionId, getSubmissionDownloadData);
       toast.success("Téléchargement terminé");
     } catch (error) {
       console.error("Erreur lors du téléchargement:", error);
