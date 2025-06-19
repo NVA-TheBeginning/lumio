@@ -81,6 +81,23 @@ export class SubmissionsController {
     return await this.submissionsService.findAllGroupSubmissions(Number(groupId), Number(idDeliverable));
   }
 
+  @Get("submissions/:promotionId/submissions")
+  @ApiQuery({
+    name: "projectId",
+    required: false,
+    type: Number,
+    description: "Filter submissions by project ID",
+  })
+  @ApiOperation({ summary: "Get all submissions for a promotion (all groups)" })
+  @ApiResponse({ status: HttpStatus.OK, description: "List of all submissions for the promotion." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Promotion not found." })
+  async findAllPromotionSubmissions(
+    @Param("promotionId") promotionId: number,
+    @Query("projectId") projectId?: number,
+  ): Promise<SubmissionMetadataResponse[]> {
+    return await this.submissionsService.findAllPromotionSubmissions(Number(promotionId), Number(projectId));
+  }
+
   @Get("submissions/:idSubmission/download")
   @ApiOperation({ summary: "Get a specific submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission details." })

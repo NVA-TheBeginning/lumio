@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CreateStudentDto, UpdatePasswordDto, UpdateStudentDto } from "./dto/students.dto";
 import { UsersService } from "./users.service";
@@ -60,7 +60,7 @@ export class UsersController {
     @Query("ids") ids: string,
     @Query("page") page?: string,
     @Query("size") size?: string,
-    @Query("all", ParseBoolPipe) all?: boolean,
+    @Query("all") all?: boolean,
   ) {
     if (!ids) {
       return [];
