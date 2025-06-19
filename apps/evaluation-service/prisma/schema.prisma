@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@prisma-evaluation"
+  previewFeatures = ["multiSchema"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["evaluation_schema"]
+}
+
+// ---------- Evaluation Schema ----------
+model Presentation {
+  id                 Int                 @id @default(autoincrement())
+  projectPromotionId Int
+  startDatetime      DateTime
+  endDatetime        DateTime?
+  durationPerGroup   Int
+  orders             PresentationOrder[]
+
+  @@map("presentations")
+  @@schema("evaluation_schema")
+}
+
+model PresentationOrder {
+  id                Int          @id @default(autoincrement())
+  presentationId    Int
+  groupId           Int
+  orderNumber       Int
+  scheduledDatetime DateTime
+  presentation      Presentation @relation(fields: [presentationId], references: [id])
+
+  @@map("presentation_orders")
+  @@schema("evaluation_schema")
+}
+
+model GradingCriteria {
+  id                 Int           @id @default(autoincrement())
+  projectPromotionId Int
+  name               String
+  weight             Float
+  type               CriterionType
+  individual         Boolean       @default(false)
+  grades             Grade[]
+
+  @@map("grading_criteria")
+  @@schema("evaluation_schema")
+}
+
+model Grade {
+  id                Int             @id @default(autoincrement())
+  gradingCriteriaId Int
+  groupId           Int?
+  studentId         Int?
+  gradeValue        Float
+  comment           String?
+  gradedAt          DateTime        @default(now())
+  criteria          GradingCriteria @relation(fields: [gradingCriteriaId], references: [id])
+
+  @@map("grades")
+  @@schema("evaluation_schema")
+}
+
+model FinalGrade {
+  id                 Int      @id @default(autoincrement())
+  projectPromotionId Int
+  userId             Int
+  finalGrade         Float
+  comment            String?
+  validatedAt        DateTime @default(now())
+
+  @@map("final_grades")
+  @@schema("evaluation_schema")
+}
+
+enum CriterionType {
+  DELIVERABLE
+  REPORT
+  PRESENTATION
+
+  @@schema("evaluation_schema")
+}
