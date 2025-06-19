@@ -1,5 +1,5 @@
 "use server";
-import { getUserFromCookie } from "@/lib/cookie";
+import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPatchData, authPostData, authPutData, PaginationMeta } from "@/lib/utils";
 import { Member, MembersResponse } from "../promotions/action";
 
@@ -413,4 +413,69 @@ export async function deleteDeliverable(id: number): Promise<void> {
 export async function getPromoStudent(promotionId: number): Promise<Member[]> {
   const response = await authFetchData<MembersResponse>(`${API_URL}/promotions/${promotionId}/students?all=true`);
   return response.data;
+}
+
+export interface PromotionSubmissionMetadataResponse {
+  submissionId: number;
+  deliverableId: number;
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  submissionDate: Date;
+  groupId: number;
+  penalty: number;
+  type: string[];
+  status: string;
+  lastModified: Date;
+  gitUrl?: string;
+  error?: boolean;
+}
+
+export async function getAllPromotionSubmissions(
+  promotionId: number,
+  projectId?: number,
+): Promise<PromotionSubmissionMetadataResponse[]> {
+  const url = projectId
+    ? `${API_URL}/promotions/${promotionId}/submissions?projectId=${projectId}`
+    : `${API_URL}/promotions/${promotionId}/submissions`;
+  return await authFetchData(url);
+}
+
+export async function downloadSubmission(submissionId: number): Promise<void> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
+
+  const response = await fetch(`${API_URL}/submissions/${submissionId}/download`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const contentDisposition = response.headers.get("content-disposition");
+  let filename = `submission-${submissionId}.zip`;
+
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch?.[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 }

@@ -34,9 +34,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       idPromotion: number;
       status: ProjectStatus;
     }) => {
-      const a = await updateProjectStatus(idProject, idPromotion, status as ProjectStatus);
-      console.log("Mutation result:", a);
-      return a;
+      return await updateProjectStatus(idProject, idPromotion, status as ProjectStatus);
     },
     onSuccess: () => {
       toast.success("Statut du projet mis à jour");

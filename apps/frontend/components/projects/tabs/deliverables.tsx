@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JSX, useState } from "react";
 import { DeliverableType, ProjectType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
@@ -53,6 +53,16 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
     setShowEditDialog(true);
   };
 
+  const handleViewSubmissions = (promotion: PromotionType) => {
+    router.push(`/dashboard/teachers/projects/${project.id}/submissions?promotionId=${promotion.id}`);
+  };
+
+  const handleViewDeliverableSubmissions = (deliverableId: number, promotionId: number) => {
+    router.push(
+      `/dashboard/teachers/projects/${project.id}/submissions?promotionId=${promotionId}&deliverableId=${deliverableId}`,
+    );
+  };
+
   const getPromotionDeliverables = (promotionId: string) => {
     return project.deliverables.filter((deliverable) => deliverable.promotionId.toString() === promotionId);
   };
@@ -84,6 +94,8 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
                   deliverables={getPromotionDeliverables(promotion.id.toString())}
                   onViewDeliverable={handleViewDeliverable}
                   onEditDeliverable={handleEditDeliverable}
+                  onViewSubmissions={handleViewSubmissions}
+                  onViewDeliverableSubmissions={handleViewDeliverableSubmissions}
                   getDeliverableStatusBadge={getDeliverableStatusBadge}
                   setShowCreateDialog={setShowCreateDialog}
                 />
@@ -116,6 +128,8 @@ interface PromotionDeliverablesProps {
   deliverables: DeliverableType[];
   onViewDeliverable: (id: number) => void;
   onEditDeliverable: (deliverable: DeliverableType) => void;
+  onViewSubmissions: (promotion: PromotionType) => void;
+  onViewDeliverableSubmissions: (deliverableId: number, promotionId: number) => void;
   getDeliverableStatusBadge: (status: string) => JSX.Element;
   setShowCreateDialog: (show: boolean) => void;
 }
@@ -124,6 +138,8 @@ function PromotionDeliverables({
   promotion,
   deliverables,
   onEditDeliverable,
+  onViewSubmissions,
+  onViewDeliverableSubmissions,
   getDeliverableStatusBadge,
   setShowCreateDialog,
 }: PromotionDeliverablesProps) {
@@ -131,16 +147,30 @@ function PromotionDeliverables({
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
         <p className="text-muted-foreground mb-6">Aucun livrable n'a encore été défini pour cette promotion.</p>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Créer un livrable pour {promotion.name}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Créer un livrable pour {promotion.name}
+          </Button>
+          <Button variant="outline" onClick={() => onViewSubmissions(promotion)}>
+            <Users className="mr-2 h-4 w-4" />
+            Voir toutes les soumissions
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Livrables de {promotion.name}</h3>
+        <Button variant="outline" onClick={() => onViewSubmissions(promotion)}>
+          <Users className="mr-2 h-4 w-4" />
+          Voir toutes les soumissions
+        </Button>
+      </div>
+
       {deliverables.map((deliverable) => (
         <div
           key={deliverable.id}
@@ -170,8 +200,12 @@ function PromotionDeliverables({
             <Button variant="outline" size="sm" onClick={() => onEditDeliverable(deliverable)}>
               Modifier
             </Button>
-            <Button variant="outline" size="sm" disabled>
-              Gérer
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewDeliverableSubmissions(deliverable.id, promotion.id)}
+            >
+              Soumissions
             </Button>
           </div>
         </div>

@@ -96,6 +96,24 @@ export class SubmissionsController {
     return await this.proxy.forwardRequest("files", `/submissions/${idSubmission}/download`, "GET");
   }
 
+  @Get("promotions/:promotionId/submissions")
+  @ApiQuery({
+    name: "projectId",
+    required: false,
+    type: Number,
+    description: "Filter submissions by project ID",
+  })
+  @ApiOperation({ summary: "Get all submissions for a promotion (all groups)" })
+  @ApiResponse({ status: HttpStatus.OK, description: "List of all submissions for the promotion." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Promotion not found." })
+  async findAllPromotionSubmissions(@Param("promotionId") promotionId: number, @Query("projectId") projectId?: number) {
+    return await this.proxy.forwardRequest(
+      "files",
+      `/submissions/${promotionId}/submissions?projectId=${projectId}`,
+      "GET",
+    );
+  }
+
   @Delete("submissions/:idSubmission")
   @ApiOperation({ summary: "Delete a submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission deleted successfully." })
