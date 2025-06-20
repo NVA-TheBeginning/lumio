@@ -1,22 +1,22 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: Needed for drag-and-drop functionality */
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "date-fns";
 import {
   AlertCircle,
-  Badge,
   Clock,
   Edit,
+  GripVertical,
   Loader2,
   MoreHorizontal,
   Plus,
   Settings,
   Shuffle,
   Trash,
-  UserPlus,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm as useHookForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -55,6 +55,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -73,6 +74,136 @@ const createGroupsSchema = z.object({
 const updateGroupSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
 });
+
+interface DraggedStudent {
+  id: number;
+  firstname: string;
+  lastname: string;
+}
+
+interface DropZoneProps {
+  groupId: number;
+  children: React.ReactNode;
+  onDrop: (studentId: number, groupId: number) => void;
+  className?: string;
+}
+
+const DropZone: React.FC<DropZoneProps> = ({ groupId, children, onDrop, className = "" }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const dropElement = dropRef.current;
+    if (!dropElement) return;
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      if (!dropElement.contains(e.relatedTarget as Node)) {
+        setIsDragOver(false);
+      }
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+
+      try {
+        const studentData = e.dataTransfer?.getData("application/json");
+        if (studentData) {
+          const student: DraggedStudent = JSON.parse(studentData);
+          onDrop(student.id, groupId);
+        }
+      } catch (error) {
+        console.error("Error parsing dropped data:", error);
+      }
+    };
+
+    dropElement.addEventListener("dragover", handleDragOver);
+    dropElement.addEventListener("dragleave", handleDragLeave);
+    dropElement.addEventListener("drop", handleDrop);
+
+    return () => {
+      dropElement.removeEventListener("dragover", handleDragOver);
+      dropElement.removeEventListener("dragleave", handleDragLeave);
+      dropElement.removeEventListener("drop", handleDrop);
+    };
+  }, [groupId, onDrop]);
+
+  return (
+    <div
+      ref={dropRef}
+      className={`${className} transition-all duration-200 ${
+        isDragOver ? "ring-2 ring-blue-500 ring-offset-2 bg-blue-50 dark:bg-blue-950/50" : ""
+      }`}
+    >
+      {children}
+    </div>
+  );
+};
+
+interface DraggableStudentProps {
+  student: Member;
+  onRemove?: () => void;
+  showRemove?: boolean;
+  isInGroup?: boolean;
+}
+
+const DraggableStudent: React.FC<DraggableStudentProps> = ({
+  student,
+  onRemove,
+  showRemove = false,
+  isInGroup = false,
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    const studentData: DraggedStudent = {
+      id: student.id,
+      firstname: student.firstname,
+      lastname: student.lastname,
+    };
+    e.dataTransfer.setData("application/json", JSON.stringify(studentData));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={`flex justify-between items-center p-2 rounded-md cursor-move transition-all duration-200 ${
+        isInGroup ? "bg-muted/30 hover:bg-muted/50" : "bg-background border hover:bg-muted/20"
+      } ${isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"}`}
+    >
+      <div className="flex items-center space-x-2">
+        <GripVertical className="h-3 w-3 text-muted-foreground" />
+        <span className="text-sm font-medium">
+          {student.firstname} {student.lastname}
+        </span>
+      </div>
+      {showRemove && onRemove && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+          onClick={onRemove}
+        >
+          <Trash className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  );
+};
 
 export function ProjectGroups({ project }: { project: ProjectType }) {
   const queryClient = useQueryClient();
@@ -155,6 +286,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
       queryClient.invalidateQueries({
         queryKey: ["projects", Number(project.id)],
       });
+      toast.success("Étudiant ajouté au groupe");
     },
   });
 
@@ -164,6 +296,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
       queryClient.invalidateQueries({
         queryKey: ["projects", Number(project.id)],
       });
+      toast.success("Étudiant retiré du groupe");
     },
   });
 
@@ -285,7 +418,10 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     return allStudents.filter((student) => !assignedStudentIds.has(student.id));
   }, [allStudents, groups]);
 
-  const handleAddStudentToGroup = (groupId: number, studentId: number) => {
+  const handleStudentDrop = (studentId: number, groupId: number) => {
+    if (groupSettings?.maxMembers === groups?.find((g) => g.id === groupId)?.members.length) {
+      return;
+    }
     addMemberMutation.mutate({ groupId, studentIds: [studentId] });
   };
 
@@ -307,6 +443,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     const assignedStudents = groups?.reduce((sum, group) => sum + group.members.length, 0) || 0;
     return totalStudents > 0 ? (assignedStudents / totalStudents) * 100 : 0;
   }, [allStudents, groups]);
+
+  const canDragAndDrop = groupSettings?.mode !== "RANDOM";
 
   return (
     <div className="space-y-6">
@@ -602,147 +740,117 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                 </div>
 
                 {groups && groups.length > 0 ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {groups.map((group) => (
-                        <Card key={group.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                          <CardHeader className="bg-muted/50 py-3">
-                            <div className="flex justify-between items-center">
-                              <CardTitle className="text-base">{group.name}</CardTitle>
-                              <div className="flex items-center space-x-2">
-                                <Badge>{group.members.length} étudiants</Badge>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => setEditingGroup({ id: group.id, name: group.name })}
-                                    >
-                                      <Edit className="h-4 w-4 mr-2" />
-                                      Modifier
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => setGroupToDelete(group.id)}
-                                      className="text-destructive"
-                                    >
-                                      <Trash className="h-4 w-4 mr-2" />
-                                      Supprimer
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                    {unassignedStudents.length > 0 && (
+                      <div className="xl:col-span-1 order-2 xl:order-1">
+                        <Card className="sticky top-4 border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/50">
+                          <CardHeader className="pb-3">
+                            <p className="text-sm text-amber-700 dark:text-amber-300">
+                              Glissez les étudiants vers les groupes pour les assigner
+                            </p>
                           </CardHeader>
-                          <CardContent className="py-3">
-                            <ul className="space-y-2">
-                              {group.members.map((member) => (
-                                <li
-                                  key={member.id}
-                                  className="flex justify-between items-center p-2 bg-muted/30 rounded-md"
-                                >
-                                  <span className="text-sm font-medium">
-                                    {member.firstname} {member.lastname}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleRemoveStudentFromGroup(group.id, member.id)}
-                                    disabled={removeMemberMutation.isPending}
-                                  >
-                                    <Trash className="h-3 w-3" />
-                                  </Button>
-                                </li>
-                              ))}
-                            </ul>
-
-                            {unassignedStudents.length > 0 && groupSettings?.mode !== "RANDOM" && (
-                              <div className="mt-3 pt-3 border-t">
-                                <p className="text-xs text-muted-foreground mb-2">Ajouter un étudiant :</p>
-                                <Select onValueChange={(value) => handleAddStudentToGroup(group.id, Number(value))}>
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue placeholder="Sélectionner..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {unassignedStudents.map((student) => (
-                                      <SelectItem key={student.id} value={student.id.toString()}>
-                                        {student.firstname} {student.lastname}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                          <CardContent className="pt-0">
+                            <ScrollArea className="h-[500px] pr-3">
+                              <div className="space-y-2">
+                                {unassignedStudents.map((student) => (
+                                  <DraggableStudent key={student.id} student={student} isInGroup={false} />
+                                ))}
                               </div>
-                            )}
+                            </ScrollArea>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
-
-                    {unassignedStudents.length > 0 && (
-                      <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/50">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg flex items-center text-amber-800 dark:text-amber-200">
-                              <UserPlus className="h-5 w-5 mr-2" />
-                              Étudiants non assignés ({unassignedStudents.length})
-                            </CardTitle>
-                            {groupSettings?.mode === "RANDOM" && groups && groups.length > 0 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleRandomizeStudents}
-                                disabled={randomizeStudentsMutation.isPending}
-                                className="bg-background"
-                              >
-                                {randomizeStudentsMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                  <Shuffle className="h-4 w-4 mr-2" />
-                                )}
-                                Répartir
-                              </Button>
-                            )}
-                          </div>
-                          {groupSettings?.mode === "RANDOM" && (
-                            <p className="text-sm text-amber-700 dark:text-amber-300">
-                              En mode aléatoire, ces étudiants peuvent être automatiquement répartis dans les groupes
-                              existants.
-                            </p>
-                          )}
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {unassignedStudents.map((student) => (
-                              <div
-                                key={student.id}
-                                className="flex items-center justify-between p-2 border rounded-md bg-background"
-                              >
-                                <span className="text-sm">
-                                  {student.firstname} {student.lastname}
-                                </span>
-                                {groupSettings?.mode !== "RANDOM" && (
-                                  <Select onValueChange={(value) => handleAddStudentToGroup(Number(value), student.id)}>
-                                    <SelectTrigger className="w-32 h-7 text-xs">
-                                      <SelectValue placeholder="Ajouter à..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {groups?.map((group) => (
-                                        <SelectItem key={group.id} value={group.id.toString()}>
-                                          {group.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      </div>
                     )}
+
+                    <div
+                      className={`${unassignedStudents.length > 0 ? "xl:col-span-3" : "xl:col-span-4"} order-1 xl:order-2`}
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {groups.map((group) => (
+                          <DropZone key={group.id} groupId={group.id} onDrop={handleStudentDrop} className="h-full">
+                            <Card className="overflow-hidden hover:shadow-md transition-all duration-200 h-full flex flex-col">
+                              <CardHeader className="bg-muted/50 py-3 flex-shrink-0">
+                                <div className="flex justify-between items-center">
+                                  <CardTitle className="text-base">{group.name}</CardTitle>
+                                  <div className="flex items-center space-x-2">
+                                    {group.members.length === groupSettings?.maxMembers && (
+                                      <div className="text-xs">Complet</div>
+                                    )}
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={() => setEditingGroup({ id: group.id, name: group.name })}
+                                        >
+                                          <Edit className="h-4 w-4 mr-2" />
+                                          Modifier
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => setGroupToDelete(group.id)}
+                                          className="text-destructive"
+                                        >
+                                          <Trash className="h-4 w-4 mr-2" />
+                                          Supprimer
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="py-3 flex-grow flex flex-col">
+                                {group.members.length > 0 ? (
+                                  <ScrollArea className="flex-grow">
+                                    <div className="space-y-2 pr-3">
+                                      {group.members.map((member) => (
+                                        <DraggableStudent
+                                          key={member.id}
+                                          student={member as unknown as Member}
+                                          showRemove={canDragAndDrop}
+                                          onRemove={() => handleRemoveStudentFromGroup(group.id, member.id)}
+                                          isInGroup={true}
+                                        />
+                                      ))}
+                                    </div>
+                                  </ScrollArea>
+                                ) : (
+                                  <div className="flex-grow flex items-center justify-center text-center py-8">
+                                    <div className="text-muted-foreground">
+                                      <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                      <p className="text-sm">Aucun étudiant</p>
+                                      {canDragAndDrop && <p className="text-xs mt-1">Glissez des étudiants ici</p>}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {unassignedStudents.length > 0 &&
+                                  groupSettings?.mode !== "RANDOM" &&
+                                  !canDragAndDrop && (
+                                    <div className="mt-3 pt-3 border-t flex-shrink-0">
+                                      <p className="text-xs text-muted-foreground mb-2">Ajouter un étudiant :</p>
+                                      <Select onValueChange={(value) => handleStudentDrop(Number(value), group.id)}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                          <SelectValue placeholder="Sélectionner..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {unassignedStudents.map((student) => (
+                                            <SelectItem key={student.id} value={student.id.toString()}>
+                                              {student.firstname} {student.lastname}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                              </CardContent>
+                            </Card>
+                          </DropZone>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <Card className="border-dashed">
