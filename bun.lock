@@ -64,6 +64,30 @@
         "typescript": "^5.8.3",
       },
     },
+    "apps/evaluation-service": {
+      "name": "evaluation-service",
+      "version": "0.0.0",
+      "dependencies": {
+        "@fastify/static": "^8.2.0",
+        "@nestjs/common": "^11.1.3",
+        "@nestjs/core": "^11.1.3",
+        "@nestjs/mapped-types": "^2.1.0",
+        "@nestjs/platform-fastify": "^11.1.3",
+        "@nestjs/swagger": "^11.2.0",
+        "@prisma/client": "^6.9.0",
+        "class-validator": "^0.14.2",
+        "fast-jwt": "^6.0.2",
+        "reflect-metadata": "^0.2.2",
+      },
+      "devDependencies": {
+        "@nestjs/cli": "^11.0.7",
+        "@nestjs/schematics": "^11.0.5",
+        "@nestjs/testing": "^11.1.3",
+        "@types/bun": "^1.2.16",
+        "prisma": "^6.9.0",
+        "typescript": "^5.8.3",
+      },
+    },
     "apps/files-service": {
       "name": "files-service",
       "version": "0.0.0",
@@ -970,6 +994,8 @@
     "estraverse": ["estraverse@4.3.0", "", {}, "sha512-39nnKffWz8xN1BU/2c79n9nB9HDzo0niYUqx6xyqUnyoAnQyyWpOTdZEeiCch8BBu515t4wp9ZmgVfVhn9EBpw=="],
 
     "estree-walker": ["estree-walker@3.0.3", "", { "dependencies": { "@types/estree": "^1.0.0" } }, "sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g=="],
+
+    "evaluation-service": ["evaluation-service@workspace:apps/evaluation-service"],
 
     "events": ["events@3.3.0", "", {}, "sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q=="],
 
