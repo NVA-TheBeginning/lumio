@@ -55,9 +55,8 @@ export class UpdateReportSectionDto {
   contentMarkdown: string;
 
   @ApiProperty({ description: "Section content in HTML format" })
-
-  @IsString()
-  contentHtml: string;
+  @ApiProperty({ nullable: true })
+  contentHtml: string | null;
 }
 
 export class UpdateReportDto {
