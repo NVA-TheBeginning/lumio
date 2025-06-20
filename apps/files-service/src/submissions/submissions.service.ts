@@ -173,7 +173,7 @@ export class SubmissionsService {
       return [];
     }
 
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = submissions.length < 5 ? submissions.length : 5;
 
     const batchPromises = [];
     for (let i = 0; i < submissions.length; i += BATCH_SIZE) {
@@ -264,7 +264,7 @@ export class SubmissionsService {
       return [];
     }
 
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = submissions.length < 5 ? submissions.length : 5;
 
     const batchPromises = [];
     for (let i = 0; i < submissions.length; i += BATCH_SIZE) {

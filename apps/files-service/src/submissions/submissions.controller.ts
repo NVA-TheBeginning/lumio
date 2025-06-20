@@ -95,7 +95,9 @@ export class SubmissionsController {
     @Param("promotionId") promotionId: number,
     @Query("projectId") projectId?: number,
   ): Promise<SubmissionMetadataResponse[]> {
-    return await this.submissionsService.findAllPromotionSubmissions(Number(promotionId), Number(projectId));
+    const data = await this.submissionsService.findAllPromotionSubmissions(Number(promotionId), Number(projectId));
+    console.log("Retrieved submissions for promotion:", data);
+    return data;
   }
 
   @Get("submissions/:idSubmission/download")

@@ -41,6 +41,9 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
     setIsSubmitting(true);
 
     try {
+      if (!promotionId && project.promotions.length > 0 && project.promotions[0]) {
+        setPromotionId(project.promotions[0].id.toString());
+      }
       await createDeliverable({
         projectId: project.id,
         promotionId: Number(promotionId),

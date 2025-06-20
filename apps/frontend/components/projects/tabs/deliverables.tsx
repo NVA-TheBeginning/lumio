@@ -64,7 +64,7 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
   };
 
   const getPromotionDeliverables = (promotionId: string) => {
-    return project.deliverables.filter((deliverable) => deliverable.promotionId.toString() === promotionId);
+    return project.deliverables.filter((deliverable) => deliverable.promotionId === Number(promotionId));
   };
 
   return (
@@ -161,10 +161,16 @@ function PromotionDeliverables({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Livrables de {promotion.name}</h3>
-        <Button variant="outline" onClick={() => onViewSubmissions(promotion)}>
-          <Users className="mr-2 h-4 w-4" />
-          Voir toutes les soumissions
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Créer un livrable
+          </Button>
+          <Button variant="outline" onClick={() => onViewSubmissions(promotion)}>
+            <Users className="mr-2 h-4 w-4" />
+            Voir toutes les soumissions
+          </Button>
+        </div>
       </div>
 
       {deliverables.map((deliverable) => (
