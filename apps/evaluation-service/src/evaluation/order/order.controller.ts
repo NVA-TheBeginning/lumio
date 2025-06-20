@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
+import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put} from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { UpdateOrderDto } from "./dto/update-order.dto";
 import { OrderService } from "./order.service";
+import {ScheduleDto} from "@/evaluation/order/dto/schedule.dto";
 
 @ApiTags("orders")
 @Controller()
@@ -32,5 +33,15 @@ export class OrderController {
   @ApiOperation({ summary: "Supprimer un ordre" })
   remove(@Param("id", ParseIntPipe) id: number) {
     return this.service.remove(id);
+  }
+
+  @Get(':id/schedule')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Générer l'horaire des passages de groupe" })
+  @ApiResponse({ status: 200, description: 'Planning généré.', type: [ScheduleDto] })
+  generateSchedule(
+      @Param('id', ParseIntPipe) id: number,
+  ): Promise<ScheduleDto[]> {
+    return this.service.generateSchedule(id);
   }
 }

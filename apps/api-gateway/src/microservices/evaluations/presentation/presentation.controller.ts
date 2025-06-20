@@ -65,4 +65,21 @@ export class PresentationController {
   remove(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number, @Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/presentations/${id}`, "DELETE");
   }
+
+  @Get(':id/schedule')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Générer l'horaire des passages de groupe" })
+  @ApiParam({ name: "projectPromotionId", type: Number })
+  @ApiParam({ name: "id", type: Number, description: 'ID de la soutenance' })
+  @ApiResponse({ status: 200, description: "Planning des passages généré." })
+  generateSchedule(
+      @Param('projectPromotionId', ParseIntPipe) projectPromotionId: number,
+      @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.proxy.forwardRequest(
+        'evaluation',
+        `/projects/${projectPromotionId}/presentations/${id}/schedule`,
+        'GET',
+    );
+  }
 }

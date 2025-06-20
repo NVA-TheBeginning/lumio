@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { UpdateOrderDto } from "./dto/update-order.dto";
+import {ScheduleDto} from "@/evaluation/order/dto/schedule.dto";
 
 @Injectable()
 export class OrderService {
@@ -29,5 +30,31 @@ export class OrderService {
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.presentationOrder.delete({ where: { id } });
+  }
+
+  async generateSchedule(presentationId: number): Promise<ScheduleDto[]> {
+    const pres = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { orders: { orderBy: { orderNumber: 'asc' } } },
+    });
+    if (!pres) {
+      throw new NotFoundException(`Presentation #${presentationId} introuvable`);
+    }
+
+    const start = pres.startDatetime;
+    const duration = pres.durationPerGroup; // en minutes
+
+    return pres.orders.map(order => {
+      const slotStart = new Date(
+          start.getTime() + (order.orderNumber - 1) * duration * 60000
+      );
+      const slotEnd = new Date(slotStart.getTime() + duration * 60000);
+      return {
+        groupId: order.groupId,
+        orderNumber: order.orderNumber,
+        start: slotStart.toISOString(),
+        end: slotEnd.toISOString(),
+      };
+    });
   }
 }
