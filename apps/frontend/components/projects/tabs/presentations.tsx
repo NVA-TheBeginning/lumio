@@ -112,10 +112,6 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">Soutenances pour {promotion.name}</h3>
-                    <Button onClick={handleCreatePresentation}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Créer une soutenance
-                    </Button>
                   </div>
 
                   {isLoading ? (

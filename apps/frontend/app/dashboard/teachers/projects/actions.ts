@@ -531,3 +531,30 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
   const blob = await response.blob();
   return { blob, filename };
 }
+
+export interface PromotionSubmissionMetadataResponse {
+  submissionId: number;
+  deliverableId: number;
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  submissionDate: Date;
+  groupId: number;
+  penalty: number;
+  type: string[];
+  status: string;
+  lastModified: Date;
+  gitUrl?: string;
+  error?: boolean;
+}
+
+export async function getAllPromotionSubmissions(
+  promotionId: number,
+  projectId?: number,
+): Promise<PromotionSubmissionMetadataResponse[]> {
+  const url = projectId
+    ? `${API_URL}/promotions/${promotionId}/submissions?projectId=${projectId}`
+    : `${API_URL}/promotions/${promotionId}/submissions`;
+  return await authFetchData(url);
+}

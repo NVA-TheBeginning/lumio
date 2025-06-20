@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { CreateGradeDto } from "./dto/create-grade.dto";
 import { UpdateGradeDto } from "./dto/update-grade.dto";
@@ -16,9 +16,7 @@ export class GradeService {
   }
 
   async findOne(id: number) {
-    const grade = await this.prisma.grade.findUnique({ where: { id } });
-    if (!grade) throw new NotFoundException(`Grade #${id} introuvable`);
-    return grade;
+    return this.prisma.grade.findUniqueOrThrow({ where: { id } });
   }
 
   async update(id: number, dto: UpdateGradeDto) {
