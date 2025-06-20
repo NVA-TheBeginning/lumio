@@ -164,7 +164,12 @@ export class UsersService {
     }
   }
 
-  async findUsersByIds(ids: number[], page?: string, size?: string): Promise<PaginatedResponse<UserResponse>> {
+  async findUsersByIds(
+    ids: number[],
+    page?: string,
+    size?: string,
+    all?: boolean,
+  ): Promise<PaginatedResponse<UserResponse>> {
     if (!ids.length) {
       return {
         data: [],
@@ -175,6 +180,59 @@ export class UsersService {
       };
     }
 
+    try {
+      if (all) {
+        return await this.findAllUsers(ids);
+      }
+
+      return await this.findUsersWithPagination(ids, page, size);
+    } catch (error) {
+      console.error("Failed to fetch users by IDs:", error);
+      throw new Error("Unable to retrieve users");
+    }
+  }
+
+  private async findAllUsers(ids: number[]): Promise<PaginatedResponse<UserResponse>> {
+    const users = await this.executeUserQuery({ ids });
+
+    return {
+      data: users,
+      size: users.length,
+      page: 1,
+      pageSize: users.length,
+      totalPages: 1,
+    };
+  }
+
+  private async findUsersWithPagination(
+    ids: number[],
+    page?: string,
+    size?: string,
+  ): Promise<PaginatedResponse<UserResponse>> {
+    const paginationConfig = this.calculatePaginationConfig(page, size);
+
+    const [users, totalRows] = await Promise.all([
+      this.executeUserQuery({ ids, ...paginationConfig.queryOptions }),
+      this.prisma.user.count({
+        where: {
+          id: {
+            in: ids,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: users,
+      size: totalRows,
+      page: paginationConfig.currentPage,
+      pageSize: paginationConfig.effectivePageSize,
+      totalPages:
+        paginationConfig.effectivePageSize > 0 ? Math.ceil(totalRows / paginationConfig.effectivePageSize) : 1,
+    };
+  }
+
+  private calculatePaginationConfig(page?: string, size?: string) {
     const currentPage = page ? Math.max(1, Number.parseInt(page, 10) || 1) : 1;
     const requestedPageSize = size ? Number.parseInt(size, 10) : null;
 
@@ -183,68 +241,45 @@ export class UsersService {
 
     const skipAmount = itemsPerPage && itemsPerPage > 0 ? (currentPage - 1) * itemsPerPage : 0;
 
-    try {
-      const queryOptions: {
-        where: { id: { in: number[] } };
-        select: {
-          id: true;
-          email: true;
-          firstname: true;
-          lastname: true;
-          role: true;
-          createdAt: true;
-        };
-        skip?: number;
-        take?: number;
-      } = {
-        where: {
-          id: {
-            in: ids,
-          },
-        },
-        select: {
-          id: true,
-          email: true,
-          firstname: true,
-          lastname: true,
-          role: true,
-          createdAt: true,
-        },
-      };
+    const queryOptions: { skip?: number; take?: number } = {};
 
-      if (isPaginationEnabled || (page && !size)) {
-        if (skipAmount > 0) {
-          queryOptions.skip = skipAmount;
-        }
-        if (itemsPerPage && itemsPerPage > 0) {
-          queryOptions.take = itemsPerPage;
-        }
+    if (isPaginationEnabled || (page && !size)) {
+      if (skipAmount > 0) {
+        queryOptions.skip = skipAmount;
       }
-
-      const [users, totalRows] = await Promise.all([
-        this.prisma.user.findMany(queryOptions),
-        this.prisma.user.count({
-          where: {
-            id: {
-              in: ids,
-            },
-          },
-        }),
-      ]);
-
-      const effectivePageSize = itemsPerPage && itemsPerPage > 0 ? itemsPerPage : totalRows;
-      const totalPages = effectivePageSize > 0 ? Math.ceil(totalRows / effectivePageSize) : 1;
-
-      return {
-        data: users,
-        size: totalRows,
-        page: currentPage,
-        pageSize: effectivePageSize,
-        totalPages,
-      };
-    } catch (error) {
-      console.error("Failed to fetch users by IDs:", error);
-      throw new Error("Unable to retrieve users");
+      if (itemsPerPage && itemsPerPage > 0) {
+        queryOptions.take = itemsPerPage;
+      }
     }
+
+    const effectivePageSize = itemsPerPage && itemsPerPage > 0 ? itemsPerPage : 0;
+
+    return {
+      currentPage,
+      effectivePageSize,
+      queryOptions,
+    };
+  }
+
+  private async executeUserQuery(options: { ids: number[]; skip?: number; take?: number }): Promise<UserResponse[]> {
+    const queryOptions = {
+      where: {
+        id: {
+          in: options.ids,
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        role: true,
+        createdAt: true,
+      },
+      ...(options.skip !== undefined && { skip: options.skip }),
+      ...(options.take !== undefined && { take: options.take }),
+    };
+
+    return await this.prisma.user.findMany(queryOptions);
   }
 }
