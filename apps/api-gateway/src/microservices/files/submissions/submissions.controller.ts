@@ -107,11 +107,14 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.OK, description: "List of all submissions for the promotion." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Promotion not found." })
   async findAllPromotionSubmissions(@Param("promotionId") promotionId: number, @Query("projectId") projectId?: number) {
-    return await this.proxy.forwardRequest(
-      "files",
-      `/submissions/${promotionId}/submissions?projectId=${projectId}`,
-      "GET",
-    );
+    if (projectId) {
+      return await this.proxy.forwardRequest(
+        "files",
+        `/submissions/${promotionId}/submissions?projectId=${projectId}`,
+        "GET",
+      );
+    }
+    return await this.proxy.forwardRequest("files", `/submissions/${promotionId}/submissions`, "GET");
   }
 
   @Delete("submissions/:idSubmission")

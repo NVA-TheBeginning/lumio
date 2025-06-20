@@ -52,10 +52,6 @@ export class SubmissionsService {
       throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
     }
 
-    if (deliverable?.allowLateSubmission === false && new Date() > new Date(deliverable.deadline)) {
-      throw new BadRequestException("Late submission is not allowed for this deliverable");
-    }
-
     const deadline = new Date(deliverable.deadline);
     const now = new Date();
     let penalty = 0;
