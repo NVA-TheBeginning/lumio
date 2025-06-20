@@ -7,10 +7,9 @@ export class GroupsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(projectId: number, promotionId: number, dto: CreateGroupDto) {
-    const pp = await this.prisma.projectPromotion.findUnique({
+    await this.prisma.projectPromotion.findUniqueOrThrow({
       where: { projectId_promotionId: { projectId, promotionId } },
     });
-    if (!pp) throw new NotFoundException("Project–Promotion introuvable");
 
     const records = Array(dto.numberOfGroups)
       .fill(undefined)
@@ -42,6 +41,46 @@ export class GroupsService {
   }
 
   async addMembers(groupId: number, studentIds: number[]) {
+    const group = await this.prisma.group.findUniqueOrThrow({
+      where: { id: groupId },
+      include: {
+        members: true,
+        projectPromotion: {
+          include: {
+            groupSettings: true,
+          },
+        },
+      },
+    });
+
+    const groupSettings = group.projectPromotion.groupSettings;
+    if (!groupSettings) {
+      throw new BadRequestException("Paramètres de groupe non configurés");
+    }
+
+    const existingMembers = await this.prisma.groupMember.findMany({
+      where: {
+        studentId: { in: studentIds },
+        group: {
+          promotionId: group.promotionId,
+          projectId: group.projectId,
+        },
+      },
+      select: { studentId: true },
+    });
+    const existingMemberIds = existingMembers.map((member) => member.studentId);
+    const newMembers = studentIds.filter((id) => !existingMemberIds.includes(id));
+    if (newMembers.length === 0) {
+      throw new BadRequestException("Membres déjà présents dans un autre groupe.");
+    }
+
+    const currentMemberCount = group.members.length;
+    const newMemberCount = currentMemberCount + studentIds.length;
+
+    if (groupSettings.maxMembers && newMemberCount > groupSettings.maxMembers) {
+      throw new BadRequestException(`Le groupe a atteint le nombre maximum de membres (${groupSettings.maxMembers}).`);
+    }
+
     const data = studentIds.map((studentId) => ({ groupId, studentId }));
     return this.prisma.groupMember.createMany({
       data,
@@ -56,7 +95,7 @@ export class GroupsService {
   }
 
   async getSettings(projectId: number, promotionId: number) {
-    return this.prisma.groupSettings.findUnique({
+    return this.prisma.groupSettings.findUniqueOrThrow({
       where: { projectId_promotionId: { projectId, promotionId } },
     });
   }
@@ -74,7 +113,7 @@ export class GroupsService {
   }
 
   async randomizeGroups(projectId: number, promotionId: number) {
-    const projectPromotion = await this.prisma.projectPromotion.findUnique({
+    const projectPromotion = await this.prisma.projectPromotion.findUniqueOrThrow({
       where: { projectId_promotionId: { projectId, promotionId } },
       include: {
         groupSettings: true,

@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "date-fns";
 import {
   AlertCircle,
-  Badge,
   Clock,
   Edit,
   GripVertical,
@@ -420,6 +419,9 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   }, [allStudents, groups]);
 
   const handleStudentDrop = (studentId: number, groupId: number) => {
+    if (groupSettings?.maxMembers === groups?.find((g) => g.id === groupId)?.members.length) {
+      return;
+    }
     addMemberMutation.mutate({ groupId, studentIds: [studentId] });
   };
 
