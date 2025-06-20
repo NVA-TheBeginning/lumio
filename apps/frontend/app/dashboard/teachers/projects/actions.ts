@@ -407,7 +407,7 @@ export async function updateDeliverable(data: UpdateDeliverableData): Promise<De
 }
 
 export async function deleteDeliverable(id: number): Promise<void> {
-  return await authDeleteData(`${API_URL}/projects/deliverables/${id}`);
+  await authDeleteData(`${API_URL}/projects/deliverables/${id}`);
 }
 
 export async function getPromoStudent(promotionId: number): Promise<Member[]> {
