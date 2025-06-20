@@ -152,10 +152,6 @@ function PromotionDeliverables({
             <Plus className="mr-2 h-4 w-4" />
             Créer un livrable pour {promotion.name}
           </Button>
-          <Button variant="outline" onClick={() => onViewSubmissions(promotion)}>
-            <Users className="mr-2 h-4 w-4" />
-            Voir toutes les soumissions
-          </Button>
         </div>
       </div>
     );
@@ -187,13 +183,6 @@ function PromotionDeliverables({
                 <Clock className="h-3.5 w-3.5" />
                 <span>Échéance: {formatDate(deliverable.deadline)}</span>
               </div>
-              {/* <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <FileCheck className="h-3.5 w-3.5" />
-                <span>
-                  {deliverable.submissions.filter((s) => s.status === "submitted").length} / {promotion.groups.length}{" "}
-                  soumis
-                </span>
-              </div> */}
             </div>
           </div>
           <div className="flex gap-2">

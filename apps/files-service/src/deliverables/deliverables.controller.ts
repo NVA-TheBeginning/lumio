@@ -26,11 +26,9 @@ export class DeliverablesController {
     type: Number,
     description: "Filter deliverables by promotion ID",
   })
-  async findAll(@Param() params: ProjectIdParams, @Query("promoId") promoId?: number): Promise<Deliverables[]> {
-    return this.deliverablesService.findAllByProjectPromo(
-      Number(params.projectId),
-      promoId ? Number(promoId) : undefined,
-    );
+  async findAll(@Param() params: ProjectIdParams, @Query("promoId") promoId?: string): Promise<Deliverables[]> {
+    const parsedPromoId = promoId ? Number(promoId) : undefined;
+    return this.deliverablesService.findAllByProjectPromo(Number(params.projectId), parsedPromoId);
   }
 
   @Put("projects/deliverables")

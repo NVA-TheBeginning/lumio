@@ -111,17 +111,10 @@ export function EditDeliverableDialog({
 
     setIsDeleting(true);
 
-    try {
-      await deleteDeliverable(deliverable.id);
-      onOpenChange(false);
-      onSuccess();
-      toast.success("Livrable supprimé avec succès !");
-    } catch (error) {
-      console.error("Erreur lors de la suppression du livrable:", error);
-      toast.error("Erreur lors de la suppression du livrable");
-    } finally {
-      setIsDeleting(false);
-    }
+    await deleteDeliverable(deliverable.id);
+    onOpenChange(false);
+    onSuccess();
+    toast.success("Livrable supprimé avec succès !");
   };
 
   if (!deliverable) return null;
