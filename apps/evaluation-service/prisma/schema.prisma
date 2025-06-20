@@ -77,6 +77,7 @@ model FinalGrade {
   comment            String?
   validatedAt        DateTime @default(now())
 
+  @@unique([projectPromotionId, userId])
   @@map("final_grades")
   @@schema("evaluation_schema")
 }
