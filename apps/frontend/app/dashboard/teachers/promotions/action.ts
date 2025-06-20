@@ -46,7 +46,7 @@ export async function getPromotion(id: number): Promise<Promotion> {
 
 export async function getPromotionMembers(promotionId: number, page = 1, size = 50): Promise<MembersResponse> {
   return await authFetchData<MembersResponse>(
-    `${API_URL}/promotions/${promotionId}/students?page=${page}&size=${size}`,
+    `${API_URL}/promotions/${promotionId}/students?page=${page}&size=${size}&all=false`,
   );
 }
 

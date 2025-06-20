@@ -7,12 +7,6 @@ import { ProjectGroups } from "./tabs/groups";
 import { ProjectOverview } from "./tabs/overview";
 import { ProjectSettings } from "./tabs/settings";
 
-// import { ProjectEvaluations } from "./tabs/project-evaluations";
-// import { ProjectGroups } from "./tabs/project-groups";
-// import { ProjectOverview } from "./tabs/project-overview";
-// import { ProjectPresentations } from "./tabs/project-presentations";
-// import { ProjectSettings } from "./tabs/project-settings";
-
 interface ProjectTabsProps {
   project: ProjectType;
   activeTab: string;

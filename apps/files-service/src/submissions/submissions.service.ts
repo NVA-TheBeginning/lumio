@@ -242,6 +242,97 @@ export class SubmissionsService {
     return results;
   }
 
+  async findAllPromotionSubmissions(promotionId: number, projectId?: number): Promise<SubmissionMetadataResponse[]> {
+    const submissions = await this.prisma.submissions.findMany({
+      where: {
+        deliverable: {
+          promotionId,
+          ...(projectId && { projectId }),
+        },
+        fileUrl: { not: null },
+      },
+      orderBy: { submissionDate: "desc" },
+      include: {
+        deliverable: {
+          select: {
+            type: true,
+            name: true,
+            projectId: true,
+            promotionId: true,
+          },
+        },
+      },
+    });
+
+    if (submissions.length === 0) {
+      return [];
+    }
+
+    const BATCH_SIZE = 5;
+
+    const batchPromises = [];
+    for (let i = 0; i < submissions.length; i += BATCH_SIZE) {
+      const batch = submissions.slice(i, i + BATCH_SIZE);
+
+      const batchPromise = Promise.allSettled(
+        batch.map(async (submission): Promise<SubmissionMetadataResponse> => {
+          if (!submission.fileUrl) {
+            throw new BadRequestException(`File URL is missing for submission ${submission.id}`);
+          }
+          const metadata = await this.s3Service.getFileMetadata(submission.fileUrl);
+          return {
+            submissionId: submission.id,
+            deliverableId: submission.deliverableId,
+            fileKey: submission.fileUrl,
+            fileName: this.extractFileName(submission.fileUrl),
+            mimeType: metadata.contentType,
+            fileSize: metadata.size,
+            submissionDate: submission.submissionDate,
+            groupId: submission.groupId,
+            penalty: Number(submission.penalty),
+            type: submission.deliverable.type,
+            status: submission.status,
+            gitUrl: submission.gitUrl || undefined,
+            lastModified: metadata.lastModified,
+          };
+        }),
+      ).then((batchResults) => ({ batchResults, batch }));
+
+      batchPromises.push(batchPromise);
+    }
+
+    const allBatchResults = await Promise.all(batchPromises);
+
+    const results: SubmissionMetadataResponse[] = [];
+
+    allBatchResults.forEach(({ batchResults, batch }) => {
+      batchResults.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          results.push(result.value);
+        } else {
+          const submission = batch[index];
+          results.push({
+            submissionId: submission.id,
+            deliverableId: submission.deliverableId,
+            fileKey: "",
+            fileName: "",
+            mimeType: "application/zip",
+            fileSize: 0,
+            submissionDate: submission.submissionDate,
+            groupId: submission.groupId,
+            penalty: Number(submission.penalty),
+            type: submission.deliverable.type,
+            status: submission.status,
+            lastModified: submission.submissionDate,
+            error: true,
+          });
+        }
+      });
+    });
+
+    return results;
+  }
+
   async downloadSubmissionFile(submissionId: number): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
     const submission = await this.prisma.submissions.findUniqueOrThrow({
       where: { id: submissionId },

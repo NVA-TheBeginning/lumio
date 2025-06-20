@@ -62,6 +62,7 @@ describe("PromotionsController", () => {
       expect(proxy.forwardRequest).toHaveBeenNthCalledWith(2, "auth", "/users?ids=1", "GET", undefined, {
         page: 2,
         size: 5,
+        all: false,
       });
       expect(result).toEqual({ data: [student] });
     });

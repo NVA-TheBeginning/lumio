@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service.js";
 import { CreateGroupDto, GroupSettingsDto, UpdateGroupDto } from "./dto/group.dto";
 
@@ -71,5 +71,111 @@ export class GroupsService {
         deadline: new Date(dto.deadline),
       },
     });
+  }
+
+  async randomizeGroups(projectId: number, promotionId: number) {
+    const projectPromotion = await this.prisma.projectPromotion.findUnique({
+      where: { projectId_promotionId: { projectId, promotionId } },
+      include: {
+        groupSettings: true,
+        groups: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!projectPromotion?.groupSettings) {
+      throw new NotFoundException("Project–Promotion introuvable");
+    }
+
+    const { groupSettings, groups: existingGroups } = projectPromotion;
+    const { maxMembers } = groupSettings;
+
+    if (!maxMembers) {
+      throw new BadRequestException("Le paramètre 'maxMembers' n'est pas défini pour les réglages de groupe.");
+    }
+
+    const studentsInPromotion = await this.prisma.studentPromotion.findMany({
+      where: { promotionId },
+      select: { userId: true },
+    });
+
+    if (studentsInPromotion.length === 0) {
+      throw new BadRequestException("Aucun étudiant trouvé dans cette promotion");
+    }
+
+    const allStudentIds = studentsInPromotion.map((sp) => sp.userId);
+    const shuffledStudents = this.shuffleArray([...allStudentIds]);
+
+    const totalStudents = shuffledStudents.length;
+    const idealNumberOfGroups = Math.ceil(totalStudents / maxMembers);
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.groupMember.deleteMany({
+        where: {
+          group: {
+            promotionId: promotionId,
+            projectId: projectId,
+          },
+        },
+      });
+
+      let finalGroupIds: number[] = existingGroups.map((g) => g.id);
+
+      if (existingGroups.length > idealNumberOfGroups) {
+        const groupsToDelete = existingGroups.slice(idealNumberOfGroups);
+        await tx.group.deleteMany({
+          where: {
+            id: {
+              in: groupsToDelete.map((g) => g.id),
+            },
+          },
+        });
+        finalGroupIds = existingGroups.slice(0, idealNumberOfGroups).map((g) => g.id);
+      }
+
+      if (finalGroupIds.length === 0 && totalStudents > 0) {
+        throw new BadRequestException("Impossible de créer ou d'utiliser des groupes pour les étudiants.");
+      }
+
+      const assignments: Array<{ groupId: number; studentId: number }> = [];
+      let studentIdx = 0;
+
+      for (let i = 0; i < finalGroupIds.length; i++) {
+        const groupId = finalGroupIds[i];
+        const studentsRemaining = totalStudents - studentIdx;
+        const groupsRemaining = finalGroupIds.length - i;
+
+        let numStudentsForThisGroup = Math.min(maxMembers, Math.ceil(studentsRemaining / groupsRemaining));
+
+        if (i === finalGroupIds.length - 1) {
+          numStudentsForThisGroup = studentsRemaining;
+        }
+
+        for (let j = 0; j < numStudentsForThisGroup && studentIdx < totalStudents; j++) {
+          assignments.push({
+            groupId: groupId,
+            studentId: shuffledStudents[studentIdx],
+          });
+          studentIdx++;
+        }
+      }
+
+      if (assignments.length > 0) {
+        await tx.groupMember.createMany({
+          data: assignments,
+          skipDuplicates: true,
+        });
+      }
+    });
+  }
+
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 }

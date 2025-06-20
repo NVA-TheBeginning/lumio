@@ -61,7 +61,10 @@ export async function getSubmissions(groupId: number, deliverableId?: number): P
   return await authFetchData(url);
 }
 
-export async function downloadSubmission(submissionId: number): Promise<void> {
+export async function getSubmissionDownloadData(submissionId: number): Promise<{
+  blob: Blob;
+  filename: string;
+}> {
   const { accessToken } = await getTokens();
   if (!accessToken) {
     throw new Error("Access token is missing");
@@ -89,14 +92,7 @@ export async function downloadSubmission(submissionId: number): Promise<void> {
   }
 
   const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+  return { blob, filename };
 }
 
 export async function deleteSubmission(submissionId: number): Promise<void> {

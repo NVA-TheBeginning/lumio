@@ -2,7 +2,6 @@
 
 import { ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 interface ProjectStatisticsProps {
   project: ProjectType;
@@ -31,39 +30,6 @@ export function ProjectStatistics({ project }: ProjectStatisticsProps) {
               )}
             </p>
             <p className="text-sm text-muted-foreground">Étudiants</p>
-          </div>
-          {/* <div className="bg-muted/50 p-4 rounded-md text-center">
-            <p className="text-2xl font-bold">
-              {project.deliverables.reduce(
-                (total, deliverable) => total + deliverable.submissions.filter((s) => s.grade !== null).length,
-                0,
-              )}
-            </p>
-            <p className="text-sm text-muted-foreground">Évaluations</p>
-          </div> */}
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">Progression des groupes</span>
-              <span className="text-sm text-muted-foreground">75%</span>
-            </div>
-            <Progress value={75} className="h-2" />
-          </div>
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">Livrables soumis</span>
-              <span className="text-sm text-muted-foreground">50%</span>
-            </div>
-            <Progress value={50} className="h-2" />
-          </div>
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">Évaluations complétées</span>
-              <span className="text-sm text-muted-foreground">30%</span>
-            </div>
-            <Progress value={30} className="h-2" />
           </div>
         </div>
       </CardContent>

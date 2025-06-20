@@ -207,4 +207,21 @@ export class GroupsController {
       dto,
     );
   }
+
+  @Post("projects/:projectId/promotions/:promotionId/groups/randomize")
+  @ApiOperation({ summary: "Randomize groups for a project‑promotion" })
+  @ApiParam({ name: "projectId", type: Number })
+  @ApiParam({ name: "promotionId", type: Number })
+  @ApiOkResponse({ description: "Groups randomized" })
+  @HttpCode(HttpStatus.OK)
+  async randomizeGroups(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+  ) {
+    return this.proxy.forwardRequest(
+      "project",
+      `/projects/${projectId}/promotions/${promotionId}/groups/randomize`,
+      "POST",
+    );
+  }
 }
