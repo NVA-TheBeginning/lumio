@@ -40,7 +40,7 @@ import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.j
 import { UpdateProjectStatusDto } from "../dto/project.dto.js";
 
 export enum GroupMode {
-  AUTO = "AUTO",
+  AUTO = "RANDOM",
   FREE = "FREE",
   MANUAL = "MANUAL",
 }

@@ -2,9 +2,13 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsDateString, IsInt, IsOptional } from "class-validator";
 
 export class CreatePresentationDto {
-  @ApiProperty({ description: "ID du project-promotion" })
+  @ApiProperty({ description: "ID du project" })
   @IsInt()
-  projectPromotionId: number;
+  projectId: number;
+
+  @ApiProperty({ description: "ID de la promotion" })
+  @IsInt()
+  promotionId: number;
 
   @ApiProperty({ description: "Début de la soutenance (ISO8601)" })
   @IsDateString()

@@ -5,64 +5,63 @@ import { CreatePresentationDto } from "../dto/create-presentation.dto.js";
 import { UpdatePresentationDto } from "../dto/update-presentation.dto.js";
 
 @ApiTags("presentations")
-@Controller("projects/:projectPromotionId/presentations")
+@Controller()
 export class PresentationController {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
-  @Post()
+  @Post("/presentations/:projectId/:promotionId")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Créer une soutenance" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
+  @ApiParam({ name: "projectId", type: Number })
+  @ApiParam({ name: "promotionId", type: Number })
   @ApiBody({ type: CreatePresentationDto })
   @ApiResponse({ status: 201, description: "Soutenance créée." })
-  create(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number, @Body() dto: CreatePresentationDto) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/presentations`, "POST", dto);
+  create(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+    @Body() dto: CreatePresentationDto,
+  ) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${projectId}/${promotionId}`, "POST", dto);
   }
 
-  @Get()
+  @Get("/presentations/:projectId/:promotionId")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Lister toutes les soutenances" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
+  @ApiParam({ name: "projectId", type: Number })
+  @ApiParam({ name: "promotionId", type: Number })
   @ApiResponse({ status: 200, description: "Liste des soutenances." })
-  findAll(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/presentations`, "GET");
+  findAll(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+  ) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${projectId}/${promotionId}`, "GET");
   }
 
-  @Get(":id")
+  @Get("/presentations/:id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Obtenir une soutenance par ID" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, description: "Soutenance trouvée." })
-  findOne(
-    @Param("projectPromotionId", ParseIntPipe) projectPromotionId: number,
-    @Param("id", ParseIntPipe) id: number,
-  ) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/presentations/${id}`, "GET");
+  findOne(@Param("id", ParseIntPipe) id: number) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${id}`, "GET");
   }
 
-  @Put(":id")
+  @Put("/presentations/:id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Mettre à jour une soutenance" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
   @ApiParam({ name: "id", type: Number })
   @ApiBody({ type: UpdatePresentationDto })
   @ApiResponse({ status: 200, description: "Soutenance mise à jour." })
-  update(
-    @Param("projectPromotionId", ParseIntPipe) projectPromotionId: number,
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: UpdatePresentationDto,
-  ) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/presentations/${id}`, "PUT", dto);
+  update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdatePresentationDto) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${id}`, "PUT", dto);
   }
 
-  @Delete(":id")
+  @Delete("/presentations/:id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Supprimer une soutenance" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, description: "Soutenance supprimée." })
-  remove(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number, @Param("id", ParseIntPipe) id: number) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/presentations/${id}`, "DELETE");
+  remove(@Param("id", ParseIntPipe) id: number) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${id}`, "DELETE");
   }
 }

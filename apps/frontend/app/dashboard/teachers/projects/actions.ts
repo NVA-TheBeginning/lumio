@@ -415,31 +415,87 @@ export async function getPromoStudent(promotionId: number): Promise<Member[]> {
   return response.data;
 }
 
-export interface PromotionSubmissionMetadataResponse {
-  submissionId: number;
-  deliverableId: number;
-  fileKey: string;
-  fileName: string;
-  mimeType: string;
-  fileSize: number;
-  submissionDate: Date;
-  groupId: number;
-  penalty: number;
-  type: string[];
-  status: string;
-  lastModified: Date;
-  gitUrl?: string;
-  error?: boolean;
+export interface PresentationType {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  startDatetime: string;
+  endDatetime?: string;
+  durationPerGroup: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export async function getAllPromotionSubmissions(
-  promotionId: number,
-  projectId?: number,
-): Promise<PromotionSubmissionMetadataResponse[]> {
-  const url = projectId
-    ? `${API_URL}/promotions/${promotionId}/submissions?projectId=${projectId}`
-    : `${API_URL}/promotions/${promotionId}/submissions`;
-  return await authFetchData(url);
+export interface OrderType {
+  id: number;
+  presentationId: number;
+  groupId: number;
+  orderNumber: number;
+  scheduledDatetime: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePresentationData {
+  projectId: number;
+  promotionId: number;
+  startDatetime: string;
+  endDatetime?: string;
+  durationPerGroup: number;
+}
+
+export interface UpdatePresentationData {
+  startDatetime?: string;
+  endDatetime?: string;
+  durationPerGroup?: number;
+}
+
+export interface CreateOrderData {
+  presentationId: number;
+  groupId: number;
+  orderNumber: number;
+  scheduledDatetime: string;
+}
+
+export interface UpdateOrderData {
+  orderNumber?: number;
+  scheduledDatetime?: string;
+}
+
+export async function createPresentation(data: CreatePresentationData): Promise<PresentationType> {
+  return await authPostData(`${API_URL}/presentations/${data.projectId}/${data.promotionId}`, data);
+}
+
+export async function getPresentations(projectId: number, promotionId: number): Promise<PresentationType[]> {
+  return await authFetchData(`${API_URL}/presentations/${projectId}/${promotionId}`);
+}
+
+export async function getPresentation(id: number): Promise<PresentationType> {
+  return await authFetchData(`${API_URL}/presentations/${id}`);
+}
+
+export async function updatePresentation(id: number, data: UpdatePresentationData): Promise<PresentationType> {
+  return await authPutData(`${API_URL}/presentations/${id}`, data);
+}
+
+export async function deletePresentation(id: number): Promise<void> {
+  return await authDeleteData(`${API_URL}/presentations/${id}`);
+}
+
+export async function createOrder(presentationId: number, data: CreateOrderData): Promise<OrderType> {
+  return await authPostData(`${API_URL}/presentations/${presentationId}/orders`, data);
+}
+
+export async function getOrders(presentationId: number): Promise<OrderType[]> {
+  return await authFetchData(`${API_URL}/presentations/${presentationId}/orders`);
+}
+
+export async function updateOrder(id: number, data: UpdateOrderData): Promise<OrderType> {
+  return await authPutData(`${API_URL}/orders/${id}`, data);
+}
+
+export async function deleteOrder(id: number): Promise<void> {
+  return await authDeleteData(`${API_URL}/orders/${id}`);
 }
 
 export async function getSubmissionDownloadData(submissionId: number): Promise<{
@@ -474,4 +530,31 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
 
   const blob = await response.blob();
   return { blob, filename };
+}
+
+export interface PromotionSubmissionMetadataResponse {
+  submissionId: number;
+  deliverableId: number;
+  fileKey: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  submissionDate: Date;
+  groupId: number;
+  penalty: number;
+  type: string[];
+  status: string;
+  lastModified: Date;
+  gitUrl?: string;
+  error?: boolean;
+}
+
+export async function getAllPromotionSubmissions(
+  promotionId: number,
+  projectId?: number,
+): Promise<PromotionSubmissionMetadataResponse[]> {
+  const url = projectId
+    ? `${API_URL}/promotions/${promotionId}/submissions?projectId=${projectId}`
+    : `${API_URL}/promotions/${promotionId}/submissions`;
+  return await authFetchData(url);
 }

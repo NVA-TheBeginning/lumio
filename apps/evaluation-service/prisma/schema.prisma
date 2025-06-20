@@ -19,12 +19,13 @@ datasource db {
 
 // ---------- Evaluation Schema ----------
 model Presentation {
-  id                 Int                 @id @default(autoincrement())
-  projectPromotionId Int
-  startDatetime      DateTime
-  endDatetime        DateTime?
-  durationPerGroup   Int
-  orders             PresentationOrder[]
+  id               Int                 @id @default(autoincrement())
+  projectId        Int
+  promotionId      Int
+  startDatetime    DateTime
+  endDatetime      DateTime?
+  durationPerGroup Int
+  orders           PresentationOrder[]
 
   @@map("presentations")
   @@schema("evaluation_schema")
@@ -43,13 +44,14 @@ model PresentationOrder {
 }
 
 model GradingCriteria {
-  id                 Int           @id @default(autoincrement())
-  projectPromotionId Int
-  name               String
-  weight             Float
-  type               CriterionType
-  individual         Boolean       @default(false)
-  grades             Grade[]
+  id          Int           @id @default(autoincrement())
+  projectId   Int
+  promotionId Int
+  name        String
+  weight      Float
+  type        CriterionType
+  individual  Boolean       @default(false)
+  grades      Grade[]
 
   @@map("grading_criteria")
   @@schema("evaluation_schema")
@@ -70,14 +72,14 @@ model Grade {
 }
 
 model FinalGrade {
-  id                 Int      @id @default(autoincrement())
-  projectPromotionId Int
-  userId             Int
-  finalGrade         Float
-  comment            String?
-  validatedAt        DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  promotionId Int
+  groupId     Int
+  finalGrade  Float
+  comment     String?
+  validatedAt DateTime @default(now())
 
-  @@unique([projectPromotionId, userId])
   @@map("final_grades")
   @@schema("evaluation_schema")
 }

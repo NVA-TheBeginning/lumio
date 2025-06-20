@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { CreatePresentationDto } from "./dto/create-presentation.dto";
 import { UpdatePresentationDto } from "./dto/update-presentation.dto";
@@ -11,20 +11,18 @@ export class PresentationService {
     return this.prisma.presentation.create({ data: dto });
   }
 
-  async findAll(projectPromotionId: number) {
+  async findAll(projectId: number, promotionId: number) {
     return this.prisma.presentation.findMany({
-      where: { projectPromotionId },
+      where: { projectId, promotionId },
       include: { orders: true },
     });
   }
 
   async findOne(id: number) {
-    const pres = await this.prisma.presentation.findUnique({
+    return await this.prisma.presentation.findUniqueOrThrow({
       where: { id },
       include: { orders: true },
     });
-    if (!pres) throw new NotFoundException(`Presentation #${id} introuvable`);
-    return pres;
   }
 
   async update(id: number, dto: UpdatePresentationDto) {

@@ -12,6 +12,18 @@ export function formatDate(dateString: string): string {
   return date.toLocaleDateString("fr-FR", options);
 }
 
+export function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  return date.toLocaleDateString("fr-FR", options);
+}
+
 export async function authFetchData<T>(url: string): Promise<T> {
   const { accessToken } = await getTokens();
   if (!accessToken) {
