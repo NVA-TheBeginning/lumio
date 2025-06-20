@@ -5,36 +5,43 @@ import { UpdatePresentationDto } from "./dto/update-presentation.dto";
 import { PresentationService } from "./presentation.service";
 
 @ApiTags("presentations")
-@Controller("projects/:projectPromotionId/presentations")
+@Controller()
 export class PresentationController {
   constructor(private readonly service: PresentationService) {}
 
-  @Post()
+  @Post("/presentations/:projectId/:promotionId")
   @ApiOperation({ summary: "Créer créneaux de soutenance" })
   @ApiResponse({ status: 201, description: "Créneaux de Soutenance créée." })
-  create(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number, @Body() dto: CreatePresentationDto) {
-    return this.service.create({ ...dto, projectPromotionId });
+  create(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+    @Body() dto: CreatePresentationDto,
+  ) {
+    return this.service.create({ ...dto, projectId, promotionId });
   }
 
-  @Get()
+  @Get("/presentations/:projectId/:promotionId")
   @ApiOperation({ summary: "Lister toutes les soutenances" })
-  findAll(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number) {
-    return this.service.findAll(projectPromotionId);
+  findAll(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+  ) {
+    return this.service.findAll(projectId, promotionId);
   }
 
-  @Get(":id")
+  @Get("/presentations/:id")
   @ApiOperation({ summary: "Obtenir une soutenance par ID" })
   findOne(@Param("id", ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
-  @Put(":id")
+  @Put("/presentations/:id")
   @ApiOperation({ summary: "Mettre à jour une soutenance" })
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdatePresentationDto) {
     return this.service.update(id, dto);
   }
 
-  @Delete(":id")
+  @Delete("/presentations/:id")
   @ApiOperation({ summary: "Supprimer une soutenance" })
   remove(@Param("id", ParseIntPipe) id: number) {
     return this.service.remove(id);

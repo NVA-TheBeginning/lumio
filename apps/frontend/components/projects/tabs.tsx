@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectDeliverables } from "./tabs/deliverables";
 import { ProjectGroups } from "./tabs/groups";
 import { ProjectOverview } from "./tabs/overview";
+import { ProjectPresentations } from "./tabs/presentations";
 import { ProjectSettings } from "./tabs/settings";
 
 interface ProjectTabsProps {
@@ -76,9 +77,7 @@ export function ProjectTabs({ project, activeTab, setActiveTab }: ProjectTabsPro
           </TabsContent>
 
           <TabsContent value="presentations" className="mt-0">
-            <div className="text-center">
-              <p className="text-muted-foreground">Coming soon...</p>
-            </div>
+            <ProjectPresentations project={project} />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">
