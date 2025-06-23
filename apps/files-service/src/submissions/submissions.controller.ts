@@ -122,4 +122,13 @@ export class SubmissionsController {
   async deleteSubmission(@Param("idSubmission") idSubmission: number): Promise<void> {
     return this.submissionsService.deleteSubmission(Number(idSubmission));
   }
+
+  @Post("submissions/:idSubmission/accept")
+  @ApiOperation({ summary: "Accept a submission (teacher only)" })
+  @ApiResponse({ status: HttpStatus.OK, description: "Submission accepted successfully." })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Submission is already accepted or invalid." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
+  async acceptSubmission(@Param("idSubmission") idSubmission: number): Promise<Submissions> {
+    return this.submissionsService.acceptSubmission(Number(idSubmission));
+  }
 }

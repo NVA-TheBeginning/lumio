@@ -79,8 +79,8 @@ model Submissions {
 }
 
 enum SubmissionStatus {
-  PASSED
-  FAILED
+  ACCEPTED
+  PENDING
   LATE
 
   @@schema("files_schema")

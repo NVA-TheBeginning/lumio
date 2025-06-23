@@ -49,6 +49,7 @@ describe("SubmissionsController", () => {
       findUnique: mock(),
       findUniqueOrThrow: mock(),
       delete: mock(),
+      update: mock(),
     },
   };
 
@@ -64,6 +65,7 @@ describe("SubmissionsController", () => {
     mockPrismaService.deliverables.findUnique.mockReset();
     mockPrismaService.deliverables.findUniqueOrThrow.mockReset();
     mockPrismaService.submissions.create.mockReset();
+    mockPrismaService.submissions.update.mockReset();
 
     s3Service = mockS3Service as unknown as S3Service;
     prismaService = mockPrismaService as unknown as PrismaService;
@@ -563,6 +565,58 @@ describe("SubmissionsController", () => {
       });
 
       expect(mockS3Service.deleteFile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("acceptSubmission", () => {
+    test("should accept a pending submission", async () => {
+      const mockSubmission = {
+        id: 1,
+        deliverableId: 1,
+        groupId: 123,
+        status: "PENDING",
+        penalty: 0,
+        submissionDate: new Date(),
+      };
+
+      const mockUpdatedSubmission = {
+        ...mockSubmission,
+        status: "ACCEPTED",
+      };
+
+      mockPrismaService.submissions.findUniqueOrThrow.mockResolvedValue(mockSubmission);
+      mockPrismaService.submissions.update.mockResolvedValue(mockUpdatedSubmission);
+
+      const result = await controller.acceptSubmission(1);
+
+      expect(result.status).toBe("ACCEPTED");
+      expect(mockPrismaService.submissions.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { status: "ACCEPTED" },
+      });
+    });
+
+    test("should throw BadRequestException if submission is already accepted", async () => {
+      const mockSubmission = {
+        id: 1,
+        deliverableId: 1,
+        groupId: 123,
+        status: "ACCEPTED",
+        penalty: 0,
+        submissionDate: new Date(),
+      };
+
+      mockPrismaService.submissions.findUniqueOrThrow.mockResolvedValue(mockSubmission);
+
+      let error: Error | null = null;
+      try {
+        await controller.acceptSubmission(1);
+      } catch (e) {
+        error = e as Error;
+      }
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error?.message).toContain("already accepted");
     });
   });
 });

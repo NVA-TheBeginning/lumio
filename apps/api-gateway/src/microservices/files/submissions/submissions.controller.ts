@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -144,5 +145,14 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
   async deleteSubmission(@Param("idSubmission") idSubmission: number): Promise<void> {
     return await this.proxy.forwardRequest("files", `/submissions/${idSubmission}`, "DELETE");
+  }
+
+  @Patch("submissions/:idSubmission/accept")
+  @ApiOperation({ summary: "Accept a submission (teacher only)" })
+  @ApiResponse({ status: HttpStatus.OK, description: "Submission accepted successfully." })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Submission is already accepted or invalid." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
+  async acceptSubmission(@Param("idSubmission", ParseIntPipe) idSubmission: number) {
+    return await this.proxy.forwardRequest("files", `/submissions/${idSubmission}/accept`, "PATCH");
   }
 }
