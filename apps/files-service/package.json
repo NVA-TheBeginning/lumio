@@ -9,7 +9,7 @@
     "dev:debug": "bun --bun nest start --debug --watch",
     "start:prod": "bun --bun dist/main.js",
     "test": "bun test",
-    "prisma": "npx prisma generate && npx prisma db push --accept-data-loss --force-reset"
+    "prisma": "npx prisma generate && npx prisma db push"
   },
   "dependencies": {
     "@fastify/multipart": "^9.0.3",
