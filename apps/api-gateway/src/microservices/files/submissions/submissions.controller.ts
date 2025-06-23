@@ -7,6 +7,7 @@ import {
   Get,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   UploadedFile,
@@ -26,7 +27,14 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   @ApiConsumes("multipart/form-data")
-  @UseInterceptors(FileInterceptor("file", { preservePath: true }))
+  @UseInterceptors(
+    FileInterceptor("file", {
+      preservePath: true,
+      limits: {
+        fileSize: 100 * 1024 * 1024,
+      },
+    }),
+  )
   @ApiBody({
     required: true,
     schema: {
@@ -51,20 +59,33 @@ export class SubmissionsController {
     },
   })
   async submit(
-    @Param("idDeliverable") idDeliverable: number,
-    @Body("groupId") groupId: number,
+    @Param("idDeliverable", ParseIntPipe) idDeliverable: number,
+    @Body() body: { groupId: string; gitUrl?: string },
     @UploadedFile() file?: File,
-    @Body("gitUrl") gitUrl?: string,
   ) {
-    if (!(file?.buffer || gitUrl)) {
+    const groupId = parseInt(body.groupId, 10);
+
+    if (Number.isNaN(groupId)) {
+      throw new BadRequestException("groupId must be a valid number");
+    }
+
+    if (!(file?.buffer || body.gitUrl)) {
       throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
-    return await this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submit`, "POST", {
-      file,
-      gitUrl,
-      groupId,
-    });
+    const formData = new FormData();
+    formData.append("groupId", groupId.toString());
+
+    if (file?.buffer) {
+      const fileBlob = new Blob([file.buffer], { type: file.mimetype });
+      formData.append("file", fileBlob, file.originalname);
+    }
+
+    if (body.gitUrl) {
+      formData.append("gitUrl", body.gitUrl);
+    }
+
+    return await this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/submit`, "POST", formData);
   }
 
   @Get("deliverables/:groupId/submissions")

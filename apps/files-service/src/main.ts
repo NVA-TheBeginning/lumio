@@ -6,7 +6,10 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "@/app.module.js";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ logger: true }));
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({ logger: true, bodyLimit: 10485760 }),
+  );
 
   const config = new DocumentBuilder().setTitle("Files Service").setVersion("1.0").build();
 

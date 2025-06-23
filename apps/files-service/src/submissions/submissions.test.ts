@@ -56,11 +56,14 @@ describe("SubmissionsController", () => {
     mockS3Service.getFileMetadata.mockReset();
     mockS3Service.getFile.mockReset();
     mockS3Service.deleteFile.mockReset();
+    mockS3Service.uploadGitSubmission.mockReset();
+    mockS3Service.uploadZipSubmission.mockReset();
     mockPrismaService.submissions.findMany.mockReset();
     mockPrismaService.submissions.findUniqueOrThrow.mockReset();
     mockPrismaService.submissions.delete.mockReset();
     mockPrismaService.deliverables.findUnique.mockReset();
     mockPrismaService.deliverables.findUniqueOrThrow.mockReset();
+    mockPrismaService.submissions.create.mockReset();
 
     s3Service = mockS3Service as unknown as S3Service;
     prismaService = mockPrismaService as unknown as PrismaService;
@@ -103,12 +106,20 @@ describe("SubmissionsController", () => {
         allowLateSubmission: true,
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
 
       const invalidGitUrl = "this-is-not-a-valid-git-url";
 
-      expect(() => controller.submit(1, 123, mockFile as unknown as File, invalidGitUrl)).toThrow(BadRequestException);
-      expect(mockPrismaService.deliverables.findUnique).toHaveBeenCalledWith({
+      let error: Error | null = null;
+      try {
+        await controller.submit(1, 123, mockFile as unknown as File, invalidGitUrl);
+      } catch (e) {
+        error = e as Error;
+      }
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect(error?.message).toContain("Invalid Git URL format");
+      expect(mockPrismaService.deliverables.findUniqueOrThrow).toHaveBeenCalledWith({
         where: { id: 1 },
       });
     });
@@ -136,7 +147,8 @@ describe("SubmissionsController", () => {
         submissionDate: new Date(),
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
+      mockS3Service.uploadGitSubmission.mockResolvedValue("mocked-git-key");
       mockPrismaService.submissions.create.mockResolvedValue(mockSubmission);
 
       await controller.submit(1, 123, undefined, "https://github.com/test/test");
@@ -150,7 +162,7 @@ describe("SubmissionsController", () => {
       });
     });
 
-    test.skip("should throw BadRequestException when late submission is not allowed", async () => {
+    test("should throw BadRequestException when late submission is not allowed", async () => {
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 5);
 
@@ -158,12 +170,12 @@ describe("SubmissionsController", () => {
         id: 1,
         projectId: 100,
         promotionId: 200,
-        type: DeliverableType.FILE,
+        type: [DeliverableType.FILE],
         deadline: pastDate,
         allowLateSubmission: false,
       };
 
-      mockPrismaService.deliverables.findUnique.mockResolvedValue(mockDeliverable);
+      mockPrismaService.deliverables.findUniqueOrThrow.mockResolvedValue(mockDeliverable);
 
       let error: Error | null = null;
       try {
@@ -173,7 +185,7 @@ describe("SubmissionsController", () => {
       }
 
       expect(error).toBeInstanceOf(BadRequestException);
-      expect(error?.message).toContain("Late submission is not allowed");
+      expect(error?.message).toContain("not allowed after the deadline");
     });
   });
 

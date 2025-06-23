@@ -17,7 +17,7 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 async function bootstrap() {
   const logger = new Logger("Gateway");
 
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ bodyLimit: 10048576 }));
   const configService = app.get(ConfigService);
 
   const port = configService.get<number>("port") ?? 3000;
