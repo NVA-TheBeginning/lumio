@@ -210,7 +210,7 @@ export class ProjectService {
       },
     });
 
-    const projectPromotion = await this.prisma.projectPromotion.findFirstOrThrow({
+    const projectPromotion = await this.prisma.projectPromotion.findFirst({
       where: {
         projectId,
         status: ProjectStatus.VISIBLE,
@@ -231,6 +231,10 @@ export class ProjectService {
         },
       },
     });
+
+    if (!projectPromotion) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
 
     const projectData = await this.prisma.project.findUniqueOrThrow({
       where: {
