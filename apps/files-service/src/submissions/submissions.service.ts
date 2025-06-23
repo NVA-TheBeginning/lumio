@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { DeliverableType, Submissions } from "@prisma-files/client";
 import * as yauzl from "yauzl";
 import { PrismaService } from "@/prisma.service";
@@ -44,16 +44,20 @@ export class SubmissionsService {
   ) {}
 
   async submit(idDeliverable: number, groupId: number, file: Buffer, gitUrl?: string): Promise<Submissions> {
-    const deliverable = await this.prisma.deliverables.findUnique({
+    const deliverable = await this.prisma.deliverables.findUniqueOrThrow({
       where: { id: Number(idDeliverable) },
     });
 
-    if (!deliverable) {
-      throw new NotFoundException(`Deliverable with ID ${idDeliverable} not found`);
-    }
-
     const deadline = new Date(deliverable.deadline);
     const now = new Date();
+
+    if (deadline < now && !deliverable.allowLateSubmission) {
+      console.warn(
+        `Submission for deliverable ${idDeliverable} is late. Deadline was ${deadline.toISOString()}, current time is ${now.toISOString()}`,
+      );
+      throw new BadRequestException("Submission is not allowed after the deadline");
+    }
+
     let penalty = 0;
     if (deadline < now) {
       const diff = Math.abs(deadline.getTime() - now.getTime());

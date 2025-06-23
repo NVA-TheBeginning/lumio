@@ -6,6 +6,7 @@ import {
   Delete,
   Get,
   HttpStatus,
+  Logger,
   Param,
   Post,
   Query,
@@ -27,7 +28,14 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   @ApiConsumes("multipart/form-data")
-  @UseInterceptors(FileInterceptor("file", { preservePath: true }))
+  @UseInterceptors(
+    FileInterceptor("file", {
+      preservePath: true,
+      limits: {
+        fileSize: 100 * 1024 * 1024,
+      },
+    }),
+  )
   @ApiBody({
     required: true,
     schema: {
@@ -95,9 +103,7 @@ export class SubmissionsController {
     @Param("promotionId") promotionId: number,
     @Query("projectId") projectId?: number,
   ): Promise<SubmissionMetadataResponse[]> {
-    const data = await this.submissionsService.findAllPromotionSubmissions(Number(promotionId), Number(projectId));
-    console.log("Retrieved submissions for promotion:", data);
-    return data;
+    return await this.submissionsService.findAllPromotionSubmissions(Number(promotionId), Number(projectId));
   }
 
   @Get("submissions/:idSubmission/download")

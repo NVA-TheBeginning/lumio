@@ -146,7 +146,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     const isOverdue = now > deadlineDate;
     const isUpcoming = deadlineDate.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000;
 
-    // Use the new submissions data from React Query
     const submission = submissions?.find(
       (s) => s.deliverableId === deliverable.id && s.groupId === currentUserGroup?.id,
     );

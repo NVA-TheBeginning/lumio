@@ -204,9 +204,16 @@ export class ProjectService {
   }
 
   async getProjectInfoStudent(projectId: number, userId: number): Promise<ProjectStudentDto> {
-    const canAccess = await this.prisma.projectPromotion.findFirst({
+    await this.prisma.project.findUniqueOrThrow({
+      where: {
+        id: projectId,
+      },
+    });
+
+    const projectPromotion = await this.prisma.projectPromotion.findFirstOrThrow({
       where: {
         projectId,
+        status: ProjectStatus.VISIBLE,
         promotion: {
           studentPromotions: {
             some: {
@@ -214,36 +221,37 @@ export class ProjectService {
             },
           },
         },
-        status: "VISIBLE",
       },
-      select: {
-        project: {
+      include: {
+        promotion: {
           select: {
             id: true,
+            name: true,
           },
         },
       },
     });
-    if (!canAccess) {
-      throw new NotFoundException("Project not found or you are not authorized to access it");
-    }
 
-    const projectData = await this.prisma.project.findUnique({
+    const projectData = await this.prisma.project.findUniqueOrThrow({
       where: {
         id: projectId,
       },
       include: {
         projectPromotions: {
+          where: {
+            status: ProjectStatus.VISIBLE,
+          },
           include: {
-            promotion: true,
+            promotion: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
     });
-
-    if (!projectData) {
-      throw new NotFoundException("Project not found");
-    }
 
     const result: ProjectStudentDto = {
       id: projectData.id,
@@ -253,7 +261,7 @@ export class ProjectService {
       createdAt: projectData.createdAt.toISOString(),
       updatedAt: projectData.updatedAt.toISOString(),
       deletedAt: projectData.deletedAt?.toISOString() || null,
-      promotionId: projectData.projectPromotions[0]?.promotionId || 1,
+      promotionId: projectPromotion.promotionId,
     };
 
     return result;
