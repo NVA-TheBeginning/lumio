@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createDeliverable, ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Button } from "@/components/ui/button";
@@ -36,17 +36,30 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
   const [deliverableType, setDeliverableType] = useState<string[]>(["FILE"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (open && project.promotions.length > 0 && !promotionId && project.promotions[0]) {
+      setPromotionId(project.promotions[0].id.toString());
+    }
+  }, [open, project.promotions, promotionId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      if (!promotionId && project.promotions.length > 0 && project.promotions[0]) {
-        setPromotionId(project.promotions[0].id.toString());
+      const selectedPromotionId =
+        promotionId ||
+        (project.promotions.length > 0 && project.promotions[0] ? project.promotions[0].id.toString() : "");
+
+      if (!selectedPromotionId) {
+        toast.error("Veuillez sélectionner une promotion");
+        setIsSubmitting(false);
+        return;
       }
+
       await createDeliverable({
         projectId: project.id,
-        promotionId: Number(promotionId),
+        promotionId: Number(selectedPromotionId),
         name,
         description: description || undefined,
         deadline,

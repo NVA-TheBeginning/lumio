@@ -1,12 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Download, FileText, Filter, GitBranch, Search } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Calendar, Check, Download, FileText, Filter, GitBranch, Search } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  acceptSubmission,
   getAllPromotionSubmissions,
   getProjectByIdTeacher,
   getSubmissionDownloadData,
@@ -27,6 +28,7 @@ export default function ProjectSubmissionsPage() {
   const projectId = Number(params.projectId);
   const initialPromotionId = searchParams.get("promotionId");
   const initialDeliverableId = searchParams.get("deliverableId");
+  const queryClient = useQueryClient();
 
   const [activePromotion, setActivePromotion] = useState<string>(initialPromotionId || "");
   const [selectedDeliverable, setSelectedDeliverable] = useState<string>(initialDeliverableId || "all");
@@ -44,6 +46,20 @@ export default function ProjectSubmissionsPage() {
     enabled: !!activePromotion,
   });
 
+  const acceptSubmissionMutation = useMutation({
+    mutationFn: acceptSubmission,
+    onSuccess: () => {
+      toast.success("Soumission acceptée avec succès");
+      queryClient.invalidateQueries({
+        queryKey: ["promotion-submissions", activePromotion, projectId],
+      });
+    },
+    onError: (error) => {
+      console.error("Erreur lors de l'acceptation:", error);
+      toast.error("Erreur lors de l'acceptation de la soumission");
+    },
+  });
+
   useMemo(() => {
     if (project && !activePromotion && project.promotions.length > 0 && project.promotions[0]) {
       setActivePromotion(project.promotions[0].id.toString());
@@ -52,10 +68,14 @@ export default function ProjectSubmissionsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
-      case "passed":
-        return <Badge className="bg-green-500">Validé</Badge>;
+      case "accepted":
+        return <Badge className="bg-green-500">Accepté</Badge>;
+      case "pending":
+        return <Badge className="bg-yellow-500">En attente</Badge>;
       case "late":
         return <Badge className="bg-orange-500">En retard</Badge>;
+      case "passed":
+        return <Badge className="bg-green-500">Validé</Badge>;
       case "failed":
         return <Badge variant="destructive">Échec</Badge>;
       default:
@@ -83,6 +103,10 @@ export default function ProjectSubmissionsPage() {
       console.error("Erreur lors du téléchargement:", error);
       toast.error("Erreur lors du téléchargement");
     }
+  };
+
+  const handleAcceptSubmission = async (submissionId: number) => {
+    await acceptSubmissionMutation.mutateAsync(submissionId);
   };
 
   const filteredSubmissions = (() => {
@@ -223,8 +247,10 @@ export default function ProjectSubmissionsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Tous les statuts</SelectItem>
-                          <SelectItem value="passed">Validé</SelectItem>
+                          <SelectItem value="accepted">Accepté</SelectItem>
+                          <SelectItem value="pending">En attente</SelectItem>
                           <SelectItem value="late">En retard</SelectItem>
+                          <SelectItem value="passed">Validé</SelectItem>
                           <SelectItem value="failed">Échec</SelectItem>
                         </SelectContent>
                       </Select>
@@ -315,6 +341,18 @@ export default function ProjectSubmissionsPage() {
                                   </div>
 
                                   <div className="flex gap-2">
+                                    {submission.status.toLowerCase() === "pending" && (
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={() => handleAcceptSubmission(submission.submissionId)}
+                                        disabled={acceptSubmissionMutation.isPending}
+                                        className="bg-green-600 hover:bg-green-700"
+                                      >
+                                        <Check className="h-4 w-4 mr-1" />
+                                        {acceptSubmissionMutation.isPending ? "Acceptation..." : "Accepter"}
+                                      </Button>
+                                    )}
                                     {submission.fileName && !submission.error && (
                                       <Button
                                         variant="outline"

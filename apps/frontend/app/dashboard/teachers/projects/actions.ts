@@ -558,3 +558,8 @@ export async function getAllPromotionSubmissions(
     : `${API_URL}/promotions/${promotionId}/submissions`;
   return await authFetchData(url);
 }
+
+export async function acceptSubmission(submissionId: number): Promise<PromotionSubmissionMetadataResponse> {
+  const url = `${API_URL}/submissions/${submissionId}/accept`;
+  return await authPatchData(url, {});
+}

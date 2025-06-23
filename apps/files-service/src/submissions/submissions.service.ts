@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { DeliverableType, Submissions } from "@prisma-files/client";
+import { DeliverableType, SubmissionStatus, Submissions } from "@prisma-files/client";
 import * as yauzl from "yauzl";
 import { PrismaService } from "@/prisma.service";
 import { S3Service } from "@/s3.service";
@@ -104,7 +104,7 @@ export class SubmissionsService {
     const created = await this.prisma.submissions.create({
       data: {
         deliverableId: idDeliverable,
-        status: penalty > 0 ? "LATE" : "PASSED",
+        status: penalty > 0 ? SubmissionStatus.LATE : SubmissionStatus.PENDING,
         groupId,
         penalty,
         fileUrl: key,
@@ -375,6 +375,21 @@ export class SubmissionsService {
     }
     await this.prisma.submissions.delete({
       where: { id: Number(idSubmission) },
+    });
+  }
+
+  async acceptSubmission(submissionId: number): Promise<Submissions> {
+    const submission = await this.prisma.submissions.findUniqueOrThrow({
+      where: { id: submissionId },
+    });
+
+    if (submission.status === SubmissionStatus.ACCEPTED) {
+      throw new BadRequestException("Submission is already accepted");
+    }
+
+    return this.prisma.submissions.update({
+      where: { id: submissionId },
+      data: { status: SubmissionStatus.ACCEPTED },
     });
   }
 }
