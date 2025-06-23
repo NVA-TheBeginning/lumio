@@ -6,7 +6,6 @@ import {
   Delete,
   Get,
   HttpStatus,
-  Logger,
   Param,
   Post,
   Query,
