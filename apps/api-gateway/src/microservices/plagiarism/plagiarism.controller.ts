@@ -38,7 +38,7 @@ export class PlagiarismController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: 201,
     description: "Plagiarism analysis completed successfully",
     schema: {
       type: "object",
@@ -92,6 +92,6 @@ export class PlagiarismController {
     description: "Internal server error during plagiarism analysis",
   })
   async checkPlagiarism(@Body() body: PlagiarismCheckDto) {
-    return this.proxy.forwardRequest("plagiarism", "/checks", "POST", body);
+    return this.proxy.forwardRequest("plagiarism", "/plagiarism/checks", "POST", body);
   }
 }
