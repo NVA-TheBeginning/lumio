@@ -1,7 +1,9 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { CacheTTL } from "@nestjs/cache-manager";
+import { Body, Controller, Post, UseInterceptors } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { PlagiarismCheckDto } from "./dto/plagiarism-check.dto.js";
+import { PlagiarismCacheInterceptor } from "./interceptors/plagiarism-cache.interceptor.js";
 
 @ApiTags("Plagiarism")
 @Controller("plagiarism")
@@ -9,10 +11,12 @@ export class PlagiarismController {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
   @Post("checks")
+  @UseInterceptors(PlagiarismCacheInterceptor)
+  @CacheTTL(600000)
   @ApiOperation({
     summary: "Downloads, processes, and compares project submissions for plagiarism",
     description:
-      "Analyzes project submissions from S3 storage for potential plagiarism using MOSS and Rabin-Karp algorithms",
+      "Analyzes project submissions from S3 storage for potential plagiarism using MOSS and Rabin-Karp algorithms. Results are cached for 10 minutes for identical project and promotion combinations.",
   })
   @ApiBody({
     required: true,
@@ -88,6 +92,6 @@ export class PlagiarismController {
     description: "Internal server error during plagiarism analysis",
   })
   async checkPlagiarism(@Body() body: PlagiarismCheckDto) {
-    return this.proxy.forwardRequest("plagiarism", "/plagiarism/checks", "POST", body);
+    return this.proxy.forwardRequest("plagiarism", "/checks", "POST", body);
   }
 }

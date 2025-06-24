@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
+import { CacheModule } from "@nestjs/cache-manager";
 import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { HealthController } from "@/health/health.controller.js";
 import { AuthModule } from "@/microservices/auth/auth.module.js";
@@ -24,6 +25,10 @@ import { PlagiarismModule } from "./microservices/plagiarism/plagiarism.module.j
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+    }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 600000, // 10 minutes in milliseconds
     }),
     AuthModule,
     UsersModule,
