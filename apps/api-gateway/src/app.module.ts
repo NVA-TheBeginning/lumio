@@ -17,6 +17,7 @@ import { DeliverablesModule } from "./microservices/files/deliverables/deliverab
 import { FilesModule } from "./microservices/files/files.module.js";
 import { SubmissionsModule } from "./microservices/files/submissions/submissions.module.js";
 import { ReportsModule } from "./microservices/reports/reports.module.js";
+import { PlagiarismModule } from "./microservices/plagiarism/plagiarism.module.js";
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     DeliverablesModule,
     DeliverableRulesModule,
     ReportsModule,
+    PlagiarismModule,
     PresentationModule,
     OrderModule,
     CriteriaModule,
