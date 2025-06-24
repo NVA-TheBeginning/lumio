@@ -1,7 +1,7 @@
+import { CacheModule } from "@nestjs/cache-manager";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
-import { CacheModule } from "@nestjs/cache-manager";
 import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { HealthController } from "@/health/health.controller.js";
 import { AuthModule } from "@/microservices/auth/auth.module.js";
@@ -17,8 +17,8 @@ import { DeliverableRulesModule } from "./microservices/files/deliverable-rules/
 import { DeliverablesModule } from "./microservices/files/deliverables/deliverables.module.js";
 import { FilesModule } from "./microservices/files/files.module.js";
 import { SubmissionsModule } from "./microservices/files/submissions/submissions.module.js";
-import { ReportsModule } from "./microservices/reports/reports.module.js";
 import { PlagiarismModule } from "./microservices/plagiarism/plagiarism.module.js";
+import { ReportsModule } from "./microservices/reports/reports.module.js";
 
 @Module({
   imports: [
