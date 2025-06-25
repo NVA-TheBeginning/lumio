@@ -20,6 +20,7 @@ pub struct BodyRequest {
     pub project_id: String,
     #[serde(rename = "promotionId")]
     pub promotion_id: String,
+    pub step: String,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, ApiComponent, Clone)]
@@ -150,9 +151,27 @@ fn generate_overall_flags(moss_score: f64, rabin_karp_score: f64) -> Vec<String>
 
 #[api_operation(summary = "Downloads, processes, and compares project submissions for plagiarism.")]
 pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>) -> impl Responder {
+    if body.project_id.trim().is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Missing required parameter: projectId"
+        }));
+    }
+
+    if body.promotion_id.trim().is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Missing required parameter: promotionId"
+        }));
+    }
+
+    if body.step.trim().is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Missing required parameter: step"
+        }));
+    }
+
     let s3_directory_prefix = format!(
-        "project-{}/promo-{}/step-999/",
-        body.project_id, body.promotion_id
+        "project-{}/promo-{}/step-{}/",
+        body.project_id, body.promotion_id, body.step
     );
     let base_extract_target_dir = &app_state.extract_base_path;
     let s3_file_keys = match s3::list_files_in_directory(&s3_directory_prefix).await {

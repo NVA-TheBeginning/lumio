@@ -55,6 +55,7 @@ async fn test_checks_projects_api_with_comparisons() {
     let req_body = BodyRequest {
         project_id: "999".to_string(),
         promotion_id: "999".to_string(),
+        step: "999".to_string(),
     };
 
     let req = test::TestRequest::post()
@@ -123,6 +124,7 @@ async fn test_checks_projects_api_full_response_format_and_content() {
     let req_body = BodyRequest {
         project_id: "999".to_string(),
         promotion_id: "999".to_string(),
+        step: "999".to_string(),
     };
 
     let req = test::TestRequest::post()
@@ -252,5 +254,179 @@ async fn test_checks_projects_api_full_response_format_and_content() {
         match_c_to_b
             .flags
             .contains(&"SIGNIFICANT_RABIN_KARP_MATCH".to_string())
+    );
+}
+
+#[actix_web::test]
+async fn test_missing_project_id() {
+    let temp_project_root = tempdir().unwrap();
+    let app_state = Data::new(AppState {
+        extract_base_path: temp_project_root.path().to_path_buf(),
+    });
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .service(web::resource("/plagiarism/checks").route(web::post().to(checks_projects))),
+    )
+    .await;
+
+    let req_body = BodyRequest {
+        project_id: "".to_string(),
+        promotion_id: "999".to_string(),
+        step: "999".to_string(),
+    };
+
+    let req = test::TestRequest::post()
+        .uri("/plagiarism/checks")
+        .set_json(&req_body)
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), actix_web::http::StatusCode::BAD_REQUEST);
+
+    let body = test::read_body(resp).await;
+    let error_response: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(
+        error_response["error"],
+        "Missing required parameter: projectId"
+    );
+}
+
+#[actix_web::test]
+async fn test_missing_promotion_id() {
+    let temp_project_root = tempdir().unwrap();
+    let app_state = Data::new(AppState {
+        extract_base_path: temp_project_root.path().to_path_buf(),
+    });
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .service(web::resource("/plagiarism/checks").route(web::post().to(checks_projects))),
+    )
+    .await;
+
+    let req_body = BodyRequest {
+        project_id: "999".to_string(),
+        promotion_id: "".to_string(),
+        step: "999".to_string(),
+    };
+
+    let req = test::TestRequest::post()
+        .uri("/plagiarism/checks")
+        .set_json(&req_body)
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), actix_web::http::StatusCode::BAD_REQUEST);
+
+    let body = test::read_body(resp).await;
+    let error_response: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(
+        error_response["error"],
+        "Missing required parameter: promotionId"
+    );
+}
+
+#[actix_web::test]
+async fn test_missing_step() {
+    let temp_project_root = tempdir().unwrap();
+    let app_state = Data::new(AppState {
+        extract_base_path: temp_project_root.path().to_path_buf(),
+    });
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .service(web::resource("/plagiarism/checks").route(web::post().to(checks_projects))),
+    )
+    .await;
+
+    let req_body = BodyRequest {
+        project_id: "999".to_string(),
+        promotion_id: "999".to_string(),
+        step: "".to_string(),
+    };
+
+    let req = test::TestRequest::post()
+        .uri("/plagiarism/checks")
+        .set_json(&req_body)
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), actix_web::http::StatusCode::BAD_REQUEST);
+
+    let body = test::read_body(resp).await;
+    let error_response: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(error_response["error"], "Missing required parameter: step");
+}
+
+#[actix_web::test]
+async fn test_empty_step() {
+    let temp_project_root = tempdir().unwrap();
+    let app_state = Data::new(AppState {
+        extract_base_path: temp_project_root.path().to_path_buf(),
+    });
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .service(web::resource("/plagiarism/checks").route(web::post().to(checks_projects))),
+    )
+    .await;
+
+    let req_body = BodyRequest {
+        project_id: "999".to_string(),
+        promotion_id: "999".to_string(),
+        step: "".to_string(),
+    };
+
+    let req = test::TestRequest::post()
+        .uri("/plagiarism/checks")
+        .set_json(&req_body)
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), actix_web::http::StatusCode::BAD_REQUEST);
+
+    let body = test::read_body(resp).await;
+    let error_response: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(error_response["error"], "Missing required parameter: step");
+}
+
+#[actix_web::test]
+async fn test_whitespace_only_parameters() {
+    let temp_project_root = tempdir().unwrap();
+    let app_state = Data::new(AppState {
+        extract_base_path: temp_project_root.path().to_path_buf(),
+    });
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .service(web::resource("/plagiarism/checks").route(web::post().to(checks_projects))),
+    )
+    .await;
+
+    let req_body = BodyRequest {
+        project_id: "   ".to_string(),
+        promotion_id: "999".to_string(),
+        step: "999".to_string(),
+    };
+
+    let req = test::TestRequest::post()
+        .uri("/plagiarism/checks")
+        .set_json(&req_body)
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), actix_web::http::StatusCode::BAD_REQUEST);
+
+    let body = test::read_body(resp).await;
+    let error_response: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(
+        error_response["error"],
+        "Missing required parameter: projectId"
     );
 }
