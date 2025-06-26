@@ -28,7 +28,7 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     }),
     CacheModule.register({
       isGlobal: true,
-      ttl: 600000, // 10 minutes in milliseconds
+      ttl: 600, // 10 minutes in seconds
     }),
     AuthModule,
     UsersModule,
