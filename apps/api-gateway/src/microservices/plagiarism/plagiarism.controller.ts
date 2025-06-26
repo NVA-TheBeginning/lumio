@@ -12,7 +12,7 @@ export class PlagiarismController {
 
   @Post("checks")
   @UseInterceptors(PlagiarismCacheInterceptor)
-  @CacheTTL(600000)
+  @CacheTTL(600)
   @ApiOperation({
     summary: "Downloads, processes, and compares project submissions for plagiarism",
     description:
