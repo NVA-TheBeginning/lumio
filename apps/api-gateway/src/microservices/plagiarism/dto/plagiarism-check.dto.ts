@@ -17,4 +17,12 @@ export class PlagiarismCheckDto {
   @IsString()
   @IsNotEmpty()
   promotionId: string;
+
+  @ApiProperty({
+    description: "The step of the project to analyze",
+    example: "step_1",
+  })
+  @IsString()
+  @IsNotEmpty()
+  step: string;
 }

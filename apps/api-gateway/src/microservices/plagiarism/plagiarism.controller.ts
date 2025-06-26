@@ -33,8 +33,13 @@ export class PlagiarismController {
           description: "The ID of the promotion/class",
           example: "promo_456",
         },
+        step: {
+          type: "string",
+          description: "The step of the project to analyze",
+          example: "step_1",
+        },
       },
-      required: ["projectId", "promotionId"],
+      required: ["projectId", "promotionId", "step"],
     },
   })
   @ApiResponse({
