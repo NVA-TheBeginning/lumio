@@ -28,8 +28,8 @@ impl S3Config {
         let access_key_id =
             env::var("ACCESS_KEY_ID").map_err(|e| format!("ACCESS_KEY_ID not set: {e}"))?;
 
-        let secret_access_key = env::var("SECRET_ACCESS_KEY")
-            .map_err(|e| format!("SECRET_ACCESS_KEY not set: {e}"))?;
+        let secret_access_key =
+            env::var("SECRET_ACCESS_KEY").map_err(|e| format!("SECRET_ACCESS_KEY not set: {e}"))?;
 
         let credentials = Credentials::new(
             Some(&access_key_id),
