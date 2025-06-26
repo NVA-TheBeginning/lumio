@@ -5,13 +5,14 @@ import { ExecutionContext, Injectable } from "@nestjs/common";
 export class PlagiarismCacheInterceptor extends CacheInterceptor {
   trackBy(context: ExecutionContext): string | undefined {
     const request = context.switchToHttp().getRequest();
-    const { projectId, promotionId } = request.body as {
+    const { projectId, promotionId, step } = request.body as {
       projectId: string;
       promotionId: string;
+      step: string;
     };
 
-    if (projectId && promotionId) {
-      return `plagiarism:checks:${projectId}:${promotionId}`;
+    if (projectId && promotionId && step) {
+      return `plagiarism:checks:${projectId}:${promotionId}:${step}`;
     }
 
     return undefined;
