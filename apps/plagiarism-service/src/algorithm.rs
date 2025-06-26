@@ -14,7 +14,7 @@ pub enum AlgorithmError {
 impl fmt::Display for AlgorithmError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AlgorithmError::Io(err) => write!(f, "I/O error: {}", err),
+            AlgorithmError::Io(err) => write!(f, "I/O error: {err}"),
         }
     }
 }

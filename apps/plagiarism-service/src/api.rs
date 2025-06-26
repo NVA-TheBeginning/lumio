@@ -178,8 +178,7 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
         Ok(keys) => keys,
         Err(e) => {
             eprintln!(
-                "Error listing S3 files for prefix '{}': {}",
-                s3_directory_prefix, e
+                "Error listing S3 files for prefix '{s3_directory_prefix}': {e}"
             );
             return HttpResponse::InternalServerError().json(ComprehensivePlagiarismResponse {
                 project_id: body.project_id.clone(),
@@ -268,14 +267,13 @@ pub async fn checks_projects(body: Json<BodyRequest>, app_state: Data<AppState>)
                     }
                     Err(e) => {
                         eprintln!(
-                            "Failed to read zip archive from S3 key {}: {}",
-                            s3_zip_key, e
+                            "Failed to read zip archive from S3 key {s3_zip_key}: {e}"
                         );
                     }
                 }
             }
             Err(e) => {
-                eprintln!("Failed to download S3 key {}: {}", s3_zip_key, e);
+                eprintln!("Failed to download S3 key {s3_zip_key}: {e}");
             }
         }
     }
