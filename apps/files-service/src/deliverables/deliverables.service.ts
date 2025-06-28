@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma-files";
 import { Deliverables } from "@prisma-files/client";
 import { CreateDeliverableDto, UpdateDeliverableDto } from "@/deliverables/dto/deliverables.dto";
 import { PrismaService } from "@/prisma.service";
@@ -91,5 +92,33 @@ export class DeliverablesService {
       }
       throw new NotFoundException(`Failed to delete deliverable with ID ${id}`);
     }
+  }
+
+  async getCalendarDeliverables(
+    promotionId: number,
+    startDate?: Date,
+    endDate?: Date,
+    projectId?: number,
+  ): Promise<Deliverables[]> {
+    const where: Prisma.DeliverablesWhereInput = { promotionId };
+
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
+    if (startDate || endDate) {
+      where.deadline = {};
+      if (startDate) {
+        where.deadline.gte = startDate;
+      }
+      if (endDate) {
+        where.deadline.lte = endDate;
+      }
+    }
+
+    return this.prisma.deliverables.findMany({
+      where,
+      orderBy: { deadline: "asc" },
+    });
   }
 }
