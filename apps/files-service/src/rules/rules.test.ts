@@ -10,7 +10,7 @@ import { CreateDeliverableRuleDto } from "./dto/rules.dto";
 const createRuleDto = (deliverableId: number): CreateDeliverableRuleDto => ({
   deliverableId,
   ruleType: RuleType.SIZE_LIMIT,
-  ruleDetails: JSON.stringify({ maxSize: 10485760, unit: "MB" }),
+  ruleDetails: { maxSizeInBytes: 10485760 },
 });
 
 interface RuleResponse {
@@ -111,7 +111,7 @@ describe("Deliverable Rules", () => {
   });
 
   test("/rules/:id (PUT) - should update a rule", async () => {
-    const updatedRuleDetails = JSON.stringify({ maxSize: 5242880, unit: "MB" });
+    const updatedRuleDetails = { maxSizeInBytes: 5242880 };
     const response = await app.inject({
       method: "PUT",
       url: `/rules/${ruleId}`,
@@ -123,7 +123,7 @@ describe("Deliverable Rules", () => {
     expect(response.statusCode).toEqual(200);
     const body = JSON.parse(response.body) as RuleResponse;
     expect(body).toHaveProperty("id", ruleId);
-    expect(body).toHaveProperty("ruleDetails", updatedRuleDetails);
+    expect(body).toHaveProperty("ruleDetails", JSON.stringify(updatedRuleDetails));
     expect(body).toHaveProperty("deliverableId", deliverableId);
   });
 

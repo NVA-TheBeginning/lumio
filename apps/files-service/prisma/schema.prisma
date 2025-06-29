@@ -57,7 +57,6 @@ enum RuleType {
   SIZE_LIMIT
   FILE_PRESENCE
   DIRECTORY_STRUCTURE
-  FILE_CONTENT
 
   @@schema("files_schema")
 }
