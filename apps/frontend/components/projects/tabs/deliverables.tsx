@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { CreateDeliverableDialog } from "../create-deliverables";
 import { EditDeliverableDialog } from "../edit-deliverable";
+import { RulesManagementDialog } from "../rules-management-dialog";
 
 interface ProjectDeliverablesProps {
   project: ProjectType;
@@ -195,6 +196,11 @@ function PromotionDeliverables({
             <Button variant="outline" size="sm" onClick={() => onEditDeliverable(deliverable)}>
               Modifier
             </Button>
+            <RulesManagementDialog deliverable={deliverable}>
+              <Button variant="outline" size="sm">
+                Règles
+              </Button>
+            </RulesManagementDialog>
             <Button
               variant="outline"
               size="sm"

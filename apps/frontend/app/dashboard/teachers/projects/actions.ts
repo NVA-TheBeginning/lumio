@@ -78,6 +78,45 @@ export interface DeliverableType {
   createdAt: string;
 }
 
+export enum RuleType {
+  SIZE_LIMIT = "SIZE_LIMIT",
+  FILE_PRESENCE = "FILE_PRESENCE",
+  DIRECTORY_STRUCTURE = "DIRECTORY_STRUCTURE",
+}
+
+export interface SizeLimitRuleDetails {
+  maxSizeInBytes: number;
+}
+
+export interface FilePresenceRuleDetails {
+  requiredFiles: string[];
+  allowedExtensions?: string[];
+  forbiddenExtensions?: string[];
+}
+
+export interface DirectoryStructureRuleDetails {
+  requiredDirectories: string[];
+  forbiddenDirectories?: string[];
+}
+
+export interface DeliverableRule {
+  id: number;
+  deliverableId: number;
+  ruleType: RuleType;
+  ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
+}
+
+export interface CreateRuleData {
+  deliverableId: number;
+  ruleType: RuleType;
+  ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
+}
+
+export interface UpdateRuleData {
+  ruleType?: RuleType;
+  ruleDetails?: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
+}
+
 export interface getAllStudentProjects {
   id: number;
   name: string;
@@ -562,4 +601,29 @@ export async function getAllPromotionSubmissions(
 export async function acceptSubmission(submissionId: number): Promise<PromotionSubmissionMetadataResponse> {
   const url = `${API_URL}/submissions/${submissionId}/accept`;
   return await authPatchData(url, {});
+}
+
+export async function getDeliverableRules(deliverableId: number): Promise<DeliverableRule[]> {
+  const url = `${API_URL}/deliverables/${deliverableId}/rules`;
+  return await authFetchData(url);
+}
+
+export async function createRule(ruleData: CreateRuleData): Promise<DeliverableRule> {
+  const url = `${API_URL}/deliverables/rules`;
+  return await authPostData(url, ruleData);
+}
+
+export async function updateRule(ruleId: number, ruleData: UpdateRuleData): Promise<DeliverableRule> {
+  const url = `${API_URL}/rules/${ruleId}`;
+  return await authPutData(url, ruleData);
+}
+
+export async function deleteRule(ruleId: number): Promise<void> {
+  const url = `${API_URL}/rules/${ruleId}`;
+  return await authDeleteData(url);
+}
+
+export async function getRule(ruleId: number): Promise<DeliverableRule> {
+  const url = `${API_URL}/rules/${ruleId}`;
+  return await authFetchData(url);
 }
