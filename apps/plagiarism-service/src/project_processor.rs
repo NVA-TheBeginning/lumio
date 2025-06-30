@@ -105,7 +105,7 @@ pub fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
         }
     }
 
-    println!("Blacklisted files/folders: {:?}", blacklist);
+    println!("Blacklisted files/folders: {blacklist:?}");
     Ok(blacklist)
 }
 
@@ -126,7 +126,7 @@ pub fn process_project_folder(
         let is_blacklisted = blacklist.iter().any(|item| path_str.contains(item));
 
         if is_blacklisted {
-            println!("Skipping blacklisted: {:?}", path);
+            println!("Skipping blacklisted: {path:?}");
             continue;
         }
 
@@ -178,7 +178,7 @@ pub fn process_project_folder(
                     }
                 }
                 Err(e) => {
-                    eprintln!("Warning: Failed to read file {:?}: {}. Skipping.", path, e);
+                    eprintln!("Warning: Failed to read file {path:?}: {e}. Skipping.");
                 }
             }
         }

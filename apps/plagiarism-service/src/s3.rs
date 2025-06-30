@@ -17,19 +17,19 @@ impl S3Config {
         dotenv().ok();
 
         let endpoint =
-            env::var("MINIO_ENDPOINT").map_err(|e| format!("MINIO_ENDPOINT not set: {}", e))?;
+            env::var("MINIO_ENDPOINT").map_err(|e| format!("MINIO_ENDPOINT not set: {e}"))?;
         let bucket_name =
-            env::var("S3_BUCKET_NAME").map_err(|e| format!("S3_BUCKET_NAME not set: {}", e))?;
-        let region_str = env::var("REGION").map_err(|e| format!("S3_REGION not set: {}", e))?;
+            env::var("S3_BUCKET_NAME").map_err(|e| format!("S3_BUCKET_NAME not set: {e}"))?;
+        let region_str = env::var("REGION").map_err(|e| format!("S3_REGION not set: {e}"))?;
         let region = region_str
             .parse::<Region>()
-            .map_err(|e| format!("Failed to parse REGION: {}", e))?;
+            .map_err(|e| format!("Failed to parse REGION: {e}"))?;
 
         let access_key_id =
-            env::var("ACCESS_KEY_ID").map_err(|e| format!("ACCESS_KEY_ID not set: {}", e))?;
+            env::var("ACCESS_KEY_ID").map_err(|e| format!("ACCESS_KEY_ID not set: {e}"))?;
 
-        let secret_access_key = env::var("SECRET_ACCESS_KEY")
-            .map_err(|e| format!("SECRET_ACCESS_KEY not set: {}", e))?;
+        let secret_access_key =
+            env::var("SECRET_ACCESS_KEY").map_err(|e| format!("SECRET_ACCESS_KEY not set: {e}"))?;
 
         let credentials = Credentials::new(
             Some(&access_key_id),
@@ -38,7 +38,7 @@ impl S3Config {
             None,
             None,
         )
-        .map_err(|e| format!("Failed to create credentials: {}", e))?;
+        .map_err(|e| format!("Failed to create credentials: {e}"))?;
 
         Ok(Self {
             bucket_name,
@@ -58,7 +58,7 @@ pub async fn get_file_from_s3(key: &str) -> Result<Vec<u8>, String> {
     };
 
     let bucket = Bucket::new(&config.bucket_name, custom_region, config.credentials)
-        .map_err(|e| format!("Bucket initialization failed: {}", e))?;
+        .map_err(|e| format!("Bucket initialization failed: {e}"))?;
 
     let bucket = bucket.with_path_style();
 
@@ -81,16 +81,16 @@ pub async fn list_files_in_directory(prefix: &str) -> Result<Vec<String>, String
     };
 
     let bucket = Bucket::new(&config.bucket_name, custom_region, config.credentials)
-        .map_err(|e| format!("Bucket initialization failed: {}", e))?;
+        .map_err(|e| format!("Bucket initialization failed: {e}"))?;
 
     let bucket = bucket.with_path_style();
 
-    println!("Listing files in directory: {:?}", bucket);
+    println!("Listing files in directory: {bucket:?}");
 
     let results = bucket
         .list(prefix.to_string(), None)
         .await
-        .map_err(|e| format!("Failed to list objects with prefix '{}': {}", prefix, e))?;
+        .map_err(|e| format!("Failed to list objects with prefix '{prefix}': {e}"))?;
 
     let file_keys = results
         .into_iter()

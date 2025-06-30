@@ -1,3 +1,4 @@
+import { CacheModule } from "@nestjs/cache-manager";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
@@ -16,6 +17,7 @@ import { DeliverableRulesModule } from "./microservices/files/deliverable-rules/
 import { DeliverablesModule } from "./microservices/files/deliverables/deliverables.module.js";
 import { FilesModule } from "./microservices/files/files.module.js";
 import { SubmissionsModule } from "./microservices/files/submissions/submissions.module.js";
+import { PlagiarismModule } from "./microservices/plagiarism/plagiarism.module.js";
 import { ReportsModule } from "./microservices/reports/reports.module.js";
 
 @Module({
@@ -23,6 +25,10 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+    }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 600, // 10 minutes in seconds
     }),
     AuthModule,
     UsersModule,
@@ -32,6 +38,7 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     DeliverablesModule,
     DeliverableRulesModule,
     ReportsModule,
+    PlagiarismModule,
     PresentationModule,
     OrderModule,
     CriteriaModule,
