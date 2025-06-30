@@ -67,7 +67,7 @@ export interface getAllStudentProjects {
 export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createDto: CreateProjectDto) {
+  async create(createDto: CreateProjectDto): Promise<{ project: Project; groups: Group[] }> {
     const { name, description, creatorId, promotionIds = [], groupSettings = [] } = createDto;
 
     this.validateBasics(name, description, creatorId);
@@ -88,7 +88,20 @@ export class ProjectService {
 
       await Promise.all(tasks);
 
-      return project;
+      const promoIdsForGroups = [...new Set(groupSettings.map((gs) => gs.promotionId))];
+
+      const groups =
+        promoIdsForGroups.length > 0
+          ? await tx.group.findMany({
+              where: {
+                projectId: project.id,
+                promotionId: { in: promoIdsForGroups },
+              },
+              include: { members: { select: { studentId: true } } },
+            })
+          : [];
+
+      return { project, groups };
     });
   }
 
