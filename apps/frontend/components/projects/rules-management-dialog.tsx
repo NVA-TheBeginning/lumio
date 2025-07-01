@@ -176,36 +176,72 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
 
     switch (rule.ruleType) {
       case RuleType.SIZE_LIMIT: {
-        const sizeDetails = details as SizeLimitRuleDetails;
-        if (!sizeDetails.maxSizeInBytes || Number.isNaN(sizeDetails.maxSizeInBytes)) {
+        let parsedDetails: SizeLimitRuleDetails;
+
+        if (typeof details === "string") {
+          try {
+            parsedDetails = JSON.parse(details) as SizeLimitRuleDetails;
+          } catch {
+            return "Erreur de format des données";
+          }
+        } else {
+          parsedDetails = details as SizeLimitRuleDetails;
+        }
+
+        const maxSizeValue = parsedDetails.maxSizeInBytes;
+
+        if (!maxSizeValue || Number.isNaN(maxSizeValue) || maxSizeValue <= 0) {
           return "Aucune limite de taille définie";
         }
-        return `Taille max: ${(sizeDetails.maxSizeInBytes / 1024 / 1024).toFixed(1)} MB`;
+
+        return `Taille max: ${(maxSizeValue / 1024 / 1024).toFixed(1)} MB`;
       }
 
       case RuleType.FILE_PRESENCE: {
-        const fileDetails = details as FilePresenceRuleDetails;
-        const parts = [];
-        if (fileDetails.requiredFiles?.length) {
-          parts.push(`Fichiers requis: ${fileDetails.requiredFiles.join(", ")}`);
+        let parsedDetails: FilePresenceRuleDetails;
+
+        if (typeof details === "string") {
+          try {
+            parsedDetails = JSON.parse(details) as FilePresenceRuleDetails;
+          } catch {
+            return "Erreur de format des données";
+          }
+        } else {
+          parsedDetails = details as FilePresenceRuleDetails;
         }
-        if (fileDetails.allowedExtensions?.length) {
-          parts.push(`Extensions autorisées: ${fileDetails.allowedExtensions.join(", ")}`);
+
+        const parts: string[] = [];
+        if (parsedDetails.requiredFiles?.length) {
+          parts.push(`Fichiers requis: ${parsedDetails.requiredFiles.join(", ")}`);
         }
-        if (fileDetails.forbiddenExtensions?.length) {
-          parts.push(`Extensions interdites: ${fileDetails.forbiddenExtensions.join(", ")}`);
+        if (parsedDetails.allowedExtensions?.length) {
+          parts.push(`Extensions autorisées: ${parsedDetails.allowedExtensions.join(", ")}`);
+        }
+        if (parsedDetails.forbiddenExtensions?.length) {
+          parts.push(`Extensions interdites: ${parsedDetails.forbiddenExtensions.join(", ")}`);
         }
         return parts.join(" | ");
       }
 
       case RuleType.DIRECTORY_STRUCTURE: {
-        const dirDetails = details as DirectoryStructureRuleDetails;
-        const dirParts = [];
-        if (dirDetails.requiredDirectories?.length) {
-          dirParts.push(`Dossiers requis: ${dirDetails.requiredDirectories.join(", ")}`);
+        let parsedDetails: DirectoryStructureRuleDetails;
+
+        if (typeof details === "string") {
+          try {
+            parsedDetails = JSON.parse(details) as DirectoryStructureRuleDetails;
+          } catch {
+            return "Erreur de format des données";
+          }
+        } else {
+          parsedDetails = details as DirectoryStructureRuleDetails;
         }
-        if (dirDetails.forbiddenDirectories?.length) {
-          dirParts.push(`Dossiers interdits: ${dirDetails.forbiddenDirectories.join(", ")}`);
+
+        const dirParts: string[] = [];
+        if (parsedDetails.requiredDirectories?.length) {
+          dirParts.push(`Dossiers requis: ${parsedDetails.requiredDirectories.join(", ")}`);
+        }
+        if (parsedDetails.forbiddenDirectories?.length) {
+          dirParts.push(`Dossiers interdits: ${parsedDetails.forbiddenDirectories.join(", ")}`);
         }
         return dirParts.join(" | ");
       }
