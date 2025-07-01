@@ -131,4 +131,43 @@ export class SubmissionsController {
   async acceptSubmission(@Param("idSubmission") idSubmission: number): Promise<Submissions> {
     return this.submissionsService.acceptSubmission(Number(idSubmission));
   }
+
+  @Post("deliverables/:idDeliverable/validate")
+  @ApiOperation({ summary: "Validate a file against deliverable rules without submitting" })
+  @ApiResponse({ status: HttpStatus.OK, description: "Validation result with any rule violations." })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      preservePath: true,
+      limits: {
+        fileSize: 100 * 1024 * 1024,
+      },
+    }),
+  )
+  @ApiBody({
+    required: true,
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+          description: "The ZIP file to validate",
+        },
+      },
+      required: ["file"],
+    },
+  })
+  async validateRules(
+    @Param("idDeliverable") idDeliverable: number,
+    @UploadedFile() file: File,
+  ): Promise<{ isValid: boolean; errors: string[] }> {
+    if (!file?.buffer) {
+      throw new BadRequestException("A file must be provided for validation.");
+    }
+
+    return this.submissionsService.validateSubmissionRules(Number(idDeliverable), file.buffer as Buffer);
+  }
 }
