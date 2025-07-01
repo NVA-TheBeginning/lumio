@@ -1,6 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayNotEmpty, IsBoolean, IsDate, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsDate,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 export class CreateDeliverableDto {
   @ApiProperty({ description: "Project ID" })
@@ -109,4 +119,34 @@ export class ProjectIdParams {
   @IsInt()
   @Type(() => Number)
   projectId: number;
+}
+
+export class CalendarResponseDto {
+  @ApiProperty({ description: "Promotion ID" })
+  @IsInt()
+  promotionId: number;
+
+  @ApiProperty({ description: "Promotion name" })
+  @IsString()
+  promotionName: string;
+
+  @ApiProperty({ description: "Projects with their deliverables" })
+  @IsArray()
+  projects: Array<{
+    projectId: number;
+    projectName: string;
+    projectDescription: string;
+    deliverables: Array<{
+      id: number;
+      projectId: number;
+      promotionId: number;
+      name: string;
+      description?: string;
+      deadline: string;
+      allowLateSubmission: boolean;
+      lateSubmissionPenalty: number;
+      type: string[];
+      createdAt: string;
+    }>;
+  }>;
 }

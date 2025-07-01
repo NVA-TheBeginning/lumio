@@ -1,7 +1,39 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { CreateDeliverableDto, ProjectIdParams, UpdateDeliverableDto } from "./dto.js";
+import { CalendarResponseDto, CreateDeliverableDto, ProjectIdParams, UpdateDeliverableDto } from "./dto.js";
+
+interface DeliverableResponse {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  name: string;
+  description?: string;
+  deadline: string;
+  allowLateSubmission: boolean;
+  lateSubmissionPenalty: number;
+  type: string[];
+  createdAt: string;
+}
+
+interface ProjectResponse {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+interface PromotionResponse {
+  id: number;
+  name: string;
+  description: string;
+  creatorId: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 @ApiTags("deliverables")
 @Controller()
@@ -59,14 +91,62 @@ export class DeliverablesController {
     @Query("startDate") startDate?: string,
     @Query("endDate") endDate?: string,
     @Query("projectId") projectId?: string,
-  ): Promise<unknown> {
+  ): Promise<CalendarResponseDto> {
     const queryParams = [];
     if (startDate) queryParams.push(`startDate=${startDate}`);
     if (endDate) queryParams.push(`endDate=${endDate}`);
     if (projectId) queryParams.push(`projectId=${projectId}`);
 
     const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
-    return this.proxy.forwardRequest("files", `/calendar/promotion/${promotionId}${queryString}`, "GET");
+
+    const deliverables = await this.proxy.forwardRequest<DeliverableResponse[]>(
+      "files",
+      `/calendar/promotion/${promotionId}${queryString}`,
+      "GET",
+    );
+
+    if (deliverables.length === 0) {
+      return {
+        promotionId,
+        promotionName: "",
+        projects: [],
+      };
+    }
+
+    const uniqueProjectIds = [...new Set(deliverables.map((d) => d.projectId))];
+
+    const promotion = await this.proxy.forwardRequest<PromotionResponse>(
+      "project",
+      `/promotions/${promotionId}`,
+      "GET",
+    );
+
+    const allProjects = await this.proxy.forwardRequest<ProjectResponse[]>("project", "/projects", "GET");
+
+    const projectPromises = uniqueProjectIds.map(async (projectId) => {
+      const project = allProjects.find((p) => p.id === projectId);
+      if (!project) {
+        return null;
+      }
+
+      const projectDeliverables = deliverables.filter((d) => d.projectId === projectId);
+
+      return {
+        projectId: project.id,
+        projectName: project.name,
+        projectDescription: project.description,
+        deliverables: projectDeliverables,
+      };
+    });
+
+    const projectResults = await Promise.all(projectPromises);
+    const projects = projectResults.filter((project): project is NonNullable<typeof project> => project !== null);
+
+    return {
+      promotionId: promotion.id,
+      promotionName: promotion.name,
+      projects,
+    };
   }
 
   @Put("projects/deliverables")
