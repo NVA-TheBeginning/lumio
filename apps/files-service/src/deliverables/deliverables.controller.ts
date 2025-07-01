@@ -40,6 +40,42 @@ export class DeliverablesController {
     return this.deliverablesService.update(updateDeliverableDto);
   }
 
+  @Get("calendar/promotion/:promotionId")
+  @ApiOperation({ summary: "Get calendar deliverables for a promotion" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "Returns deliverables for the promotion within the specified date range.",
+  })
+  @ApiQuery({
+    name: "startDate",
+    required: false,
+    type: String,
+    description: "Start date for filtering (ISO 8601 format)",
+  })
+  @ApiQuery({
+    name: "endDate",
+    required: false,
+    type: String,
+    description: "End date for filtering (ISO 8601 format)",
+  })
+  @ApiQuery({
+    name: "projectId",
+    required: false,
+    type: Number,
+    description: "Filter by specific project ID",
+  })
+  async getCalendarDeliverables(
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
+    @Query("projectId", new ParseIntPipe({ optional: true })) projectId?: number,
+  ): Promise<Deliverables[]> {
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
+
+    return this.deliverablesService.getCalendarDeliverables(promotionId, startDateObj, endDateObj, projectId);
+  }
+
   @Delete("projects/deliverables/:id")
   @ApiOperation({ summary: "Delete a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })
