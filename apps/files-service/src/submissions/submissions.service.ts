@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { DeliverableType, SubmissionStatus, Submissions } from "@prisma-files/client";
 import * as yauzl from "yauzl";
 import { PrismaService } from "@/prisma.service";
+import { RuleValidationService } from "@/rules/rule-validation.service";
 import { S3Service } from "@/s3.service";
 
 export interface SubmissionMetadataResponse {
@@ -41,6 +42,7 @@ export class SubmissionsService {
   constructor(
     private prisma: PrismaService,
     private s3Service: S3Service,
+    private ruleValidationService: RuleValidationService,
   ) {}
 
   async submit(idDeliverable: number, groupId: number, file: Buffer, gitUrl?: string): Promise<Submissions> {
@@ -88,6 +90,13 @@ export class SubmissionsService {
       const containsForbiddenFiles = await this.checkForbiddenFiles(file);
       if (containsForbiddenFiles) {
         throw new BadRequestException("ZIP is invalid or contains forbidden files");
+      }
+
+      // Validate submission against deliverable rules
+      const ruleValidationResult = await this.ruleValidationService.validateSubmission(idDeliverable, file);
+      if (!ruleValidationResult.isValid) {
+        const errorMessage = `Submission does not meet the required rules:\n${ruleValidationResult.errors.join("\n")}`;
+        throw new BadRequestException(errorMessage);
       }
 
       key = await this.s3Service.uploadZipSubmission(
@@ -391,5 +400,12 @@ export class SubmissionsService {
       where: { id: submissionId },
       data: { status: SubmissionStatus.ACCEPTED },
     });
+  }
+
+  async validateSubmissionRules(
+    deliverableId: number,
+    fileBuffer: Buffer,
+  ): Promise<{ isValid: boolean; errors: string[] }> {
+    return this.ruleValidationService.validateSubmission(deliverableId, fileBuffer);
   }
 }
