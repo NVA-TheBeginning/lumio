@@ -95,17 +95,18 @@ export class DeliverablesService {
   }
 
   async getCalendarDeliverables(
-    promotionId: number,
+    promotionId?: number,
     startDate?: Date,
     endDate?: Date,
     projectId?: number,
   ): Promise<Deliverables[]> {
-    const where: Prisma.DeliverablesWhereInput = { promotionId };
-
+    const where: Prisma.DeliverablesWhereInput = {};
+    if (promotionId) {
+      where.promotionId = promotionId;
+    }
     if (projectId) {
       where.projectId = projectId;
     }
-
     if (startDate || endDate) {
       where.deadline = {};
       if (startDate) {
@@ -115,7 +116,6 @@ export class DeliverablesService {
         where.deadline.lte = endDate;
       }
     }
-
     return this.prisma.deliverables.findMany({
       where,
       orderBy: { deadline: "asc" },
