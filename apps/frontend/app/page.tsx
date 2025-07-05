@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Spline from "@splinetool/react-spline/next";
 import Link from "next/link";
 import { ModeToggle } from "@/components/toggle-theme";
 import { Button } from "@/components/ui/button";
@@ -63,14 +63,15 @@ export default async function Home() {
               </div>
             </div>
             <div className="flex justify-center">
-              <Image
-                src="https://picsum.photos/500/400"
-                alt="Lumio Interface"
-                className="rounded-lg shadow-xl"
-                priority
-                width={500}
-                height={400}
-              />
+              <div className="w-full overflow-hidden rounded-2xl">
+                <Spline
+                  scene="/keyboard.spline"
+                  style={{
+                    background: "transparent",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
