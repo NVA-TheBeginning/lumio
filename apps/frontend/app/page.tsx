@@ -38,9 +38,9 @@ export default async function Home() {
         </div>
       </header>
 
-      <section className="flex-1 flex items-center bg-linear-to-b from-background to-muted">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <section className="flex-1 flex items-center bg-linear-to-b from-background to-muted min-h-[60vh]">
+        <div className="container mx-auto px-4 py-20 md:py-32">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
                 Simplifiez la gestion de vos projets pédagogiques
@@ -62,13 +62,13 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            <div className="flex justify-center">
-              <div className="w-full overflow-hidden rounded-2xl">
+            <div className="flex justify-center items-center -mx-24 md:-mx-80 -my-16 md:-my-24 overflow-visible">
+              <div className="w-full h-[950px] overflow-visible">
                 <Spline
                   scene="/keyboard.spline"
                   style={{
                     background: "transparent",
-                    objectFit: "contain",
+                    width: "100%",
                   }}
                 />
               </div>
