@@ -35,6 +35,7 @@ export default function ProjectSubmissionsPage() {
   const [selectedDeliverable, setSelectedDeliverable] = useState<string>(initialDeliverableId || "all");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [acceptingSubmissions, setAcceptingSubmissions] = useState<Set<number>>(new Set());
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["projects", Number(projectId)],
@@ -49,15 +50,25 @@ export default function ProjectSubmissionsPage() {
 
   const acceptSubmissionMutation = useMutation({
     mutationFn: acceptSubmission,
-    onSuccess: () => {
+    onSuccess: (_, submissionId) => {
       toast.success("Soumission acceptée avec succès");
       queryClient.invalidateQueries({
         queryKey: ["promotion-submissions", activePromotion, projectId],
       });
+      setAcceptingSubmissions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(submissionId);
+        return newSet;
+      });
     },
-    onError: (error) => {
+    onError: (error, submissionId) => {
       console.error("Erreur lors de l'acceptation:", error);
       toast.error("Erreur lors de l'acceptation de la soumission");
+      setAcceptingSubmissions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(submissionId);
+        return newSet;
+      });
     },
   });
 
@@ -127,6 +138,7 @@ export default function ProjectSubmissionsPage() {
   };
 
   const handleAcceptSubmission = async (submissionId: number) => {
+    setAcceptingSubmissions(prev => new Set(prev).add(submissionId));
     await acceptSubmissionMutation.mutateAsync(submissionId);
   };
 
@@ -140,27 +152,30 @@ export default function ProjectSubmissionsPage() {
     });
   };
 
-  const getPlagiarismResultForSubmission = (groupId: number, deliverableId: number) => {
-    const plagiarismQuery = queryClient.getQueryData<{
-      projectId: string;
-      promotionId: string;
-      folderResults: {
-        folderName: string;
-        sha1: string | null;
-        plagiarismPercentage: number;
-        matches: {
-          matchedFolder: string;
-          overallMatchPercentage: number;
-          combinedScore: number;
-          flags: string[];
+  const getPlagiarismResultForSubmission = useMemo(() => {
+    return (groupId: number, deliverableId: number) => {
+      const plagiarismQuery = queryClient.getQueryData<{
+        projectId: string;
+        promotionId: string;
+        folderResults: {
+          folderName: string;
+          sha1: string | null;
+          plagiarismPercentage: number;
+          matches: {
+            matchedFolder: string;
+            overallMatchPercentage: number;
+            combinedScore: number;
+            flags: string[];
+          }[];
         }[];
-      }[];
-    }>(["plagiarism-results", activePromotion, projectId, deliverableId.toString()]);
-    if (!plagiarismQuery) return null;
+      }>(["plagiarism-results", activePromotion, projectId, deliverableId.toString()]);
 
-    const groupName = getGroupName(groupId);
-    return plagiarismQuery.folderResults?.find((folder) => folder.folderName === groupName);
-  };
+      if (!plagiarismQuery) return null;
+      console.log("Plagiarism Query Data:", plagiarismQuery);
+
+      return plagiarismQuery.folderResults?.find((folder) => folder.folderName.startsWith(`${groupId}-`));
+    };
+  }, [activePromotion, projectId, queryClient]);
 
   const getPlagiarismBadge = (plagiarismPercentage: number) => {
     if (plagiarismPercentage >= 80) {
@@ -433,11 +448,11 @@ export default function ProjectSubmissionsPage() {
                                         variant="default"
                                         size="sm"
                                         onClick={() => handleAcceptSubmission(submission.submissionId)}
-                                        disabled={acceptSubmissionMutation.isPending}
+                                        disabled={acceptingSubmissions.has(submission.submissionId)}
                                         className="bg-green-600 hover:bg-green-700"
                                       >
                                         <Check className="h-4 w-4 mr-1" />
-                                        {acceptSubmissionMutation.isPending ? "Acceptation..." : "Accepter"}
+                                        {acceptingSubmissions.has(submission.submissionId) ? "Acceptation..." : "Accepter"}
                                       </Button>
                                     )}
                                     {submission.fileName && !submission.error && (
