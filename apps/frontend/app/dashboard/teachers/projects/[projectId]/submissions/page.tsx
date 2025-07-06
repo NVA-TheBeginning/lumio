@@ -55,7 +55,7 @@ export default function ProjectSubmissionsPage() {
       queryClient.invalidateQueries({
         queryKey: ["promotion-submissions", activePromotion, projectId],
       });
-      setAcceptingSubmissions(prev => {
+      setAcceptingSubmissions((prev) => {
         const newSet = new Set(prev);
         newSet.delete(submissionId);
         return newSet;
@@ -64,7 +64,7 @@ export default function ProjectSubmissionsPage() {
     onError: (error, submissionId) => {
       console.error("Erreur lors de l'acceptation:", error);
       toast.error("Erreur lors de l'acceptation de la soumission");
-      setAcceptingSubmissions(prev => {
+      setAcceptingSubmissions((prev) => {
         const newSet = new Set(prev);
         newSet.delete(submissionId);
         return newSet;
@@ -138,7 +138,7 @@ export default function ProjectSubmissionsPage() {
   };
 
   const handleAcceptSubmission = async (submissionId: number) => {
-    setAcceptingSubmissions(prev => new Set(prev).add(submissionId));
+    setAcceptingSubmissions((prev) => new Set(prev).add(submissionId));
     await acceptSubmissionMutation.mutateAsync(submissionId);
   };
 
@@ -452,7 +452,9 @@ export default function ProjectSubmissionsPage() {
                                         className="bg-green-600 hover:bg-green-700"
                                       >
                                         <Check className="h-4 w-4 mr-1" />
-                                        {acceptingSubmissions.has(submission.submissionId) ? "Acceptation..." : "Accepter"}
+                                        {acceptingSubmissions.has(submission.submissionId)
+                                          ? "Acceptation..."
+                                          : "Accepter"}
                                       </Button>
                                     )}
                                     {submission.fileName && !submission.error && (
