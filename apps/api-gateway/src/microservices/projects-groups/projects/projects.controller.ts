@@ -36,8 +36,9 @@ import {
 } from "class-validator";
 import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator.js";
 import { AuthGuard } from "@/jwt/guards/auth.guard.js";
+import { CreateReportDto, ReportResponseDto } from "@/microservices/reports/dto.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { UpdateProjectStatusDto } from "../dto/project.dto.js";
+import { GroupWithMembersDto, ProjectDto, ProjectWithGroupsDto, UpdateProjectStatusDto } from "../dto/project.dto.js";
 
 export enum GroupMode {
   AUTO = "RANDOM",
@@ -106,6 +107,17 @@ export class CreateProjectDto {
   groupSettings!: GroupSettingDto[];
 }
 
+export class ProjectCreationResponseDto {
+  @ApiProperty({ type: ProjectDto })
+  project!: ProjectDto;
+
+  @ApiProperty({ type: [GroupWithMembersDto] })
+  groups!: GroupWithMembersDto[];
+
+  @ApiProperty({ type: [ReportResponseDto] })
+  reports!: ReportResponseDto[];
+}
+
 @ApiTags("projects")
 @Controller("projects")
 export class ProjectsController {
@@ -113,11 +125,29 @@ export class ProjectsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Create a new project with its group settings" })
+  @ApiOperation({ summary: "Create a project, its groups and the initial reports" })
   @ApiBody({ type: CreateProjectDto })
-  @ApiCreatedResponse({ description: "The project has been successfully created", type: Object })
-  async create(@Body() createProjectDto: CreateProjectDto) {
-    return this.proxy.forwardRequest("project", "/projects", "POST", createProjectDto);
+  @ApiCreatedResponse({ description: "Project, groups and empty reports created", type: ProjectCreationResponseDto })
+  async create(@Body() createProjectDto: CreateProjectDto): Promise<ProjectCreationResponseDto> {
+    const { project, groups } = await this.proxy.forwardRequest<ProjectWithGroupsDto>(
+      "project",
+      "/projects",
+      "POST",
+      createProjectDto,
+    );
+
+    const reports: ReportResponseDto[] = await Promise.all(
+      groups.map((g) =>
+        this.proxy.forwardRequest<ReportResponseDto>("report", "/reports", "POST", {
+          projectId: project.id,
+          groupId: g.id,
+          promotionId: g.promotionId,
+          sections: [], // squelette vide – ajoute ton template si besoin
+        } as CreateReportDto),
+      ),
+    );
+
+    return { project, groups, reports };
   }
 
   @Get("myprojects")

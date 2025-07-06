@@ -56,11 +56,17 @@ describe("Projects", () => {
     const dto = createProjectDto();
     const res = await app.inject({ method: "POST", url: "/projects", payload: dto });
     expect(res.statusCode).toBe(201);
-    const body = JSON.parse(res.body);
-    expect(body).toHaveProperty("id");
-    expect(body.name).toBe(dto.name);
-    expect(body.description).toBe(dto.description);
-    projectId = body.id;
+
+    const { project } = JSON.parse(res.body) as {
+      project: { id: number; name: string; description: string };
+      groups: Array<{ id: number; name: string; members: number }>;
+    };
+
+    expect(project).toHaveProperty("id");
+    expect(project.name).toBe(dto.name);
+    expect(project.description).toBe(dto.description);
+
+    projectId = project.id;
 
     const projectPromotions = await prisma.projectPromotion.findMany({ where: { projectId } });
     expect(projectPromotions).toHaveLength(promotionIds.length);
