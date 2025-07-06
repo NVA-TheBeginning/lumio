@@ -121,14 +121,78 @@ export class RuleValidationService {
 
   private validateDirectoryStructure(rule: DirectoryStructureRuleDetails, zipEntries: ZipFileEntry[]): string[] {
     const errors: string[] = [];
-    const directories = zipEntries.filter((entry) => entry.isDirectory).map((entry) => entry.fileName);
-    const allPaths = zipEntries.map((entry) => entry.fileName);
+
+    const systemPaths = [
+      "__MACOSX",
+      ".DS_Store",
+      ".git",
+      "node_modules",
+      ".vscode",
+      ".idea",
+      "Thumbs.db",
+      "desktop.ini",
+      ".svn",
+      ".hg",
+      ".bzr",
+      "CVS",
+      ".gitkeep",
+      ".gitignore",
+      ".npmignore",
+      ".dockerignore",
+      ".env",
+      ".env.local",
+      ".env.development",
+      ".env.production",
+      ".nyc_output",
+      "coverage",
+      "dist",
+      "build",
+      "tmp",
+      "temp",
+      ".cache",
+      ".parcel-cache",
+      ".next",
+      ".nuxt",
+      ".vite",
+    ];
+
+    const isSystemPath = (path: string): boolean => {
+      const normalizedPath = path.replace(/\\/g, "/");
+      return systemPaths.some((systemPath) => {
+        return (
+          normalizedPath === systemPath ||
+          normalizedPath.startsWith(`${systemPath}/`) ||
+          normalizedPath.includes(`/${systemPath}/`) ||
+          normalizedPath.startsWith(`${systemPath}.`) ||
+          normalizedPath.includes(`/${systemPath}.`)
+        );
+      });
+    };
+
+    const cleanEntries = zipEntries.filter((entry) => !isSystemPath(entry.fileName));
+    const directories = cleanEntries.filter((entry) => entry.isDirectory).map((entry) => entry.fileName);
+    const allPaths = cleanEntries.map((entry) => entry.fileName);
+
+    const normalizePathForComparison = (path: string): string => {
+      return path.replace(/\\/g, "/").replace(/\/$/, "");
+    };
+
+    const pathContainsDirectory = (path: string, targetDir: string): boolean => {
+      const normalizedPath = normalizePathForComparison(path);
+      const normalizedTarget = normalizePathForComparison(targetDir);
+
+      return (
+        normalizedPath === normalizedTarget ||
+        normalizedPath.startsWith(`${normalizedTarget}/`) ||
+        normalizedPath.includes(`/${normalizedTarget}/`) ||
+        normalizedPath.endsWith(`/${normalizedTarget}`)
+      );
+    };
 
     for (const requiredDir of rule.requiredDirectories) {
       const found =
-        directories.some((dirName) => {
-          return dirName === requiredDir || dirName.startsWith(`${requiredDir}/`);
-        }) || allPaths.some((path) => path.startsWith(`${requiredDir}/`));
+        directories.some((dirName) => pathContainsDirectory(dirName, requiredDir)) ||
+        allPaths.some((path) => pathContainsDirectory(path, requiredDir));
 
       if (!found) {
         errors.push(`Required directory missing: ${requiredDir}`);
@@ -138,13 +202,8 @@ export class RuleValidationService {
     if (rule.forbiddenDirectories && rule.forbiddenDirectories.length > 0) {
       for (const forbiddenDir of rule.forbiddenDirectories) {
         const found =
-          directories.some((dirName) => {
-            return (
-              dirName === forbiddenDir ||
-              dirName.includes(`/${forbiddenDir}/`) ||
-              dirName.startsWith(`${forbiddenDir}/`)
-            );
-          }) || allPaths.some((path) => path.includes(`/${forbiddenDir}/`) || path.startsWith(`${forbiddenDir}/`));
+          directories.some((dirName) => pathContainsDirectory(dirName, forbiddenDir)) ||
+          allPaths.some((path) => pathContainsDirectory(path, forbiddenDir));
 
         if (found) {
           errors.push(`Forbidden directory found: ${forbiddenDir}`);
