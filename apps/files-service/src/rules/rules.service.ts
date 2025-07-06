@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { DeliverablesRules } from "@prisma-files/client";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { DeliverablesRules, RuleType } from "@prisma-files/client";
 import { PrismaService } from "@/prisma.service";
-import { CreateDeliverableRuleDto, UpdateDeliverableRuleDto } from "@/rules/dto/rules.dto";
+import {
+  CreateDeliverableRuleDto,
+  DirectoryStructureRuleDetails,
+  FilePresenceRuleDetails,
+  SizeLimitRuleDetails,
+  UpdateDeliverableRuleDto,
+} from "@/rules/dto/rules.dto";
 
 @Injectable()
 export class DeliverableRulesService {
@@ -18,13 +24,49 @@ export class DeliverableRulesService {
       throw new NotFoundException("Deliverable not found");
     }
 
+    this.validateRuleDetails(createRuleDto.ruleType, createRuleDto.ruleDetails);
+
     return this.prisma.deliverablesRules.create({
       data: {
         deliverableId: createRuleDto.deliverableId,
         ruleType: createRuleDto.ruleType,
-        ruleDetails: createRuleDto.ruleDetails,
+        ruleDetails: JSON.stringify(createRuleDto.ruleDetails),
       },
     });
+  }
+
+  private validateRuleDetails(
+    ruleType: RuleType,
+    ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails,
+  ): void {
+    switch (ruleType) {
+      case RuleType.SIZE_LIMIT: {
+        const sizeRule = ruleDetails as SizeLimitRuleDetails;
+        if (!sizeRule.maxSizeInBytes || sizeRule.maxSizeInBytes <= 0) {
+          throw new BadRequestException("SIZE_LIMIT rule must have a valid maxSizeInBytes value");
+        }
+        break;
+      }
+
+      case RuleType.FILE_PRESENCE: {
+        const fileRule = ruleDetails as FilePresenceRuleDetails;
+        if (!fileRule.requiredFiles || fileRule.requiredFiles.length === 0) {
+          throw new BadRequestException("FILE_PRESENCE rule must have at least one required file");
+        }
+        break;
+      }
+
+      case RuleType.DIRECTORY_STRUCTURE: {
+        const dirRule = ruleDetails as DirectoryStructureRuleDetails;
+        if (!dirRule.requiredDirectories || dirRule.requiredDirectories.length === 0) {
+          throw new BadRequestException("DIRECTORY_STRUCTURE rule must have at least one required directory");
+        }
+        break;
+      }
+
+      default:
+        throw new BadRequestException(`Unsupported rule type: ${ruleType}`);
+    }
   }
 
   async findAllByDeliverable(deliverableId: number): Promise<DeliverablesRules[]> {
@@ -63,12 +105,25 @@ export class DeliverableRulesService {
     try {
       await this.findOne(id);
 
+      const updateData: Partial<{ ruleType: RuleType; ruleDetails: string }> = {};
+
+      if (updateRuleDto.ruleType !== undefined) {
+        updateData.ruleType = updateRuleDto.ruleType;
+      }
+
+      if (updateRuleDto.ruleDetails !== undefined) {
+        // Validate if both ruleType and ruleDetails are provided, or get existing ruleType
+        const ruleType = updateRuleDto.ruleType || (await this.findOne(id)).ruleType;
+        this.validateRuleDetails(ruleType, updateRuleDto.ruleDetails);
+        updateData.ruleDetails = JSON.stringify(updateRuleDto.ruleDetails);
+      }
+
       return await this.prisma.deliverablesRules.update({
         where: { id },
-        data: updateRuleDto,
+        data: updateData,
       });
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
       throw new NotFoundException(`Failed to update rule with ID ${id}`);

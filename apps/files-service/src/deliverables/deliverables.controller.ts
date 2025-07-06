@@ -40,6 +40,21 @@ export class DeliverablesController {
     return this.deliverablesService.update(updateDeliverableDto);
   }
 
+  @Get("calendar")
+  async getCalendarDeliverablesAll(
+    @Query("promotionId", new ParseIntPipe({ optional: true })) promotionId?: number,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
+    @Query("projectId", new ParseIntPipe({ optional: true })) projectId?: number,
+  ): Promise<Deliverables[]> {
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
+    if (promotionId) {
+      return this.deliverablesService.getCalendarDeliverables(promotionId, startDateObj, endDateObj, projectId);
+    }
+    return this.deliverablesService.getCalendarDeliverables(undefined, startDateObj, endDateObj, projectId);
+  }
+
   @Delete("projects/deliverables/:id")
   @ApiOperation({ summary: "Delete a deliverable" })
   @ApiResponse({ status: HttpStatus.OK, description: "The deliverable has been successfully deleted." })

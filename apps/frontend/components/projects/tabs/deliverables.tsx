@@ -5,6 +5,7 @@ import { Clock, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JSX, useState } from "react";
 import { DeliverableType, ProjectType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
+import { RulesManagementDialog } from "@/components/projects/rules-management-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -195,6 +196,11 @@ function PromotionDeliverables({
             <Button variant="outline" size="sm" onClick={() => onEditDeliverable(deliverable)}>
               Modifier
             </Button>
+            <RulesManagementDialog deliverable={deliverable}>
+              <Button variant="outline" size="sm">
+                Règles
+              </Button>
+            </RulesManagementDialog>
             <Button
               variant="outline"
               size="sm"

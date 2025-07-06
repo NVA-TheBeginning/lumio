@@ -1,7 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { RuleType } from "@prisma-files/client";
 import { Type } from "class-transformer";
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsObject, IsOptional } from "class-validator";
+
+// Base interfaces for rule details
+export interface SizeLimitRuleDetails {
+  maxSizeInBytes: number;
+}
+
+export interface FilePresenceRuleDetails {
+  requiredFiles: string[]; // Array of required file paths/names
+  allowedExtensions?: string[]; // Array of allowed file extensions (e.g., ['.js', '.ts'])
+  forbiddenExtensions?: string[]; // Array of forbidden file extensions
+}
+
+export interface DirectoryStructureRuleDetails {
+  requiredDirectories: string[]; // Array of required directory paths
+  forbiddenDirectories?: string[]; // Array of forbidden directory names/paths
+}
 
 export class CreateDeliverableRuleDto {
   @ApiProperty({ description: "Deliverable ID" })
@@ -13,10 +29,17 @@ export class CreateDeliverableRuleDto {
   @IsEnum(RuleType)
   ruleType: RuleType;
 
-  @ApiProperty({ description: "Rule details (e.g., JSON or text configuration)" })
-  @IsString()
+  @ApiProperty({
+    description: "Rule details configuration",
+    example: {
+      [RuleType.SIZE_LIMIT]: { maxSizeInBytes: 10485760 },
+      [RuleType.FILE_PRESENCE]: { requiredFiles: ["README.md", "src/main.js"], allowedExtensions: [".js", ".json"] },
+      [RuleType.DIRECTORY_STRUCTURE]: { requiredDirectories: ["src", "tests"] },
+    },
+  })
+  @IsObject()
   @IsNotEmpty()
-  ruleDetails: string;
+  ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
 }
 
 export class UpdateDeliverableRuleDto {
@@ -25,10 +48,17 @@ export class UpdateDeliverableRuleDto {
   @IsOptional()
   ruleType?: RuleType;
 
-  @ApiPropertyOptional({ description: "Rule details (e.g., JSON or text configuration)" })
-  @IsString()
+  @ApiPropertyOptional({
+    description: "Rule details configuration",
+    example: {
+      [RuleType.SIZE_LIMIT]: { maxSizeInBytes: 10485760 },
+      [RuleType.FILE_PRESENCE]: { requiredFiles: ["README.md", "src/main.js"], allowedExtensions: [".js", ".json"] },
+      [RuleType.DIRECTORY_STRUCTURE]: { requiredDirectories: ["src", "tests"] },
+    },
+  })
+  @IsObject()
   @IsOptional()
-  ruleDetails?: string;
+  ruleDetails?: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
 }
 
 export class RuleIdParam {

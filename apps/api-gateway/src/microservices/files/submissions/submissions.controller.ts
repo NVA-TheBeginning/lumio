@@ -155,4 +155,47 @@ export class SubmissionsController {
   async acceptSubmission(@Param("idSubmission", ParseIntPipe) idSubmission: number) {
     return await this.proxy.forwardRequest("files", `/submissions/${idSubmission}/accept`, "PATCH");
   }
+
+  @Post("deliverables/:idDeliverable/validate")
+  @ApiOperation({ summary: "Validate a file against deliverable rules without submitting" })
+  @ApiResponse({ status: HttpStatus.OK, description: "Validation result with any rule violations." })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Invalid input data." })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      preservePath: true,
+      limits: {
+        fileSize: 100 * 1024 * 1024,
+      },
+    }),
+  )
+  @ApiBody({
+    required: true,
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+          description: "The ZIP file to validate",
+        },
+      },
+      required: ["file"],
+    },
+  })
+  async validateRules(
+    @Param("idDeliverable", ParseIntPipe) idDeliverable: number,
+    @UploadedFile() file: File,
+  ): Promise<{ isValid: boolean; errors: string[] }> {
+    if (!file?.buffer) {
+      throw new BadRequestException("A file must be provided for validation.");
+    }
+
+    const formData = new FormData();
+    const fileBlob = new Blob([file.buffer], { type: file.mimetype });
+    formData.append("file", fileBlob, file.originalname);
+
+    return await this.proxy.forwardRequest("files", `/deliverables/${idDeliverable}/validate`, "POST", formData);
+  }
 }
