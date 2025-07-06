@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Check, Download, FileText, Filter, GitBranch, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Check, Download, FileText, Filter, GitBranch, Search } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   acceptSubmission,
+  checkPlagiarism,
   getAllPromotionSubmissions,
   getProjectByIdTeacher,
   getSubmissionDownloadData,
@@ -60,6 +61,26 @@ export default function ProjectSubmissionsPage() {
     },
   });
 
+  const plagiarismCheckMutation = useMutation({
+    mutationFn: ({
+      projectId,
+      promotionId,
+      deliverableId,
+    }: {
+      projectId: string;
+      promotionId: string;
+      deliverableId: string;
+    }) => checkPlagiarism(projectId, promotionId, deliverableId),
+    onSuccess: (data, { deliverableId }) => {
+      toast.success("Vérification de plagiat terminée");
+      queryClient.setQueryData(["plagiarism-results", activePromotion, projectId, deliverableId], data);
+    },
+    onError: (error) => {
+      console.error("Erreur lors de la vérification:", error);
+      toast.error("Erreur lors de la vérification de plagiat");
+    },
+  });
+
   useMemo(() => {
     if (project && !activePromotion && project.promotions.length > 0 && project.promotions[0]) {
       setActivePromotion(project.promotions[0].id.toString());
@@ -107,6 +128,51 @@ export default function ProjectSubmissionsPage() {
 
   const handleAcceptSubmission = async (submissionId: number) => {
     await acceptSubmissionMutation.mutateAsync(submissionId);
+  };
+
+  const handleCheckPlagiarism = (deliverableId: number) => {
+    if (!activePromotion) return;
+
+    plagiarismCheckMutation.mutate({
+      projectId: projectId.toString(),
+      promotionId: activePromotion,
+      deliverableId: deliverableId.toString(),
+    });
+  };
+
+  const getPlagiarismResultForSubmission = (groupId: number, deliverableId: number) => {
+    const plagiarismQuery = queryClient.getQueryData<{
+      projectId: string;
+      promotionId: string;
+      folderResults: {
+        folderName: string;
+        sha1: string | null;
+        plagiarismPercentage: number;
+        matches: {
+          matchedFolder: string;
+          overallMatchPercentage: number;
+          combinedScore: number;
+          flags: string[];
+        }[];
+      }[];
+    }>(["plagiarism-results", activePromotion, projectId, deliverableId.toString()]);
+    if (!plagiarismQuery) return null;
+
+    const groupName = getGroupName(groupId);
+    return plagiarismQuery.folderResults?.find((folder) => folder.folderName === groupName);
+  };
+
+  const getPlagiarismBadge = (plagiarismPercentage: number) => {
+    if (plagiarismPercentage >= 80) {
+      return <Badge variant="destructive">Plagiat élevé ({plagiarismPercentage}%)</Badge>;
+    }
+    if (plagiarismPercentage >= 50) {
+      return <Badge className="bg-orange-500">Plagiat moyen ({plagiarismPercentage}%)</Badge>;
+    }
+    if (plagiarismPercentage >= 20) {
+      return <Badge className="bg-yellow-500">Plagiat faible ({plagiarismPercentage}%)</Badge>;
+    }
+    return <Badge className="bg-green-500">Pas de plagiat ({plagiarismPercentage}%)</Badge>;
   };
 
   const filteredSubmissions = (() => {
@@ -283,11 +349,23 @@ export default function ProjectSubmissionsPage() {
                       {Object.entries(submissionsByDeliverable).map(([deliverableId, deliverableSubmissions]) => (
                         <Card key={deliverableId}>
                           <CardHeader>
-                            <CardTitle className="text-lg">
-                              {getDeliverableName(Number(deliverableId))}
-                              <Badge variant="outline" className="ml-2">
-                                {deliverableSubmissions.length} soumission{deliverableSubmissions.length > 1 ? "s" : ""}
-                              </Badge>
+                            <CardTitle className="text-lg flex items-center justify-between">
+                              <div>
+                                {getDeliverableName(Number(deliverableId))}
+                                <Badge variant="outline" className="ml-2">
+                                  {deliverableSubmissions.length} soumission
+                                  {deliverableSubmissions.length > 1 ? "s" : ""}
+                                </Badge>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCheckPlagiarism(Number(deliverableId))}
+                                disabled={plagiarismCheckMutation.isPending}
+                              >
+                                <AlertTriangle className="h-4 w-4 mr-1" />
+                                {plagiarismCheckMutation.isPending ? "Vérification..." : "Vérifier plagiat"}
+                              </Button>
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
@@ -307,6 +385,15 @@ export default function ProjectSubmissionsPage() {
                                         </Badge>
                                       )}
                                       {submission.error && <Badge variant="destructive">Erreur fichier</Badge>}
+                                      {(() => {
+                                        const plagiarismResult = getPlagiarismResultForSubmission(
+                                          submission.groupId,
+                                          submission.deliverableId,
+                                        );
+                                        return plagiarismResult
+                                          ? getPlagiarismBadge(plagiarismResult.plagiarismPercentage)
+                                          : null;
+                                      })()}
                                     </div>
 
                                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
