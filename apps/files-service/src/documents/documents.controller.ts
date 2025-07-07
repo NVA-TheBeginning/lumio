@@ -68,7 +68,7 @@ export class DocumentController {
     }
     file.mimetype = mimetype;
 
-    return this.documentService.uploadDocument(file, name, userId);
+    return await this.documentService.uploadDocument(file, name, userId);
   }
 
   @Get()
@@ -83,7 +83,7 @@ export class DocumentController {
     description: "List of documents",
   })
   async getDocuments(@Query("userId") userId: number) {
-    return this.documentService.getDocumentsByOwner(userId);
+    return await this.documentService.getDocumentsByOwner(userId);
   }
 
   @Get(":id")
@@ -96,13 +96,7 @@ export class DocumentController {
   @ApiBadRequestResponse({ description: "Invalid document ID" })
   @ApiNotFoundResponse({ description: "Document not found" })
   async getDocument(@Param("id", ParseIntPipe) id: number): Promise<GetDocumentResponse> {
-    const document = await this.documentService.getDocumentById(id);
-
-    if (!document) {
-      throw new BadRequestException("Document not found");
-    }
-
-    return document;
+    return await this.documentService.getDocumentById(id);
   }
 
   @Delete(":id")
@@ -112,6 +106,6 @@ export class DocumentController {
   @ApiBadRequestResponse({ description: "Invalid document ID" })
   @ApiNotFoundResponse({ description: "Document not found" })
   async deleteDocument(@Param("id", ParseIntPipe) id: number) {
-    return this.documentService.deleteDocument(id);
+    return await this.documentService.deleteDocument(id);
   }
 }

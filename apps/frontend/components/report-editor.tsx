@@ -156,7 +156,7 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Éditeur de Rapport</h1>
+        <div className="text-3xl font-bold" />
         <div className="flex gap-2">
           <Button variant="outline" onClick={togglePreview}>
             <Eye className="w-4 h-4 mr-2" />
