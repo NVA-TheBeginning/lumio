@@ -7,7 +7,6 @@
     "meganrogge.template-string-converter",
     "oven.bun-vscode",
     "biomejs.biome",
-    "prisma.prisma",
-    "vercel.turbo-vsc"
+    "prisma.prisma"
   ]
 }

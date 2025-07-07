@@ -1,10 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, FileText, Users } from "lucide-react";
+import { ArrowLeft, Calendar, FileText } from "lucide-react";
 import { useState } from "react";
 import ReportEditor from "@/components/report-editor";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
@@ -39,7 +38,6 @@ export default function ReportsPage() {
             <ArrowLeft className="w-4 h-4" />
             Retour aux rapports
           </Button>
-          <h1 className="text-3xl font-bold">Édition du rapport #{selectedReportId}</h1>
         </div>
         <ReportEditor reportId={selectedReportId} />
       </div>
@@ -87,13 +85,6 @@ export default function ReportsPage() {
                   <FileText className="w-5 h-5" />
                   Rapport #{report.id}
                 </CardTitle>
-                <div className="flex gap-2">
-                  <Badge variant="secondary">
-                    <Users className="w-3 h-3 mr-1" />
-                    Projet #{report.projectId}
-                  </Badge>
-                  {report.groupId && <Badge variant="outline">Groupe #{report.groupId}</Badge>}
-                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
