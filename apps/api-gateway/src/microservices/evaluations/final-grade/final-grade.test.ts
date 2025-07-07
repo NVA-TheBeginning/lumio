@@ -29,7 +29,12 @@ describe("FinalGradeController", () => {
     const mockResult = [{ id: 1, finalGrade: 15.5 }];
     (proxy.forwardRequest as jest.Mock).mockResolvedValue(mockResult);
     const result = await controller.calculateAndSave(1, 2);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/projects/1/promotions/2/final-grades", "POST", {});
+    expect(proxy.forwardRequest).toHaveBeenCalledWith(
+      "evaluation",
+      "/projects/1/promotions/2/final-grades",
+      "POST",
+      {},
+    );
     expect(result).toEqual(mockResult);
   });
 
