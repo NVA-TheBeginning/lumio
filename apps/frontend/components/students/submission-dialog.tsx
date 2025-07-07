@@ -1,10 +1,11 @@
 "use client";
 
-import { FileUp, Github, Upload, X } from "lucide-react";
+import { AlertCircle, FileUp, Github, Upload, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SubmissionData, submitDeliverable } from "@/app/dashboard/students/projects/actions";
 import { DeliverableType } from "@/app/dashboard/teachers/projects/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
   const [file, setFile] = useState<File | null>(null);
   const [gitUrl, setGitUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const canSubmitFile = deliverable.type.includes("FILE");
   const canSubmitGit = deliverable.type.includes("GIT");
@@ -49,6 +51,7 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setValidationErrors([]);
 
     try {
       const submissionData: SubmissionData = { groupId };
@@ -72,11 +75,27 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
 
       setFile(null);
       setGitUrl("");
+      setValidationErrors([]);
       onOpenChange(false);
       onSuccess();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erreur lors de la soumission:", error);
-      toast.error("Erreur lors de la soumission");
+
+      if (error instanceof Error && error.message?.includes("does not meet the required rules")) {
+        const ruleViolations = error.message
+          .split("\n")
+          .filter((line: string) => line.trim() && !line.includes("does not meet the required rules"))
+          .map((line: string) => line.trim());
+
+        if (ruleViolations.length > 0) {
+          setValidationErrors(ruleViolations);
+          toast.error("Votre soumission ne respecte pas les règles requises");
+        } else {
+          toast.error("Erreur lors de la soumission");
+        }
+      } else {
+        toast.error("Erreur lors de la soumission");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -115,6 +134,20 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
               </Badge>
             )}
           </div>
+
+          {validationErrors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-semibold mb-2">Votre soumission ne respecte pas les règles suivantes :</div>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Tabs
             value={submissionType}
