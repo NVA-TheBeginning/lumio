@@ -9,23 +9,37 @@ import { UpdateCriteriaDto } from "../dto/update-criteria.dto.js";
 export class CriteriaController {
   constructor(private readonly proxy: MicroserviceProxyService) {}
 
-  @Post("projects/:projectPromotionId/criteria")
+  @Post("projects/:projectId/promotions/:promotionId/criteria")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Créer un critère de notation" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
+  @ApiParam({ name: "projectId", type: Number })
+  @ApiParam({ name: "promotionId", type: Number })
   @ApiBody({ type: CreateCriteriaDto })
   @ApiResponse({ status: 201, description: "Critère créé." })
-  create(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number, @Body() dto: CreateCriteriaDto) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/criteria`, "POST", dto);
+  create(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+    @Body() dto: CreateCriteriaDto,
+  ) {
+    return this.proxy.forwardRequest(
+      "evaluation",
+      `/projects/${projectId}/promotions/${promotionId}/criteria`,
+      "POST",
+      dto,
+    );
   }
 
-  @Get("projects/:projectPromotionId/criteria")
+  @Get("projects/:projectId/promotions/:promotionId/criteria")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Lister les critères de notation" })
-  @ApiParam({ name: "projectPromotionId", type: Number })
+  @ApiParam({ name: "projectId", type: Number })
+  @ApiParam({ name: "promotionId", type: Number })
   @ApiResponse({ status: 200, description: "Liste des critères." })
-  findAll(@Param("projectPromotionId", ParseIntPipe) projectPromotionId: number) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectPromotionId}/criteria`, "GET");
+  findAll(
+    @Param("projectId", ParseIntPipe) projectId: number,
+    @Param("promotionId", ParseIntPipe) promotionId: number,
+  ) {
+    return this.proxy.forwardRequest("evaluation", `/projects/${projectId}/promotions/${promotionId}/criteria`, "GET");
   }
 
   @Put("criteria/:id")
