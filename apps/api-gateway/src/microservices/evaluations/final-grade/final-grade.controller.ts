@@ -19,7 +19,11 @@ export class FinalGradeController {
     @Param("projectId", ParseIntPipe) projectId: number,
     @Param("promotionId", ParseIntPipe) promotionId: number,
   ) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectId}/promotions/${promotionId}/final-grades`, "GET");
+    return this.proxy.forwardRequest(
+      "evaluation",
+      `/projects/${projectId}/promotions/${promotionId}/final-grades`,
+      "GET",
+    );
   }
 
   @Post("projects/:projectId/promotions/:promotionId/final-grades")
@@ -34,7 +38,12 @@ export class FinalGradeController {
     @Param("projectId", ParseIntPipe) projectId: number,
     @Param("promotionId", ParseIntPipe) promotionId: number,
   ) {
-    return this.proxy.forwardRequest("evaluation", `/projects/${projectId}/promotions/${promotionId}/final-grades`, "POST", {});
+    return this.proxy.forwardRequest(
+      "evaluation",
+      `/projects/${projectId}/promotions/${promotionId}/final-grades`,
+      "POST",
+      {},
+    );
   }
 
   @Put("final-grades/:id")
