@@ -11,43 +11,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Build & Development
 ```bash
 # Start all services in development mode
-bun dev
+bun run dev
 
 # Build all services
-bun build
-
-# Start production build
-bun start
+bun run build
 
 # Build only affected packages (CI)
-bun build:ci
+bun run build:ci
 ```
 
 ### Code Quality
 ```bash
 # Format code with Biome
-bun format
+bun run format
 
 # Lint and fix issues with Biome
-bun lint
+bun run lint
 ```
 
 ### Testing
 ```bash
 # Run all tests
-bun test
-
-# Run tests for affected packages (CI)
-bun test:ci
+bun run test
 ```
 
 ### Database
 ```bash
 # Run Prisma commands across services
 bun prisma
-
-# Start PostgreSQL with Adminer
-docker-compose up -d
 ```
 
 ### Frontend Development
@@ -56,7 +47,7 @@ docker-compose up -d
 cd apps/frontend && bun dev
 
 # Build frontend
-cd apps/frontend && bun build
+cd apps/frontend && bun run build
 ```
 
 ## Architecture Overview
