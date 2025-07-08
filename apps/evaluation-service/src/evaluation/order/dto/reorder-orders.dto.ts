@@ -2,13 +2,6 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsInt, Min } from "class-validator";
 
 export class ReorderDto {
-  @ApiProperty({ example: 3, description: "Position actuelle" })
-  @IsInt()
-  @Min(1)
-  from: number;
-
-  @ApiProperty({ example: 1, description: "Nouvelle position" })
-  @IsInt()
-  @Min(1)
-  to: number;
+  @ApiProperty({ example: 3 }) @IsInt() @Min(1) from!: number;
+  @ApiProperty({ example: 1 }) @IsInt() @Min(1) to!: number;
 }

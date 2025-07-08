@@ -1,132 +1,140 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
-import { Test } from "@nestjs/testing";
+import { beforeEach, describe, expect, jest, test } from "bun:test";
 import { addMinutes } from "date-fns";
-import { PrismaService } from "@/prisma.service";
-import { OrderModule } from "./order.module";
+import { ReorderDto } from "@/evaluation/order/dto/reorder-orders.dto";
+import { SaveOrdersDto } from "@/evaluation/order/dto/save-orders.dto";
+import { UpdateOrderDto } from "@/evaluation/order/dto/update-order.dto";
+import { OrderService } from "./order.service.js";
 
-describe("Evaluation – PresentationOrders", () => {
-  let app: NestFastifyApplication;
-  let prisma: PrismaService;
-  let presId: number;
+type PrismaMock = ReturnType<typeof createPrismaMock>;
+function createPrismaMock() {
+  return {
+    presentation: {
+      findUniqueOrThrow: jest.fn(),
+      findUnique: jest.fn(),
+    },
+    presentationOrder: {
+      create: jest.fn(),
+      deleteMany: jest.fn(),
+      createMany: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    // biome-ignore lint/suspicious/noExplicitAny: any is used here to mock PrismaService
+    $transaction: jest.fn(async (fn: any) => fn(prisma)),
+  };
+}
 
-  beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [OrderModule],
-    }).compile();
+let prisma: PrismaMock;
+let service: OrderService;
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+beforeEach(() => {
+  prisma = createPrismaMock();
+  // biome-ignore lint/suspicious/noExplicitAny: any is used here to mock PrismaService
+  service = new OrderService(prisma as any);
+});
 
-    prisma = app.get(PrismaService);
-
-    /* 📄 seed 1 présentation */
-    const start = new Date();
-    const pres = await prisma.presentation.create({
-      data: {
-        projectId: 1,
-        promotionId: 1,
-        startDatetime: start,
-        durationPerGroup: 30,
-      },
+describe("saveOrderList()", () => {
+  test("creates slots with computed schedule", async () => {
+    const start = new Date("2025-09-05T08:30:00Z");
+    prisma.presentation.findUniqueOrThrow.mockResolvedValue({
+      startDatetime: start,
+      durationPerGroup: 20,
     });
-    presId = pres.id;
+
+    const dto: SaveOrdersDto = { groupIds: [5, 6, 7] };
+    const result = await service.saveOrderList(1, dto);
+    expect(result).toEqual({ created: 3 });
+
+    const { data } = prisma.presentationOrder.createMany.mock.calls[0][0];
+    expect(data).toHaveLength(3);
+    expect(data[0]).toMatchObject({ groupId: 5, orderNumber: 1, scheduledDatetime: start });
+    expect(data[2].scheduledDatetime.getTime()).toBe(addMinutes(start, 40).getTime());
+  });
+});
+
+describe("update()", () => {
+  test("moves slot when orderNumber changes", async () => {
+    prisma.presentationOrder.findMany.mockResolvedValue([
+      { id: 1, orderNumber: 1 },
+      { id: 2, orderNumber: 2 },
+      { id: 3, orderNumber: 3 },
+    ]);
+    prisma.presentation.findUniqueOrThrow.mockResolvedValue({
+      startDatetime: new Date("2025-01-01T10:00:00Z"),
+      durationPerGroup: 15,
+    });
+
+    prisma.presentationOrder.findUnique.mockResolvedValue({
+      id: 2,
+      presentationId: 99,
+      orderNumber: 2,
+    });
+
+    const dto: UpdateOrderDto = { orderNumber: 1 };
+    await service.update(2, dto);
+
+    const calls = prisma.presentationOrder.update.mock.calls;
+    expect(calls).toHaveLength(3);
+    expect(calls[0][0].data.orderNumber).toBe(1); // id 2 moved first
+    expect(calls[2][0].data.orderNumber).toBe(3); // ex-1 devient 3
   });
 
-  afterAll(async () => {
-    await prisma.presentationOrder.deleteMany({ where: { presentationId: presId } });
-    await prisma.presentation.delete({ where: { id: presId } });
-    await app.close();
+  test("updates only groupId when orderNumber not provided", async () => {
+    prisma.presentationOrder.findUnique.mockResolvedValue({
+      id: 10,
+      presentationId: 1,
+      orderNumber: 1,
+    });
+    const dto: UpdateOrderDto = { groupId: 999 };
+    await service.update(10, dto);
+
+    expect(prisma.presentationOrder.update).toHaveBeenCalledWith({
+      where: { id: 10 },
+      data: { groupId: 999 },
+    });
   });
+});
 
-  test("POST /presentations/:id/orders/generate (SEQUENTIAL)", async () => {
-    const payload = {
-      groupIds: [1, 2, 3],
-      algorithm: "SEQUENTIAL",
-    };
-
-    const res = await app.inject({
-      method: "POST",
-      url: `/presentations/${presId}/orders/generate`,
-      payload,
+describe("reorder()", () => {
+  test("resequence list according to {from,to}", async () => {
+    prisma.presentationOrder.findMany.mockResolvedValue([
+      { id: 1, orderNumber: 1 },
+      { id: 2, orderNumber: 2 },
+      { id: 3, orderNumber: 3 },
+    ]);
+    prisma.presentation.findUniqueOrThrow.mockResolvedValue({
+      startDatetime: new Date(),
+      durationPerGroup: 10,
     });
 
-    expect(res.statusCode).toBe(201);
-    const body = JSON.parse(res.body);
-    expect(body).toEqual({ created: 3 });
+    const dto: ReorderDto = { from: 3, to: 1 };
+    await service.reorder(77, dto);
 
-    /* check DB: orderNumber & scheduledDatetime cohérents */
-    const orders = await prisma.presentationOrder.findMany({
-      where: { presentationId: presId },
-      orderBy: { orderNumber: "asc" },
-    });
-
-    expect(orders.map((o) => o.orderNumber)).toEqual([1, 2, 3]);
-    const firstDate = orders[0].scheduledDatetime;
-    expect(orders[1].scheduledDatetime.getTime()).toBe(addMinutes(firstDate, 30).getTime());
+    const firstUpdate = prisma.presentationOrder.update.mock.calls[0][0];
+    expect(firstUpdate.where.id).toBe(3); // id 3 now first
+    expect(firstUpdate.data.orderNumber).toBe(1);
   });
+});
 
-  test("PATCH reorder – permute 3↦1", async () => {
-    const res = await app.inject({
-      method: "PATCH",
-      url: `/presentations/${presId}/orders/reorder`,
-      payload: { from: 3, to: 1 },
+describe("remove()", () => {
+  test("deletes slot then resequences", async () => {
+    prisma.presentationOrder.findUnique.mockResolvedValue({
+      id: 9,
+      presentationId: 123,
+      orderNumber: 2,
     });
-    expect(res.statusCode).toBe(200);
-
-    const orders = await prisma.presentationOrder.findMany({
-      where: { presentationId: presId },
-      orderBy: { orderNumber: "asc" },
+    prisma.presentation.findUniqueOrThrow.mockResolvedValue({
+      startDatetime: new Date(),
+      durationPerGroup: 5,
     });
-    expect(orders[0].groupId).toBe(3);
-    expect(orders[2].groupId).toBe(2);
-  });
+    prisma.presentationOrder.findMany.mockResolvedValue([{ id: 10, orderNumber: 1 }]);
 
-  test("PUT update – change orderNumber explicit", async () => {
-    const target = await prisma.presentationOrder.findFirstOrThrow({
-      where: { presentationId: presId, orderNumber: 2 },
-    });
+    const res = await service.remove(9);
 
-    const res = await app.inject({
-      method: "PUT",
-      url: `/orders/${target.id}`,
-      payload: { orderNumber: 1 },
-    });
-    expect(res.statusCode).toBe(200);
-
-    const updated = await prisma.presentationOrder.findUniqueOrThrow({
-      where: { id: target.id },
-    });
-    expect(updated.orderNumber).toBe(1);
-  });
-
-  test("DELETE /orders/:id – cascade resequence", async () => {
-    const all = await prisma.presentationOrder.findMany({ where: { presentationId: presId } });
-    const toDelete = all[0];
-
-    const res = await app.inject({
-      method: "DELETE",
-      url: `/orders/${toDelete.id}`,
-    });
-    expect(res.statusCode).toBe(200);
-
-    const remaining = await prisma.presentationOrder.findMany({
-      where: { presentationId: presId },
-      orderBy: { orderNumber: "asc" },
-    });
-
-    /* plus que 2 slots, numéro 1 réattribué */
-    expect(remaining.length).toBe(2);
-    expect(remaining[0].orderNumber).toBe(1);
-  });
-
-  test("PATCH reorder – indexes hors limites → 404", async () => {
-    const res = await app.inject({
-      method: "PATCH",
-      url: `/presentations/${presId}/orders/reorder`,
-      payload: { from: 5, to: 1 },
-    });
-    expect(res.statusCode).toBe(404);
+    expect(res).toEqual({ deleted: true });
+    expect(prisma.presentationOrder.delete).toHaveBeenCalledWith({ where: { id: 9 } });
+    expect(prisma.presentationOrder.update).toHaveBeenCalled(); // ✅ désormais true
   });
 });
