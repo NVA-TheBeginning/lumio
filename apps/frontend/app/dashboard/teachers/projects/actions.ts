@@ -489,16 +489,13 @@ export interface UpdatePresentationData {
   durationPerGroup?: number;
 }
 
-export interface CreateOrderData {
-  presentationId: number;
-  groupId: number;
-  orderNumber: number;
-  scheduledDatetime: string;
+export interface SaveOrdersData {
+  groupIds: number[];
 }
 
 export interface UpdateOrderData {
+  groupId?: number;
   orderNumber?: number;
-  scheduledDatetime?: string;
 }
 
 export async function createPresentation(data: CreatePresentationData): Promise<PresentationType> {
@@ -521,7 +518,7 @@ export async function deletePresentation(id: number): Promise<void> {
   return await authDeleteData(`${API_URL}/presentations/${id}`);
 }
 
-export async function createOrder(presentationId: number, data: CreateOrderData): Promise<OrderType> {
+export async function saveOrders(presentationId: number, data: SaveOrdersData): Promise<OrderType[]> {
   return await authPostData(`${API_URL}/presentations/${presentationId}/orders`, data);
 }
 
