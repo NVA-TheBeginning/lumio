@@ -163,7 +163,7 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
                   min="0"
                   max="100"
                   value={lateSubmissionPenalty}
-                  onChange={(e) => setLateSubmissionPenalty(Number(e.target.value))}
+                  onChange={(e) => setLateSubmissionPenalty(Number(e.target.value) || 0)}
                 />
               </div>
             )}
