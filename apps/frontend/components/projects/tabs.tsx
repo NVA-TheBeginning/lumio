@@ -3,6 +3,7 @@
 import type { ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectDeliverables } from "./tabs/deliverables";
+import { ProjectEvaluations } from "./tabs/evaluations";
 import { ProjectGroups } from "./tabs/groups";
 import { ProjectOverview } from "./tabs/overview";
 import { ProjectPresentations } from "./tabs/presentations";
@@ -71,9 +72,7 @@ export function ProjectTabs({ project, activeTab, setActiveTab }: ProjectTabsPro
           </TabsContent>
 
           <TabsContent value="evaluations" className="mt-0">
-            <div className="text-center">
-              <p className="text-muted-foreground">Coming soon...</p>
-            </div>
+            <ProjectEvaluations project={project} />
           </TabsContent>
 
           <TabsContent value="presentations" className="mt-0">

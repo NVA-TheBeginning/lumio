@@ -664,3 +664,63 @@ export async function getRule(ruleId: number): Promise<DeliverableRule> {
   const url = `${API_URL}/rules/${ruleId}`;
   return await authFetchData(url);
 }
+
+// Evaluation system types following existing patterns
+export interface GradingCriteria {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  name: string;
+  weight: number;
+  type: "DELIVERABLE" | "REPORT" | "PRESENTATION";
+  individual: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Grade {
+  id: number;
+  gradingCriteriaId: number;
+  groupId: number;
+  studentId?: number;
+  gradeValue: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinalGrade {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  groupId: number;
+  finalGrade: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Minimal evaluation API functions following existing patterns
+export async function getCriteria(projectId: number, promotionId: number): Promise<GradingCriteria[]> {
+  return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/criteria`);
+}
+
+export async function getGradesForCriteria(criteriaId: number): Promise<Grade[]> {
+  return await authFetchData(`${API_URL}/criteria/${criteriaId}/grades`);
+}
+
+export async function createGrade(
+  criteriaId: number,
+  data: { groupId: number; gradeValue: number; comment?: string },
+): Promise<Grade> {
+  const payload = { ...data, gradingCriteriaId: criteriaId };
+  return await authPostData(`${API_URL}/criteria/${criteriaId}/grades`, payload);
+}
+
+export async function updateGrade(gradeId: number, data: { gradeValue?: number; comment?: string }): Promise<Grade> {
+  return await authPutData(`${API_URL}/grades/${gradeId}`, data);
+}
+
+export async function getFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {
+  return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/final-grades`);
+}

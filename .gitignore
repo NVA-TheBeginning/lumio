@@ -39,7 +39,9 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+'.idea' 
+.idea/
 lumio.iml
-.*
-!.vscode
-!.github
+apps/.claude/settings.local.json
+.claude/settings.local.json
+apps/frontend/tsconfig.tsbuildinfo
