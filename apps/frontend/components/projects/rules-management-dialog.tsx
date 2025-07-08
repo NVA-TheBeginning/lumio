@@ -356,7 +356,7 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
                         id="maxSize"
                         type="number"
                         value={maxSizeInBytes}
-                        onChange={(e) => setMaxSizeInBytes(Number(e.target.value))}
+                        onChange={(e) => setMaxSizeInBytes(Number(e.target.value) || 0)}
                         placeholder="10485760"
                       />
                       <p className="text-sm text-muted-foreground mt-1">

@@ -169,16 +169,14 @@ export default function ProjectSubmissionsPage() {
           }[];
         }[];
       }>(["plagiarism-results", activePromotion, projectId, deliverableId.toString()]);
-
       if (!plagiarismQuery) return null;
-      console.log("Plagiarism Query Data:", plagiarismQuery);
 
       return plagiarismQuery.folderResults?.find((folder) => folder.folderName.startsWith(`${groupId}-`));
     };
   }, [activePromotion, projectId, queryClient]);
 
   const getPlagiarismBadge = (plagiarismPercentage: number) => {
-    if (plagiarismPercentage >= 80) {
+    if (plagiarismPercentage >= 70) {
       return <Badge variant="destructive">Plagiat élevé ({plagiarismPercentage}%)</Badge>;
     }
     if (plagiarismPercentage >= 50) {
@@ -187,7 +185,7 @@ export default function ProjectSubmissionsPage() {
     if (plagiarismPercentage >= 20) {
       return <Badge className="bg-yellow-500">Plagiat faible ({plagiarismPercentage}%)</Badge>;
     }
-    return <Badge className="bg-green-500">Pas de plagiat ({plagiarismPercentage}%)</Badge>;
+    return <Badge className="bg-green-500">Pas de plagiat détecté ({plagiarismPercentage}%)</Badge>;
   };
 
   const filteredSubmissions = (() => {
@@ -233,13 +231,8 @@ export default function ProjectSubmissionsPage() {
   }, [filteredSubmissions]);
 
   const availableDeliverables = useMemo(() => {
-    if (!project) {
-      return [];
-    }
-    if (!activePromotion) {
-      return [];
-    }
-    return project.deliverables.filter((d) => d.promotionId.toString() === activePromotion);
+    if (!(project && activePromotion)) return [];
+    return project.deliverables.filter((d) => d.promotionId === Number(activePromotion));
   }, [project, activePromotion]);
 
   if (projectLoading) {

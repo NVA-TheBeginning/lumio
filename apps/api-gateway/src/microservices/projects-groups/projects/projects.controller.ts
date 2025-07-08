@@ -41,7 +41,7 @@ import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.j
 import { GroupWithMembersDto, ProjectDto, ProjectWithGroupsDto, UpdateProjectStatusDto } from "../dto/project.dto.js";
 
 export enum GroupMode {
-  AUTO = "RANDOM",
+  RANDOM = "RANDOM",
   FREE = "FREE",
   MANUAL = "MANUAL",
 }
@@ -142,7 +142,7 @@ export class ProjectsController {
           projectId: project.id,
           groupId: g.id,
           promotionId: g.promotionId,
-          sections: [], // squelette vide – ajoute ton template si besoin
+          sections: [],
         } as CreateReportDto),
       ),
     );
