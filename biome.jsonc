@@ -57,7 +57,7 @@
       },
       "nursery": {
         "noAwaitInLoop": "error",
-        "noFloatingPromises": "error",
+        //"noFloatingPromises": "error", disabled due to slow performance
         "useUniqueElementIds": "off"
       },
       "suspicious": {

@@ -479,7 +479,6 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                   <div className="lg:col-span-2">
                     <div className="space-y-2">
                       <h3 className="text-xl font-semibold">{promotion.name}</h3>
-                      <p className="text-muted-foreground">{promotion.description}</p>
                     </div>
                   </div>
 
@@ -493,12 +492,36 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                           </span>
                         </div>
                         <Progress value={progress} className="h-2" />
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <div className="font-medium">{unassignedStudents.length} étudiants</div>
-                            <div className="text-muted-foreground">Non assignés</div>
+                        {unassignedStudents.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <div className="font-medium">{unassignedStudents.length} étudiants</div>
+                              <div className="text-muted-foreground">Non assignés</div>
+                            </div>
+                            <div>
+                              <div className="font-medium">{groups?.length || 0} groupes</div>
+                              <div className="text-muted-foreground">Créés</div>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="text-center">
+                            <div className="flex items-center justify-center space-x-2 text-green-600 dark:text-green-400 mb-1">
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span className="font-medium">Assignation terminée</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {groups?.length || 0} groupes • {allStudents.length} étudiants
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -592,7 +615,11 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                   <FormItem>
                                     <FormLabel>Date limite</FormLabel>
                                     <FormControl>
-                                      <Input type="datetime-local" {...field} />
+                                      <Input
+                                        type="datetime-local"
+                                        {...field}
+                                        min={new Date().toISOString().slice(0, 16)}
+                                      />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
