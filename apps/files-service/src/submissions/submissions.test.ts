@@ -3,6 +3,7 @@ import type { File } from "@nest-lab/fastify-multer";
 import { BadRequestException } from "@nestjs/common";
 import { DeliverableType } from "@prisma-files/client";
 import type { PrismaService } from "@/prisma.service";
+import { RuleValidationService } from "@/rules/rule-validation.service";
 import type { S3Service } from "@/s3.service";
 import { SubmissionsController } from "./submissions.controller";
 import { SubmissionsService } from "./submissions.service";
@@ -24,6 +25,7 @@ describe("SubmissionsController", () => {
   let controller: SubmissionsController;
   let submissionsService: SubmissionsService;
   let s3Service: S3Service;
+  let RuleValidationService: RuleValidationService;
   let prismaService: PrismaService;
 
   const mockS3Service = {
@@ -69,7 +71,8 @@ describe("SubmissionsController", () => {
 
     s3Service = mockS3Service as unknown as S3Service;
     prismaService = mockPrismaService as unknown as PrismaService;
-    submissionsService = new SubmissionsService(prismaService, s3Service);
+    RuleValidationService = mock() as unknown as RuleValidationService;
+    submissionsService = new SubmissionsService(prismaService, s3Service, RuleValidationService);
     controller = new SubmissionsController(submissionsService);
   });
 

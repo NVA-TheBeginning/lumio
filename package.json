@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "lumio",
-  "packageManager": "bun@1.2.16",
+  "packageManager": "bun@1.2.18",
   "scripts": {
     "build": "turbo run build",
     "build:ci": "turbo run build --affected",
@@ -11,7 +11,8 @@
     "start": "turbo run start",
     "format": "biome format --fix",
     "lint": "biome check --fix --unsafe",
-    "prisma": "turbo run prisma"
+    "prisma": "turbo run prisma",
+    "clean": "rm -rf node_modules && rm -rf apps/*/node_modules && rm -rf apps/*/dist && rm -rf apps/*/.turbo"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",

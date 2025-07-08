@@ -586,6 +586,17 @@ export interface PromotionSubmissionMetadataResponse {
   lastModified: Date;
   gitUrl?: string;
   error?: boolean;
+  plagiarismResult?: {
+    folderName: string;
+    sha1: string | null;
+    plagiarismPercentage: number;
+    matches: {
+      matchedFolder: string;
+      overallMatchPercentage: number;
+      combinedScore: number;
+      flags: string[];
+    }[];
+  };
 }
 
 export async function getAllPromotionSubmissions(
@@ -601,6 +612,32 @@ export async function getAllPromotionSubmissions(
 export async function acceptSubmission(submissionId: number): Promise<PromotionSubmissionMetadataResponse> {
   const url = `${API_URL}/submissions/${submissionId}/accept`;
   return await authPatchData(url, {});
+}
+
+export async function checkPlagiarism(
+  projectId: string,
+  promotionId: string,
+  step: string,
+): Promise<{
+  projectId: string;
+  promotionId: string;
+  folderResults: {
+    folderName: string;
+    sha1: string | null;
+    plagiarismPercentage: number;
+    matches: {
+      matchedFolder: string;
+      overallMatchPercentage: number;
+      combinedScore: number;
+      flags: string[];
+    }[];
+  }[];
+}> {
+  return await authPostData(`${API_URL}/plagiarism/checks`, {
+    projectId,
+    promotionId,
+    step,
+  });
 }
 
 export async function getDeliverableRules(deliverableId: number): Promise<DeliverableRule[]> {

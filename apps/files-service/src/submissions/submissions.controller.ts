@@ -7,6 +7,7 @@ import {
   Get,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -123,7 +124,7 @@ export class SubmissionsController {
     return this.submissionsService.deleteSubmission(Number(idSubmission));
   }
 
-  @Post("submissions/:idSubmission/accept")
+  @Patch("submissions/:idSubmission/accept")
   @ApiOperation({ summary: "Accept a submission (teacher only)" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission accepted successfully." })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: "Submission is already accepted or invalid." })

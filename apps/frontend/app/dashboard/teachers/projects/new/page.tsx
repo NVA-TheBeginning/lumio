@@ -24,7 +24,7 @@ const groupSettingSchema = z.object({
   promotionId: z.number().positive(),
   minMembers: z.number().min(1, "Minimum 1 membre requis"),
   maxMembers: z.number().min(1, "Minimum 1 membre requis"),
-  mode: z.string().refine((val) => ["AUTO", "FREE", "MANUAL"].includes(val), {
+  mode: z.string().refine((val) => ["RANDOM", "FREE", "MANUAL"].includes(val), {
     message: "Mode invalide",
   }),
   deadline: z.string().min(1, "La date limite est requise"),
@@ -279,7 +279,7 @@ export default function CreateProjectForm() {
                         control={form.control}
                         name={`groupSettings.${index}.minMembers`}
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="min-h-[80px]">
                             <FormLabel>Nombre minimum de membres</FormLabel>
                             <FormControl>
                               <Input
@@ -287,7 +287,7 @@ export default function CreateProjectForm() {
                                 min={1}
                                 max={form.getValues(`groupSettings.${index}.maxMembers`) || 10}
                                 {...field}
-                                onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                                onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 1)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -299,14 +299,14 @@ export default function CreateProjectForm() {
                         control={form.control}
                         name={`groupSettings.${index}.maxMembers`}
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="min-h-[80px]">
                             <FormLabel>Nombre maximum de membres</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 min={form.getValues(`groupSettings.${index}.minMembers`) || 1}
                                 {...field}
-                                onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                                onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 1)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -319,7 +319,7 @@ export default function CreateProjectForm() {
                       control={form.control}
                       name={`groupSettings.${index}.mode`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="min-h-[140px]">
                           <FormLabel>Mode de formation des groupes</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
@@ -328,7 +328,7 @@ export default function CreateProjectForm() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="AUTO">Automatique</SelectItem>
+                              <SelectItem value="RANDOM">Automatique</SelectItem>
                               <SelectItem value="FREE">Libre</SelectItem>
                               <SelectItem value="MANUAL">Manuel</SelectItem>
                             </SelectContent>
@@ -349,7 +349,7 @@ export default function CreateProjectForm() {
                       control={form.control}
                       name={`groupSettings.${index}.deadline`}
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem className="flex flex-col min-h-[90px]">
                           <FormLabel>Date limite de formation des groupes</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>

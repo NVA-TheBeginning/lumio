@@ -88,6 +88,7 @@ pub fn build_blacklist(project_path: &Path) -> io::Result<FxHashSet<String>> {
         String::from(".github/"),
         String::from(".github\\"),
         String::from("LICENSE"),
+        String::from("__MACOSX/"),
     ]);
 
     let gitignore_path = project_path.join(".gitignore");
