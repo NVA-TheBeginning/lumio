@@ -83,7 +83,16 @@ export type CalendarEvent = {
   start: Date;
   end: Date;
   title: string;
-  color?: VariantProps<typeof monthEventVariants>["variant"];
+  color?: VariantProps<typeof monthEventVariants>["variant"] | string;
+  allDay?: boolean;
+  projectId?: number;
+  projectName?: string;
+  projectColor?: string;
+  promotionId?: number;
+  promotionName?: string;
+  deliverableId?: number;
+  deadline?: string;
+  description?: string;
 };
 
 type CalendarProps = {
@@ -111,6 +120,10 @@ const Calendar = ({
   const [date, setDate] = useState(defaultDate);
   const [events, setEvents] = useState<CalendarEvent[]>(defaultEvents);
   const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setEvents(defaultEvents);
+  }, [defaultEvents]);
 
   useEffect(() => {
     setIsClient(true);
@@ -187,7 +200,22 @@ const CalendarViewTrigger = forwardRef<
 });
 CalendarViewTrigger.displayName = "CalendarViewTrigger";
 
+const getColorVariant = (color?: string): VariantProps<typeof monthEventVariants>["variant"] => {
+  if (!color) return "default";
+
+  const colorMap: Record<string, VariantProps<typeof monthEventVariants>["variant"]> = {
+    "#3b82f6": "blue",
+    "#10b981": "green",
+    "#ec4899": "pink",
+    "#8b5cf6": "purple",
+  };
+
+  return colorMap[color] || "default";
+};
+
 const EventGroup = ({ events, hour }: { events: CalendarEvent[]; hour: Date }) => {
+  const { onEventClick } = useCalendar();
+
   return (
     <div className="h-20 border-t last:border-b">
       {events
@@ -195,18 +223,29 @@ const EventGroup = ({ events, hour }: { events: CalendarEvent[]; hour: Date }) =
         .map((event) => {
           const hoursDifference = differenceInMinutes(event.end, event.start) / 60;
           const startPosition = event.start.getMinutes() / 60;
+          const variant = getColorVariant(event.color as string);
 
           return (
-            <div
+            <button
               key={event.id}
-              className={cn("relative", dayEventVariants({ variant: event.color }))}
+              type="button"
+              className={cn("relative cursor-pointer", dayEventVariants({ variant }))}
               style={{
                 top: `${startPosition * 100}%`,
                 height: `${hoursDifference * 100}%`,
+                ...(event.projectColor && variant === "default"
+                  ? {
+                      backgroundColor: `${event.projectColor}30`,
+                      borderLeftColor: event.projectColor,
+                      color: event.projectColor,
+                    }
+                  : {}),
               }}
+              onClick={() => onEventClick?.(event)}
+              title={event.description || event.title}
             >
               {event.title}
-            </div>
+            </button>
           );
         })}
     </div>
@@ -310,7 +349,7 @@ const CalendarWeekView = () => {
 };
 
 const CalendarMonthView = () => {
-  const { date, view, events, locale } = useCalendar();
+  const { date, view, events, locale, onEventClick } = useCalendar();
 
   const monthDates = useMemo(() => getDaysInMonth(date), [date]);
   const weekDays = useMemo(() => generateWeekdays(locale), [locale]);
@@ -354,14 +393,31 @@ const CalendarMonthView = () => {
               </span>
 
               {currentEvents.map((event) => {
+                const variant = getColorVariant(event.color as string);
+
                 return (
-                  <div key={event.id} className="px-1 rounded text-sm flex items-center gap-1">
-                    <div className={cn("shrink-0", monthEventVariants({ variant: event.color }))} />
+                  <button
+                    key={event.id}
+                    type="button"
+                    className="px-1 rounded text-sm flex items-center gap-1 cursor-pointer hover:bg-muted/50"
+                    onClick={() => onEventClick?.(event)}
+                    title={event.description || event.title}
+                  >
+                    <div
+                      className={cn("shrink-0", monthEventVariants({ variant }))}
+                      style={
+                        event.projectColor && variant === "default"
+                          ? {
+                              backgroundColor: event.projectColor,
+                            }
+                          : {}
+                      }
+                    />
                     <span className="flex-1 truncate">{event.title}</span>
                     <time className="tabular-nums text-muted-foreground/50 text-xs">
                       {format(event.start, "HH:mm")}
                     </time>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -469,10 +525,6 @@ const CalendarPrevTrigger = forwardRef<HTMLButtonElement, React.HTMLAttributes<H
   ({ children, onClick, ...props }, ref) => {
     const { date, setDate, view, enableHotkeys } = useCalendar();
 
-    useHotkeys("ArrowLeft", () => prev(), {
-      enabled: enableHotkeys,
-    });
-
     const prev = useCallback(() => {
       if (view === "day") {
         setDate(subDays(date, 1));
@@ -484,6 +536,10 @@ const CalendarPrevTrigger = forwardRef<HTMLButtonElement, React.HTMLAttributes<H
         setDate(subYears(date, 1));
       }
     }, [date, view, setDate]);
+
+    useHotkeys("ArrowLeft", () => prev(), {
+      enabled: enableHotkeys,
+    });
 
     return (
       <Button
@@ -507,13 +563,13 @@ const CalendarTodayTrigger = forwardRef<HTMLButtonElement, React.HTMLAttributes<
   ({ children, onClick, ...props }, ref) => {
     const { setDate, enableHotkeys, today } = useCalendar();
 
-    useHotkeys("t", () => jumpToToday(), {
-      enabled: enableHotkeys,
-    });
-
     const jumpToToday = useCallback(() => {
       setDate(today);
     }, [today, setDate]);
+
+    useHotkeys("t", () => jumpToToday(), {
+      enabled: enableHotkeys,
+    });
 
     return (
       <Button
