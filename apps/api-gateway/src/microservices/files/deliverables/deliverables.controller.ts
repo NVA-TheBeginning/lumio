@@ -97,97 +97,96 @@ export class DeliverablesController {
     @Query("startDate") startDate?: string,
     @Query("endDate") endDate?: string,
     @Query("projectId") projectId?: string,
-  ): Promise<CalendarResponseDto | CalendarResponseDto[]> {
-    const queryParams = [];
-    if (promotionId) queryParams.push(`promotionId=${promotionId}`);
-    if (startDate) queryParams.push(`startDate=${startDate}`);
-    if (endDate) queryParams.push(`endDate=${endDate}`);
-    if (projectId) queryParams.push(`projectId=${projectId}`);
+  ): Promise<CalendarResponseDto[]> {
+    const queryParams = [
+      promotionId && `promotionId=${promotionId}`,
+      startDate && `startDate=${startDate}`,
+      endDate && `endDate=${endDate}`,
+      projectId && `projectId=${projectId}`,
+    ].filter(Boolean);
     const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
 
-    if (promotionId) {
-      const deliverables = await this.proxy.forwardRequest<DeliverableResponse[]>(
-        "files",
-        `/calendar/promotion/${promotionId}${queryString}`,
-        "GET",
-      );
-      if (deliverables.length === 0) {
-        return {
-          promotionId: Number(promotionId),
-          promotionName: "",
-          projects: [],
-        };
-      }
-      const uniqueProjectIds = [...new Set(deliverables.map((d) => d.projectId))];
-      const promotion = await this.proxy.forwardRequest<PromotionResponse>(
-        "project",
-        `/promotions/${promotionId}`,
-        "GET",
-      );
-      const allProjects = await this.proxy.forwardRequest<ProjectResponse[]>("project", "/projects", "GET");
-      const projectPromises = uniqueProjectIds.map(async (projectId) => {
-        const project = allProjects.find((p) => p.id === projectId);
-        if (!project) {
-          return null;
-        }
-        const projectDeliverables = deliverables.filter((d) => d.projectId === projectId);
-        return {
-          projectId: project.id,
-          projectName: project.name,
-          projectDescription: project.description,
-          deliverables: projectDeliverables,
-        };
-      });
-      const projectResults = await Promise.all(projectPromises);
-      const projects = projectResults.filter((project): project is NonNullable<typeof project> => project !== null);
-      return {
-        promotionId: promotion.id,
-        promotionName: promotion.name,
-        projects,
-      };
-    }
-
-    const allDeliverables = await this.proxy.forwardRequest<DeliverableResponse[]>(
+    const deliverables = await this.proxy.forwardRequest<DeliverableResponse[]>(
       "files",
-      `/calendar${queryString}`,
+      promotionId ? `/calendar/promotion/${promotionId}${queryString}` : `/calendar${queryString}`,
       "GET",
     );
-    if (allDeliverables.length === 0) {
+
+    if (deliverables.length === 0) {
       return [];
     }
-    const uniquePromotionIds = [...new Set(allDeliverables.map((d) => d.promotionId))];
-    const allPromotions = await this.proxy.forwardRequest<PromotionResponse[]>("project", "/promotions", "GET");
-    const allProjects = await this.proxy.forwardRequest<ProjectResponse[]>("project", "/projects", "GET");
-    const promotionPromises = uniquePromotionIds.map(async (promotionId) => {
-      const promotion = allPromotions.find((p) => p.id === promotionId);
-      if (!promotion) {
-        return null;
-      }
-      const promotionDeliverables = allDeliverables.filter((d) => d.promotionId === promotionId);
-      const promotionProjectIds = [...new Set(promotionDeliverables.map((d) => d.projectId))];
-      const projects = promotionProjectIds
-        .map((projectId) => {
-          const project = allProjects.find((p) => p.id === projectId);
-          if (!project) {
-            return null;
-          }
-          const projectDeliverables = promotionDeliverables.filter((d) => d.projectId === projectId);
-          return {
-            projectId: project.id,
-            projectName: project.name,
-            projectDescription: project.description,
-            deliverables: projectDeliverables,
-          };
+
+    const [allPromotions, allProjects] = await Promise.all([
+      this.proxy.forwardRequest<PromotionResponse[]>("project", "/promotions", "GET"),
+      this.proxy.forwardRequest<ProjectResponse[]>("project", "/projects", "GET"),
+    ]);
+
+    const projectMap = new Map(allProjects.map((p) => [p.id, p]));
+    const promotionMap = new Map(allPromotions.map((p) => [p.id, p]));
+
+    const buildProjects = (deliverables: DeliverableResponse[]) => {
+      const projectGroups = new Map<number, DeliverableResponse[]>();
+      deliverables.forEach((d) => {
+        if (!projectGroups.has(d.projectId)) {
+          projectGroups.set(d.projectId, []);
+        }
+        const group = projectGroups.get(d.projectId);
+        if (group) {
+          group.push(d);
+        }
+      });
+
+      return Array.from(projectGroups.entries())
+        .map(([projectId, deliverables]) => {
+          const project = projectMap.get(projectId);
+          return project
+            ? {
+                projectId: project.id,
+                projectName: project.name,
+                projectDescription: project.description,
+                deliverables,
+              }
+            : null;
         })
         .filter((project): project is NonNullable<typeof project> => project !== null);
-      return {
-        promotionId: promotion.id,
-        promotionName: promotion.name,
-        projects,
-      };
+    };
+
+    if (promotionId) {
+      const promotion = promotionMap.get(Number(promotionId));
+      if (!promotion) {
+        return [];
+      }
+      return [
+        {
+          promotionId: promotion.id,
+          promotionName: promotion.name,
+          projects: buildProjects(deliverables),
+        },
+      ];
+    }
+
+    const promotionGroups = new Map<number, DeliverableResponse[]>();
+    deliverables.forEach((d) => {
+      if (!promotionGroups.has(d.promotionId)) {
+        promotionGroups.set(d.promotionId, []);
+      }
+      const group = promotionGroups.get(d.promotionId);
+      if (group) {
+        group.push(d);
+      }
     });
-    const promotionResults = await Promise.all(promotionPromises);
-    return promotionResults.filter((promotion): promotion is NonNullable<typeof promotion> => promotion !== null);
+
+    return Array.from(promotionGroups.entries())
+      .map(([promotionId, deliverables]) => {
+        const promotion = promotionMap.get(promotionId);
+        if (!promotion) return null;
+        return {
+          promotionId: promotion.id,
+          promotionName: promotion.name,
+          projects: buildProjects(deliverables),
+        };
+      })
+      .filter((promotion): promotion is NonNullable<typeof promotion> => promotion !== null);
   }
 
   @Put("projects/deliverables")
