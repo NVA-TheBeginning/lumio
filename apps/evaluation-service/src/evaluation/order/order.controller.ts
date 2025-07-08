@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { CreateOrderDto } from "./dto/create-order.dto";
-import { UpdateOrderDto } from "./dto/update-order.dto";
-import { OrderService } from "./order.service";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put } from "@nestjs/common";
+import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { ReorderDto } from "@/evaluation/order/dto/reorder-orders.dto";
+import { SaveOrdersDto } from "@/evaluation/order/dto/save-orders.dto";
+import { UpdateOrderDto } from "@/evaluation/order/dto/update-order.dto";
+import { OrderService } from "./order.service.js";
 
 @ApiTags("orders")
 @Controller()
@@ -10,26 +11,28 @@ export class OrderController {
   constructor(private readonly service: OrderService) {}
 
   @Post("presentations/:presentationId/orders")
-  @ApiOperation({ summary: "Créer un ordre de passage" })
-  @ApiResponse({ status: 201, description: "Ordre créé." })
-  create(@Param("presentationId", ParseIntPipe) presentationId: number, @Body() dto: CreateOrderDto) {
-    return this.service.create(presentationId, dto);
+  @ApiParam({ name: "presentationId", type: Number })
+  @ApiOperation({ summary: "Remplace l’ordre complet" })
+  save(@Param("presentationId", ParseIntPipe) presentationId: number, @Body() dto: SaveOrdersDto) {
+    return this.service.saveOrderList(presentationId, dto);
   }
 
   @Get("presentations/:presentationId/orders")
-  @ApiOperation({ summary: "Lister les ordres pour une soutenance" })
-  findAll(@Param("presentationId", ParseIntPipe) presentationId: number) {
-    return this.service.findAll(presentationId);
+  findAll(@Param("presentationId", ParseIntPipe) id: number) {
+    return this.service.findAll(id);
   }
 
   @Put("orders/:id")
-  @ApiOperation({ summary: "Mettre à jour un ordre" })
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateOrderDto) {
     return this.service.update(id, dto);
   }
 
+  @Patch("presentations/:presentationId/orders/reorder")
+  reorder(@Param("presentationId", ParseIntPipe) id: number, @Body() dto: ReorderDto) {
+    return this.service.reorder(id, dto);
+  }
+
   @Delete("orders/:id")
-  @ApiOperation({ summary: "Supprimer un ordre" })
   remove(@Param("id", ParseIntPipe) id: number) {
     return this.service.remove(id);
   }
