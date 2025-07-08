@@ -3,10 +3,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Clock, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { JSX, useState } from "react";
+import { useState } from "react";
 import { DeliverableType, ProjectType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
 import { RulesManagementDialog } from "@/components/projects/rules-management-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,19 +29,6 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
     queryClient.invalidateQueries({
       queryKey: ["projects", Number(project.id)],
     });
-  };
-
-  const getDeliverableStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge className="bg-green-500">Terminé</Badge>;
-      case "active":
-        return <Badge className="bg-blue-500">En cours</Badge>;
-      case "upcoming":
-        return <Badge variant="outline">À venir</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
   };
 
   const handleViewDeliverable = (deliverableId: number) => {
@@ -97,7 +83,6 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
                   onEditDeliverable={handleEditDeliverable}
                   onViewSubmissions={handleViewSubmissions}
                   onViewDeliverableSubmissions={handleViewDeliverableSubmissions}
-                  getDeliverableStatusBadge={getDeliverableStatusBadge}
                   setShowCreateDialog={setShowCreateDialog}
                 />
               </TabsContent>
@@ -131,7 +116,6 @@ interface PromotionDeliverablesProps {
   onEditDeliverable: (deliverable: DeliverableType) => void;
   onViewSubmissions: (promotion: PromotionType) => void;
   onViewDeliverableSubmissions: (deliverableId: number, promotionId: number) => void;
-  getDeliverableStatusBadge: (status: string) => JSX.Element;
   setShowCreateDialog: (show: boolean) => void;
 }
 
@@ -141,7 +125,6 @@ function PromotionDeliverables({
   onEditDeliverable,
   onViewSubmissions,
   onViewDeliverableSubmissions,
-  getDeliverableStatusBadge,
   setShowCreateDialog,
 }: PromotionDeliverablesProps) {
   if (deliverables.length === 0) {
@@ -182,9 +165,7 @@ function PromotionDeliverables({
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="font-medium">{deliverable.name}</h3>
-              {getDeliverableStatusBadge(deliverable.status)}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">{deliverable.description}</p>
             <div className="flex items-center gap-6 mt-2">
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />

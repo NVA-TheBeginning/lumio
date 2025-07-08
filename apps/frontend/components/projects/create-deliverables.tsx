@@ -130,6 +130,7 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
                 id="deadline"
                 type="datetime-local"
                 value={deadline}
+                min={new Date().toISOString().slice(0, 16)}
                 onChange={(e) => setDeadline(e.target.value)}
                 required
               />
@@ -163,7 +164,7 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
                   min="0"
                   max="100"
                   value={lateSubmissionPenalty}
-                  onChange={(e) => setLateSubmissionPenalty(Number(e.target.value))}
+                  onChange={(e) => setLateSubmissionPenalty(Number(e.target.value) || 0)}
                 />
               </div>
             )}

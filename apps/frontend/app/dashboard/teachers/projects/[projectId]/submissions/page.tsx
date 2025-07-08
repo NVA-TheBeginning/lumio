@@ -1,7 +1,18 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, Calendar, Check, Download, FileText, Filter, GitBranch, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  Check,
+  Download,
+  ExternalLink,
+  FileText,
+  Filter,
+  GitBranch,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -14,6 +25,7 @@ import {
   getSubmissionDownloadData,
   PromotionSubmissionMetadataResponse,
 } from "@/app/dashboard/teachers/projects/actions";
+import { PlagiarismDetailsDialog } from "@/components/projects/plagiarism-details-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,25 +181,40 @@ export default function ProjectSubmissionsPage() {
           }[];
         }[];
       }>(["plagiarism-results", activePromotion, projectId, deliverableId.toString()]);
-
       if (!plagiarismQuery) return null;
-      console.log("Plagiarism Query Data:", plagiarismQuery);
 
       return plagiarismQuery.folderResults?.find((folder) => folder.folderName.startsWith(`${groupId}-`));
     };
   }, [activePromotion, projectId, queryClient]);
 
-  const getPlagiarismBadge = (plagiarismPercentage: number) => {
-    if (plagiarismPercentage >= 80) {
-      return <Badge variant="destructive">Plagiat élevé ({plagiarismPercentage}%)</Badge>;
+  const getPlagiarismBadge = (
+    plagiarismPercentage: number,
+    plagiarismResult?: PromotionSubmissionMetadataResponse["plagiarismResult"],
+  ) => {
+    const badge = (() => {
+      if (plagiarismPercentage >= 70) {
+        return <Badge variant="destructive">Plagiat élevé ({plagiarismPercentage}%)</Badge>;
+      }
+      if (plagiarismPercentage >= 50) {
+        return <Badge className="bg-orange-500">Plagiat moyen ({plagiarismPercentage}%)</Badge>;
+      }
+      if (plagiarismPercentage >= 20) {
+        return <Badge className="bg-yellow-500">Plagiat faible ({plagiarismPercentage}%)</Badge>;
+      }
+      return <Badge className="bg-green-500">Pas de plagiat détecté ({plagiarismPercentage}%)</Badge>;
+    })();
+
+    if (plagiarismResult) {
+      return (
+        <PlagiarismDetailsDialog plagiarismResult={plagiarismResult}>
+          <button type="button" className="cursor-pointer hover:opacity-80 transition-opacity">
+            {badge}
+          </button>
+        </PlagiarismDetailsDialog>
+      );
     }
-    if (plagiarismPercentage >= 50) {
-      return <Badge className="bg-orange-500">Plagiat moyen ({plagiarismPercentage}%)</Badge>;
-    }
-    if (plagiarismPercentage >= 20) {
-      return <Badge className="bg-yellow-500">Plagiat faible ({plagiarismPercentage}%)</Badge>;
-    }
-    return <Badge className="bg-green-500">Pas de plagiat ({plagiarismPercentage}%)</Badge>;
+
+    return badge;
   };
 
   const filteredSubmissions = (() => {
@@ -233,13 +260,8 @@ export default function ProjectSubmissionsPage() {
   }, [filteredSubmissions]);
 
   const availableDeliverables = useMemo(() => {
-    if (!project) {
-      return [];
-    }
-    if (!activePromotion) {
-      return [];
-    }
-    return project.deliverables.filter((d) => d.promotionId.toString() === activePromotion);
+    if (!(project && activePromotion)) return [];
+    return project.deliverables.filter((d) => d.promotionId === Number(activePromotion));
   }, [project, activePromotion]);
 
   if (projectLoading) {
@@ -406,7 +428,7 @@ export default function ProjectSubmissionsPage() {
                                           submission.deliverableId,
                                         );
                                         return plagiarismResult
-                                          ? getPlagiarismBadge(plagiarismResult.plagiarismPercentage)
+                                          ? getPlagiarismBadge(plagiarismResult.plagiarismPercentage, plagiarismResult)
                                           : null;
                                       })()}
                                     </div>
@@ -443,6 +465,19 @@ export default function ProjectSubmissionsPage() {
                                   </div>
 
                                   <div className="flex gap-2">
+                                    {submission.gitUrl && (
+                                      <Button variant="outline" size="sm" asChild>
+                                        <a
+                                          href={submission.gitUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-1"
+                                        >
+                                          <ExternalLink className="h-4 w-4" />
+                                          Ouvrir Git
+                                        </a>
+                                      </Button>
+                                    )}
                                     {submission.status.toLowerCase() === "pending" && (
                                       <Button
                                         variant="default"
