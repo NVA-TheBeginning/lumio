@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronsUpDown, Cog, LogOut, Moon, Sun, SunMoon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -26,10 +26,12 @@ export function NavUser({ user }: { user: NavUserProps }) {
   const { isMobile } = useSidebar();
   const { setTheme } = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
     mutationFn: clearUserCookie,
     onSuccess: () => {
+      queryClient.clear();
       router.push("/");
       router.refresh();
     },

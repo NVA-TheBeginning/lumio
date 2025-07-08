@@ -130,6 +130,7 @@ export function CreateDeliverableDialog({ open, onOpenChange, project, onSuccess
                 id="deadline"
                 type="datetime-local"
                 value={deadline}
+                min={new Date().toISOString().slice(0, 16)}
                 onChange={(e) => setDeadline(e.target.value)}
                 required
               />
