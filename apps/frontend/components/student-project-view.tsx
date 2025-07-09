@@ -3,7 +3,7 @@
 import { AlertCircle, Award, Calendar, CheckCircle, Clock, Download, Eye, FileText, Upload, Users } from "lucide-react";
 import { useState } from "react";
 import { SubmissionMetadataResponse } from "@/app/dashboard/students/projects/actions";
-import { DeliverableType } from "@/app/dashboard/teachers/projects/actions";
+import { DeliverableType, getOrders } from "@/app/dashboard/teachers/projects/actions";
 import { SubmissionDetailsDialog } from "@/components/students/submission-details-dialog";
 import { SubmissionDialog } from "@/components/students/submission-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,8 +15,10 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJoinGroup, useLeaveGroup, useProjectStudent } from "@/hooks/use-project-student";
+import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
-import { formatDate } from "@/lib/utils";
+import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 interface StudentProjectViewProps {
   projectId: number;
@@ -53,6 +55,12 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     currentUserGroup?.id || 0,
     undefined,
     !!currentUserGroup,
+  );
+
+  const { data: presentationOrders } = useStudentPresentationOrder(
+    projectId,
+    project?.promotionId || 0,
+    currentUserGroup?.id || 0,
   );
 
   const [submissionDialog, setSubmissionDialog] = useState<{
@@ -174,6 +182,53 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
   const groupDeadlineStatus = getGroupDeadlineStatus();
 
+  const handleExportPDF = async () => {
+    if (!(presentationOrders?.length && currentUserGroup && project)) return;
+
+    const presentationOrder = presentationOrders[0];
+    if (!presentationOrder?.order) return;
+
+    const { presentation } = presentationOrder;
+
+    try {
+      // Get all orders for this presentation to include all groups
+      const allOrders = await getOrders(presentation.id);
+
+      // Map orders to include group information
+      const ordersWithGroups = allOrders
+        .map((order) => ({
+          ...order,
+          group: project.groups.find((group) => group.id === order.groupId),
+        }))
+        .filter((order) => order.group); // Only include orders that have a group
+
+      const promotionData = {
+        id: project.promotionId,
+        name: "Promotion",
+        description: "",
+        status: "VISIBLE" as const,
+        groupSettings: {
+          projectId: project.id,
+          promotionId: project.promotionId,
+          minMembers: project.groupSettings?.minMembers || 1,
+          maxMembers: project.groupSettings?.maxMembers || 10,
+          mode: project.groupSettings?.mode || "MANUAL",
+          deadline: project.groupSettings?.deadline || "",
+          updatedAt: new Date().toISOString(),
+        },
+        groups: project.groups,
+      };
+
+      await exportPresentationOrdersToPDF({
+        presentation,
+        promotion: promotionData,
+        orders: ordersWithGroups,
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'export PDF:", error);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Card>
@@ -215,7 +270,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Votre groupe</p>
@@ -227,7 +282,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Prochaine échéance</p>
@@ -243,13 +298,22 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Avancement</p>
-                    <p className="text-2xl font-bold">{Math.round(projectProgress)}%</p>
+                    <p className="text-sm font-medium text-muted-foreground">Prochaine soutenance</p>
+                    <p className="text-2xl font-bold">
+                      {presentationOrders?.length && presentationOrders[0]?.order?.scheduledDatetime
+                        ? formatDate(presentationOrders[0].order.scheduledDatetime)
+                        : "Soutenance non programmée"}
+                    </p>
+                    {presentationOrders?.length && presentationOrders[0]?.order && (
+                      <p className="text-sm text-muted-foreground">
+                        Position #{presentationOrders[0].order.orderNumber}
+                      </p>
+                    )}
                   </div>
-                  <Award className="h-8 w-8 text-muted-foreground" />
+                  <Calendar className="h-8 w-8 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
@@ -546,11 +610,60 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h4 className="font-medium mb-3">Soutenances</h4>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune soutenance programmée pour le moment</p>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium">Soutenances</h4>
+                  {presentationOrders?.length && currentUserGroup && (
+                    <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Exporter PDF
+                    </Button>
+                  )}
                 </div>
+                {presentationOrders?.length ? (
+                  <div className="space-y-4">
+                    {presentationOrders.map(({ presentation, order }) => (
+                      <Card key={presentation.id} className="border-l-4 border-l-blue-500">
+                        <CardContent className="pt-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h5 className="font-medium">Soutenance #{order?.orderNumber}</h5>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatDate(presentation.startDatetime)}
+                                </p>
+                              </div>
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {presentation.durationPerGroup}min
+                              </Badge>
+                            </div>
+                            {order?.scheduledDatetime && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="h-4 w-4 text-blue-500" />
+                                <span className="font-medium">Horaire programmé :</span>
+                                <span>{formatDateTime(order.scheduledDatetime)}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Users className="h-4 w-4" />
+                              <span>
+                                Passage en{" "}
+                                {order?.orderNumber
+                                  ? `${order.orderNumber}${order.orderNumber === 1 ? "er" : "ème"}`
+                                  : "position"}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Aucune soutenance programmée pour le moment</p>
+                  </div>
+                )}
               </div>
 
               <Separator />
