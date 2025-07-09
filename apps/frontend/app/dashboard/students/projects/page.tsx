@@ -31,7 +31,6 @@ const groupStatusOptions = [
   { label: "Sans groupe", value: "ungrouped" },
 ];
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Needed for complex filtering and sorting logic
 export default function ProjectList() {
   const router = useRouter();
   const queryClient = useQueryClient();

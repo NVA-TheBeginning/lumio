@@ -3,10 +3,12 @@
   "vcs": {
     "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": true
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
   },
   "files": {
-    "ignoreUnknown": true
+    "ignoreUnknown": true,
+    "includes": ["**", "!**/dist", "!**/.next", "!**/build"]
   },
   "formatter": {
     "enabled": true,
@@ -20,12 +22,6 @@
     "rules": {
       "recommended": true,
       "complexity": {
-        "noExcessiveCognitiveComplexity": {
-          "level": "error",
-          "options": {
-            "maxAllowedComplexity": 30
-          }
-        },
         "noUselessStringConcat": "error",
         "useDateNow": "error",
         "useSimplifiedLogicExpression": "error"
@@ -57,8 +53,7 @@
       },
       "nursery": {
         "noAwaitInLoop": "error",
-        //"noFloatingPromises": "error", disabled due to slow performance
-        "useUniqueElementIds": "off"
+        "noFloatingPromises": "error"
       },
       "suspicious": {
         "noDuplicateElseIf": "error",
