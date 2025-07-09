@@ -1,15 +1,17 @@
 "use client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { clearUserCookie } from "@/lib/cookie";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
     mutationFn: clearUserCookie,
     onSuccess: () => {
+      queryClient.clear();
       router.push("/");
       router.refresh();
     },

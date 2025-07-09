@@ -1,56 +1,76 @@
-import { beforeEach, describe, expect, it, jest } from "bun:test";
+import { beforeEach, describe, expect, jest, test } from "bun:test";
 import { Test, TestingModule } from "@nestjs/testing";
+import { ReorderDto } from "@/microservices/evaluations/order/dto/reorder-orders.dto.js";
+import { SaveOrdersDto } from "@/microservices/evaluations/order/dto/save-orders.dto.js";
+import { UpdateOrderDto } from "@/microservices/evaluations/order/dto/update-order.dto.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { CreateOrderDto } from "../dto/create-order.dto.js";
-import { UpdateOrderDto } from "../dto/update-order.dto.js";
 import { OrderController } from "./order.controller.js";
 
-describe("OrderController", () => {
+describe("OrderController (Gateway)", () => {
   let controller: OrderController;
   let proxy: MicroserviceProxyService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const mod: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
-      providers: [{ provide: MicroserviceProxyService, useValue: { forwardRequest: jest.fn() } }],
+      providers: [
+        {
+          provide: MicroserviceProxyService,
+          useValue: { forwardRequest: jest.fn() },
+        },
+      ],
     }).compile();
 
-    controller = module.get(OrderController);
-    proxy = module.get(MicroserviceProxyService);
+    controller = mod.get(OrderController);
+    proxy = mod.get(MicroserviceProxyService);
+    jest.clearAllMocks();
   });
 
-  it("create calls proxy.forwardRequest", async () => {
-    const dto: CreateOrderDto = {
-      presentationId: 1,
-      groupId: 2,
-      orderNumber: 3,
-      scheduledDatetime: new Date().toISOString(),
-    };
-    (proxy.forwardRequest as jest.Mock).mockResolvedValue({ id: 5, ...dto });
-    const result = await controller.create(1, dto);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/presentations/1/orders", "POST", dto);
-    expect(result).toEqual({ id: 5, ...dto });
+  test("save() forwards payload list → evaluation", async () => {
+    const dto: SaveOrdersDto = { groupIds: [11, 12, 13] };
+    (proxy.forwardRequest as jest.Mock).mockResolvedValue({ created: 3 });
+
+    const res = await controller.save(42, dto);
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/presentations/42/orders", "POST", dto);
+    expect(res).toEqual({ created: 3 });
   });
 
-  it("findAll calls proxy.forwardRequest", async () => {
-    (proxy.forwardRequest as jest.Mock).mockReturnValue(Promise.resolve([]));
-    const result = await controller.findAll(2);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/presentations/2/orders", "GET");
-    expect(result).toEqual([]);
+  test("findAll() forwards GET correctly", async () => {
+    (proxy.forwardRequest as jest.Mock).mockResolvedValue([]);
+
+    const res = await controller.findAll(99);
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/presentations/99/orders", "GET");
+    expect(res).toEqual([]);
   });
 
-  it("update calls proxy.forwardRequest", async () => {
-    const dto: UpdateOrderDto = { orderNumber: 4 };
-    (proxy.forwardRequest as jest.Mock).mockResolvedValue({ id: 7, ...dto });
-    const result = await controller.update(7, dto);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/orders/7", "PUT", dto);
-    expect(result).toEqual({ id: 7, ...dto });
+  test("update() forwards PUT on /orders/:id", async () => {
+    const dto: UpdateOrderDto = { groupId: 222 };
+    (proxy.forwardRequest as jest.Mock).mockResolvedValue({ id: 5 });
+
+    const res = await controller.update(5, dto);
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/orders/5", "PUT", dto);
+    expect(res).toEqual({ id: 5 });
   });
 
-  it("remove calls proxy.forwardRequest", async () => {
+  test("reorder() forwards PATCH with {from,to}", async () => {
+    const dto: ReorderDto = { from: 4, to: 1 };
+    (proxy.forwardRequest as jest.Mock).mockResolvedValue({ reordered: true });
+
+    const res = await controller.reorder(77, dto);
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/presentations/77/orders/reorder", "PATCH", dto);
+    expect(res).toEqual({ reordered: true });
+  });
+
+  test("remove() forwards DELETE /orders/:id", async () => {
     (proxy.forwardRequest as jest.Mock).mockResolvedValue({ deleted: true });
-    const result = await controller.remove(8);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/orders/8", "DELETE");
-    expect(result).toEqual({ deleted: true });
+
+    const res = await controller.remove(55);
+
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/orders/55", "DELETE");
+    expect(res).toEqual({ deleted: true });
   });
 });

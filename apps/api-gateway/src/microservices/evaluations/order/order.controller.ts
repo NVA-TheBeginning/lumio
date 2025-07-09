@@ -1,8 +1,21 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+} from "@nestjs/common";
+import { ApiBody, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { ReorderDto } from "@/microservices/evaluations/order/dto/reorder-orders.dto.js";
+import { SaveOrdersDto } from "@/microservices/evaluations/order/dto/save-orders.dto.js";
+import { UpdateOrderDto } from "@/microservices/evaluations/order/dto/update-order.dto.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
-import { CreateOrderDto } from "../dto/create-order.dto.js";
-import { UpdateOrderDto } from "../dto/update-order.dto.js";
 
 @ApiTags("orders")
 @Controller()
@@ -11,38 +24,33 @@ export class OrderController {
 
   @Post("presentations/:presentationId/orders")
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Créer un ordre de passage" })
+  @ApiOperation({ summary: "Enregistrer l’ordre (remplace tout)" })
   @ApiParam({ name: "presentationId", type: Number })
-  @ApiBody({ type: CreateOrderDto })
-  @ApiResponse({ status: 201, description: "Ordre créé." })
-  create(@Param("presentationId", ParseIntPipe) presentationId: number, @Body() dto: CreateOrderDto) {
+  @ApiBody({ type: SaveOrdersDto })
+  save(@Param("presentationId", ParseIntPipe) presentationId: number, @Body() dto: SaveOrdersDto) {
     return this.proxy.forwardRequest("evaluation", `/presentations/${presentationId}/orders`, "POST", dto);
   }
 
   @Get("presentations/:presentationId/orders")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Lister les ordres de passage" })
-  @ApiParam({ name: "presentationId", type: Number })
-  @ApiResponse({ status: 200, description: "Liste des ordres." })
-  findAll(@Param("presentationId", ParseIntPipe) presentationId: number) {
-    return this.proxy.forwardRequest("evaluation", `/presentations/${presentationId}/orders`, "GET");
+  findAll(@Param("presentationId", ParseIntPipe) id: number) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${id}/orders`, "GET");
   }
 
   @Put("orders/:id")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Mettre à jour un ordre de passage" })
-  @ApiParam({ name: "id", type: Number })
   @ApiBody({ type: UpdateOrderDto })
-  @ApiResponse({ status: 200, description: "Ordre mis à jour." })
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateOrderDto) {
     return this.proxy.forwardRequest("evaluation", `/orders/${id}`, "PUT", dto);
   }
 
+  @Patch("presentations/:presentationId/orders/reorder")
+  @ApiBody({ type: ReorderDto })
+  reorder(@Param("presentationId", ParseIntPipe) id: number, @Body() dto: ReorderDto) {
+    return this.proxy.forwardRequest("evaluation", `/presentations/${id}/orders/reorder`, "PATCH", dto);
+  }
+
   @Delete("orders/:id")
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Supprimer un ordre de passage" })
-  @ApiParam({ name: "id", type: Number })
-  @ApiResponse({ status: 200, description: "Ordre supprimé." })
   remove(@Param("id", ParseIntPipe) id: number) {
     return this.proxy.forwardRequest("evaluation", `/orders/${id}`, "DELETE");
   }
