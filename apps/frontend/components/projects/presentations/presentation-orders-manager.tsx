@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   getOrders,
-  OrderType,
   PresentationType,
   PromotionType,
   SaveOrdersData,
@@ -17,23 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
 import { formatDateTime } from "@/lib/utils";
+import { OrderWithGroup } from "@/types/presentation-orders";
 
 interface PresentationOrdersManagerProps {
   presentation: PresentationType;
   promotion: PromotionType;
-}
-
-interface OrderWithGroup extends OrderType {
-  group?: {
-    id: number;
-    name: string;
-    members: {
-      id: number;
-      firstname: string;
-      lastname: string;
-      email: string;
-    }[];
-  };
 }
 
 export function PresentationOrdersManager({ presentation, promotion }: PresentationOrdersManagerProps) {

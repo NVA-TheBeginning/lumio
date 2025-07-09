@@ -3,26 +3,7 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { PresentationType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
 import { formatDate, formatDateTime } from "@/lib/utils";
-
-interface OrderWithGroup {
-  id: number;
-  groupId: number;
-  orderNumber: number;
-  presentationId: number;
-  scheduledDatetime: string;
-  createdAt: string;
-  updatedAt: string;
-  group?: {
-    id: number;
-    name: string;
-    members: {
-      id: number;
-      firstname: string;
-      lastname: string;
-      email: string;
-    }[];
-  };
-}
+import { OrderWithGroup } from "@/types/presentation-orders";
 
 interface PresentationOrdersPDFProps {
   presentation: PresentationType;
