@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/prisma.service";
 import { UpdateFinalGradeDto } from "./dto/update-final-grade.dto";
 
@@ -23,7 +23,7 @@ export class FinalGradeService {
     });
 
     if (criteria.length === 0) {
-      throw new Error("No criteria found for this project/promotion");
+      throw new NotFoundException("No criteria found for this project/promotion");
     }
 
     // Get all grades for these criteria
