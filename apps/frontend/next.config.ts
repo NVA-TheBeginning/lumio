@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
   experimental: {
     reactCompiler: enableReactCompiler,
     optimizePackageImports: ["@radix-ui/*"],
-    ppr: "incremental",
     nodeMiddleware: true,
     serverActions: {
       bodySizeLimit: "1gb",
