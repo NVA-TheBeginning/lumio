@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Calendar, Clock, Download, GripVertical, Shuffle, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, Clock, Download, GripVertical, Shuffle, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -15,8 +15,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, formatDateTime } from "@/lib/utils";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
+import { formatDateTime } from "@/lib/utils";
 
 interface PresentationOrdersManagerProps {
   presentation: PresentationType;
@@ -174,7 +174,7 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
         orders: localOrders,
       });
       toast.success("PDF exporté avec succès");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de l'export du PDF");
     }
   };
