@@ -98,3 +98,41 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
 export async function deleteSubmission(submissionId: number): Promise<void> {
   return await authDeleteData(`${API_URL}/submissions/${submissionId}`);
 }
+
+export async function downloadProjectDocument(documentId: number): Promise<{
+  blob: Blob;
+  filename: string;
+}> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
+
+  const response = await fetch(`${API_URL}/documents/${documentId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.file) {
+    throw new Error("Invalid response format from server");
+  }
+
+  if (!data.mimeType) {
+    throw new Error("Missing mimeType in response");
+  }
+
+  const uint8Array = new Uint8Array(data.file.data || data.file);
+  const blob = new Blob([uint8Array], { type: data.mimeType });
+
+  const filename = `document-${documentId}`;
+
+  return { blob, filename };
+}

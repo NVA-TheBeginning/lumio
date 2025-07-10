@@ -1,8 +1,10 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { AlertCircle, Award, Calendar, CheckCircle, Clock, Download, Eye, FileText, Upload, Users } from "lucide-react";
 import { useState } from "react";
-import { SubmissionMetadataResponse } from "@/app/dashboard/students/projects/actions";
+import { toast } from "sonner";
+import { downloadProjectDocument, SubmissionMetadataResponse } from "@/app/dashboard/students/projects/actions";
 import { DeliverableType, getOrders } from "@/app/dashboard/teachers/projects/actions";
 import { SubmissionDetailsDialog } from "@/components/students/submission-details-dialog";
 import { SubmissionDialog } from "@/components/students/submission-dialog";
@@ -48,6 +50,28 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   const { data: project, isLoading, refetch } = useProjectStudent(projectId);
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
+
+  const downloadDocumentMutation = useMutation({
+    mutationFn: async ({ documentId, filename }: { documentId: number; filename: string }) => {
+      const result = await downloadProjectDocument(documentId);
+      return { ...result, filename };
+    },
+    onSuccess: ({ blob, filename }) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Document téléchargé");
+    },
+    onError: (error) => {
+      toast.error(`Erreur lors du téléchargement: ${error.message}`);
+    },
+  });
 
   const currentUserGroup = project?.groups.find((group) => group.members.some((member) => member.id === currentUserId));
 
@@ -431,18 +455,40 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-3 border rounded-lg flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-6 w-6 text-blue-500" />
-                      <div>
-                        <p className="font-medium text-sm">Sujet du projet</p>
-                        <p className="text-xs text-muted-foreground">Spécification officielle</p>
+                  {project.documents?.length > 0 ? (
+                    project.documents.map((document) => (
+                      <div
+                        key={document.id}
+                        className="p-3 border rounded-lg flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-6 w-6 text-blue-500" />
+                          <div>
+                            <p className="font-medium text-sm">{document.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {Math.round(document.sizeInBytes / 1024)} KB • Ajouté le {formatDate(document.uploadedAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={() =>
+                            downloadDocumentMutation.mutate({ documentId: document.id, filename: document.name })
+                          }
+                          disabled={downloadDocumentMutation.isPending}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Aucun document disponible</p>
                     </div>
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 

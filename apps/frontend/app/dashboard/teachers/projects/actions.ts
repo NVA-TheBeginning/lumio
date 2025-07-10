@@ -1,6 +1,14 @@
 "use server";
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
-import { authDeleteData, authFetchData, authPatchData, authPostData, authPutData, PaginationMeta } from "@/lib/utils";
+import {
+  authDeleteData,
+  authFetchData,
+  authPatchData,
+  authPostData,
+  authPostFormData,
+  authPutData,
+  PaginationMeta,
+} from "@/lib/utils";
 import { Member, MembersResponse } from "../promotions/action";
 
 const API_URL = process.env.API_URL || "http://localhost:3000";
@@ -190,12 +198,14 @@ export interface ProjectType {
   deletedAt: string | null;
   promotions: PromotionType[];
   deliverables: DeliverableType[];
+  documents: ProjectDocument[];
 }
 
 export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
-  const [projectData, deliverablesData] = await Promise.all([
+  const [projectData, deliverablesData, documentsData] = await Promise.all([
     authFetchData<getProjectTeacher>(`${API_URL}/projects/${id}/teacher`),
     authFetchData<DeliverableType[]>(`${API_URL}/projects/${id}/deliverables`),
+    authFetchData<ProjectDocument[]>(`${API_URL}/documents/projects/${id}`),
   ]);
 
   if (!projectData) {
@@ -212,10 +222,10 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     deletedAt: projectData.deletedAt,
     promotions: [],
     deliverables: deliverablesData || [],
+    documents: documentsData || [],
   };
 
   const promotionPromises = projectData.promotions.map(async (promotion) => {
-    // TODO: create a single route to fetch both group settings and groups
     const [groupSettings, groups] = await Promise.all([
       authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${promotion.id}/group-settings`),
       authFetchData<GroupType[]>(`${API_URL}/projects/${id}/promotions/${promotion.id}/groups`),
@@ -283,6 +293,7 @@ export interface ProjectStudentType {
   };
   groups: GroupType[];
   deliverables: DeliverableType[];
+  documents: ProjectDocument[];
   submissions: {
     groupId: number;
     status: string;
@@ -315,16 +326,19 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
     },
     groups: [],
     deliverables: [],
+    documents: [],
     submissions: [],
   };
 
-  const [deliverables, groupSettings, groups] = await Promise.all([
+  const [deliverables, groupSettings, groups, documents] = await Promise.all([
     authFetchData<DeliverableType[]>(`${API_URL}/projects/${id}/deliverables`),
     authFetchData<GroupSettingsType>(`${API_URL}/projects/${id}/promotions/${data.promotionId}/group-settings`),
     authFetchData<GroupType[]>(`${API_URL}/projects/${id}/promotions/${data.promotionId}/groups`),
+    authFetchData<ProjectDocument[]>(`${API_URL}/documents/projects/${id}`),
   ]);
 
   result.deliverables = deliverables || [];
+  result.documents = documents || [];
   result.submissions = [];
   result.groupSettings = groupSettings || {
     minMembers: 0,
@@ -660,4 +674,79 @@ export async function deleteRule(ruleId: number): Promise<void> {
 export async function getRule(ruleId: number): Promise<DeliverableRule> {
   const url = `${API_URL}/rules/${ruleId}`;
   return await authFetchData(url);
+}
+
+export interface ProjectDocument {
+  id: number;
+  name: string;
+  mimeType: string;
+  sizeInBytes: number;
+  uploadedAt: string;
+  userId: number;
+  projectId?: number;
+}
+
+export async function getProjectDocuments(projectId: number): Promise<ProjectDocument[]> {
+  return await authFetchData(`${API_URL}/documents/projects/${projectId}`);
+}
+
+export async function uploadDocumentToProject(projectId: number, file: File, name: string): Promise<ProjectDocument> {
+  const user = await getUserFromCookie();
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  formData.append("name", name);
+  formData.append("userId", user.id.toString());
+  formData.append("projectIds", JSON.stringify([projectId]));
+
+  return await authPostFormData(`${API_URL}/documents/upload`, formData);
+}
+
+export async function linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
+  return await authPostData(`${API_URL}/documents/${documentId}/projects`, { projectIds: [projectId] });
+}
+
+export async function unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {
+  return await authDeleteData(`${API_URL}/documents/${documentId}/projects/${projectId}`);
+}
+
+export async function downloadProjectDocument(documentId: number): Promise<{
+  blob: Blob;
+  filename: string;
+}> {
+  const { accessToken } = await getTokens();
+  if (!accessToken) {
+    throw new Error("Access token is missing");
+  }
+
+  const response = await fetch(`${API_URL}/documents/${documentId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.file) {
+    throw new Error("Invalid response format from server");
+  }
+
+  if (!data.mimeType) {
+    throw new Error("Missing mimeType in response");
+  }
+
+  const uint8Array = new Uint8Array(data.file.data || data.file);
+  const blob = new Blob([uint8Array], { type: data.mimeType });
+
+  const filename = `document-${documentId}`;
+
+  return { blob, filename };
 }
