@@ -18,7 +18,7 @@ export class DocumentService {
     private s3Service: S3Service,
   ) {}
 
-  async uploadDocument(file: File, name: string, ownerId: number) {
+  async uploadDocument(file: File, name: string, ownerId: number, projectIds?: number[]) {
     if (!file) {
       throw new BadRequestException("File is required");
     }
@@ -40,6 +40,10 @@ export class DocumentService {
           mimeType: file.mimetype,
         },
       });
+
+      if (projectIds && projectIds.length > 0) {
+        await this.linkDocumentToProjects(document.id, projectIds);
+      }
 
       return document;
     } catch (error) {
@@ -110,5 +114,53 @@ export class DocumentService {
     });
 
     return { success: true };
+  }
+
+  async linkDocumentToProjects(documentId: number, projectIds: number[]) {
+    await this.prisma.documents.findUniqueOrThrow({
+      where: { id: Number(documentId) },
+    });
+
+    const projectDocuments = projectIds.map((projectId) => ({
+      documentId: Number(documentId),
+      projectId: Number(projectId),
+    }));
+
+    await this.prisma.projectDocuments.createMany({
+      data: projectDocuments,
+      skipDuplicates: true,
+    });
+
+    return { success: true };
+  }
+
+  async unlinkDocumentFromProject(documentId: number, projectId: number) {
+    const deleted = await this.prisma.projectDocuments.deleteMany({
+      where: {
+        documentId: Number(documentId),
+        projectId: Number(projectId),
+      },
+    });
+
+    if (deleted.count === 0) {
+      throw new BadRequestException("Document-project link not found");
+    }
+
+    return { success: true };
+  }
+
+  async getDocumentsByProject(projectId: number) {
+    return this.prisma.documents.findMany({
+      where: {
+        ProjectDocuments: {
+          some: {
+            projectId: Number(projectId),
+          },
+        },
+      },
+      orderBy: {
+        uploadedAt: "desc",
+      },
+    });
   }
 }
