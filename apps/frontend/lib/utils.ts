@@ -1,6 +1,12 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { isTruthy } from "@/lib/cookie";
+
+export function isTruthy(value: string | undefined | null): value is string {
+  if (value === undefined || value === null) {
+    return false;
+  }
+  return Boolean(value.trim());
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

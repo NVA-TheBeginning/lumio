@@ -1,7 +1,7 @@
 "use server";
 import { cookies } from "next/headers";
 
-export function isTruthy(value: string | undefined | null): value is string {
+function isTruthy(value: string | undefined | null): value is string {
   if (value === undefined || value === null) {
     return false;
   }
