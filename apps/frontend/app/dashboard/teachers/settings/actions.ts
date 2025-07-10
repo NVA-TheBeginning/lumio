@@ -10,7 +10,7 @@ export async function updateProfile(data: {
 }) {
   const { firstname, lastname, email, newPassword } = data;
   const { accessToken } = await getTokens();
-  const API_URL = process.env.API_URL || "http://localhost:3000";
+  const API_URL = process.env.API_URL ?? "http://localhost:3000";
   const user = await getUserFromCookie();
   if (!user?.id) {
     throw new Error("User ID is missing");

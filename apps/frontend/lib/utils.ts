@@ -41,7 +41,7 @@ export async function authFetchData<T>(url: string): Promise<T> {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
 
-  return response.json();
+  return await response.json();
 }
 
 export async function authPostData<T>(url: string, data: unknown): Promise<T> {
@@ -62,7 +62,7 @@ export async function authPostData<T>(url: string, data: unknown): Promise<T> {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
 
-  return response.json();
+  return await response.json();
 }
 
 export async function authPostFormData<T>(url: string, formData: FormData): Promise<T> {
@@ -103,7 +103,7 @@ export async function authPutData<T>(url: string, data: unknown): Promise<T> {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
 
-  return response.json();
+  return await response.json();
 }
 
 export async function authPatchData<T>(url: string, data: unknown): Promise<T> {
@@ -124,7 +124,7 @@ export async function authPatchData<T>(url: string, data: unknown): Promise<T> {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
 
-  return response.json();
+  return await response.json();
 }
 
 export async function authDeleteData<T = void>(url: string): Promise<T> {
@@ -147,7 +147,7 @@ export async function authDeleteData<T = void>(url: string): Promise<T> {
     return undefined as T;
   }
 
-  return response.json();
+  return await response.json();
 }
 
 export function formatBytes(bytes: number, decimals = 2): string {
@@ -159,7 +159,17 @@ export function formatBytes(bytes: number, decimals = 2): string {
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`;
+  let unit: string;
+
+  if (i >= sizes.length) {
+    const lastUnit = sizes[sizes.length - 1];
+    unit = lastUnit ?? "Unknown Unit";
+  } else {
+    const currentUnit = sizes[i];
+    unit = currentUnit ?? "Unknown Unit";
+  }
+
+  return `${Number.parseFloat((bytes / k ** (i >= sizes.length ? sizes.length - 1 : i)).toFixed(dm))} ${unit}`;
 }
 
 export interface PaginationMeta {

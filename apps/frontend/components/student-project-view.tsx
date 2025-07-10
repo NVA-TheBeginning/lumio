@@ -76,15 +76,15 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   const currentUserGroup = project?.groups.find((group) => group.members.some((member) => member.id === currentUserId));
 
   const { data: submissions, refetch: refetchSubmissions } = useSubmissions(
-    currentUserGroup?.id || 0,
+    currentUserGroup?.id ?? 0,
     undefined,
     !!currentUserGroup,
   );
 
   const { data: presentationOrders } = useStudentPresentationOrder(
     projectId,
-    project?.promotionId || 0,
-    currentUserGroup?.id || 0,
+    project?.promotionId ?? 0,
+    currentUserGroup?.id ?? 0,
   );
 
   const [submissionDialog, setSubmissionDialog] = useState<{
@@ -160,7 +160,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     );
   }
 
-  const completedDeliverables = submissions?.length || 0;
+  const completedDeliverables = submissions?.length ?? 0;
   const totalDeliverables = project.deliverables.length;
   const projectProgress = totalDeliverables > 0 ? (completedDeliverables / totalDeliverables) * 100 : 0;
 
@@ -455,7 +455,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {project.documents?.length > 0 ? (
+                  {project.documents.length > 0 ? (
                     project.documents.map((document) => (
                       <div
                         key={document.id}

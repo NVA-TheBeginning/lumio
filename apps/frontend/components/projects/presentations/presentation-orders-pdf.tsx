@@ -165,7 +165,7 @@ export const PresentationOrdersPDF = ({ presentation, promotion, orders }: Prese
                 Programmé à:{" "}
                 {calculateScheduledTime(index + 1, presentation.startDatetime, presentation.durationPerGroup)}
               </Text>
-              <Text style={styles.membersTitle}>Membres ({order.group?.members.length || 0}):</Text>
+              <Text style={styles.membersTitle}>Membres ({order.group?.members.length ?? 0}):</Text>
               <Text style={styles.membersList}>
                 {order.group?.members.map((member) => `${member.firstname} ${member.lastname}`).join(", ") ||
                   "Aucun membre"}

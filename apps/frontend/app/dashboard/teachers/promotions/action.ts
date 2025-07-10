@@ -31,14 +31,14 @@ export interface MembersResponse {
   totalPages: number;
 }
 
-const API_URL = process.env.API_URL || "http://localhost:3000";
+const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
 export async function getPromotions(): Promise<Promotion[]> {
   const user = await getUserFromCookie();
   if (!user) {
     return [];
   }
-  return await authFetchData<Promotion[]>(`${API_URL}/promotions?creatorId=${Number(user?.id)}`);
+  return await authFetchData<Promotion[]>(`${API_URL}/promotions?creatorId=${Number(user.id)}`);
 }
 export async function getPromotion(id: number): Promise<Promotion> {
   return await authFetchData<Promotion>(`${API_URL}/promotions/${id}`);
@@ -74,7 +74,7 @@ export async function createPromotion(data: {
 
 export async function deletePromotion(id: number): Promise<void> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (accessToken == null || accessToken === "") {
     throw new Error("Access token is missing");
   }
   const response = await fetch(`${API_URL}/promotions/${id}`, {

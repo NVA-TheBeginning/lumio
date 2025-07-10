@@ -83,8 +83,8 @@ export async function getTokens(): Promise<{ accessToken: string | null; refresh
   const refreshToken = cookieStore.get("refreshToken");
 
   return {
-    accessToken: accessToken?.value || null,
-    refreshToken: refreshToken?.value || null,
+    accessToken: accessToken?.value ?? null,
+    refreshToken: refreshToken?.value ?? null,
   };
 }
 
@@ -109,7 +109,7 @@ export async function refreshTokens(refreshToken: string): Promise<void> {
     throw new Error("Refresh token is missing");
   }
 
-  const API_URL = process.env.API_URL || "http://localhost:3000";
+  const API_URL = process.env.API_URL ?? "http://localhost:3000";
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: {

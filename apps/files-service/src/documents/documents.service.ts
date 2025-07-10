@@ -36,7 +36,7 @@ export class DocumentService {
           name: name,
           ownerId: Number(ownerId),
           fileKey,
-          sizeInBytes: file.size || 0,
+          sizeInBytes: file.size ?? 0,
           mimeType: file.mimetype,
         },
       });

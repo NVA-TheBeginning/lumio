@@ -70,7 +70,7 @@ export class S3Service {
       const stat: S3Stat = await s3file.stat();
 
       return {
-        size: stat.size || 0,
+        size: stat.size ?? 0,
         lastModified: stat.lastModified || new Date(),
         contentType: stat.type || "application/zip",
       };
@@ -226,7 +226,7 @@ export class S3Service {
         .filter((obj) => obj.key.endsWith(".zip"))
         .map((obj) => ({
           key: obj.key,
-          size: obj.size || 0,
+          size: obj.size ?? 0,
           lastModified: obj.lastModified ? new Date(obj.lastModified) : new Date(),
         }));
     } catch (error) {

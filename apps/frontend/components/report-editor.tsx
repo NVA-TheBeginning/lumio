@@ -33,11 +33,11 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateReportDto }) => updateReport(id, data),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Rapport mis à jour", {
         description: "Vos modifications ont été sauvegardées.",
       });
-      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: () => {
       toast.error("Erreur", {
@@ -68,8 +68,8 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
       const newSections = [...prevSections];
       newSections[index] = {
         ...newSections[index],
-        title: field === "title" ? value : newSections[index]?.title || "titre",
-        contentMarkdown: field === "contentMarkdown" ? value : newSections[index]?.contentMarkdown || "contenu",
+        title: field === "title" ? value : (newSections[index]?.title ?? "titre"),
+        contentMarkdown: field === "contentMarkdown" ? value : (newSections[index]?.contentMarkdown ?? "contenu"),
       };
       return newSections;
     });
@@ -206,7 +206,7 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
                         <div>
                           <p className="font-medium text-sm">{section.title || `Section ${index + 1}`}</p>
                           <p className="text-xs text-muted-foreground">
-                            {section.contentMarkdown?.length || 0} caractères
+                            {section.contentMarkdown?.length ?? 0} caractères
                           </p>
                         </div>
                       </div>
@@ -347,7 +347,7 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {currentSection?.contentMarkdown?.length || 0} caractères
+                    {currentSection?.contentMarkdown?.length ?? 0} caractères
                   </p>
                 </div>
               </CardContent>
