@@ -91,7 +91,8 @@ tsconfig.tsbuildinfo
 *.crt
 
 # Claude settings
-.claude/**
+**/.claude/**
+.claude
 
 # Rust (plagiarism-service)
 target/

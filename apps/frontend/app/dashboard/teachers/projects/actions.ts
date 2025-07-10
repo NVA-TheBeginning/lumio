@@ -749,7 +749,7 @@ export async function _getProjectDocuments(projectId: number): Promise<ProjectDo
   return await authFetchData(`${API_URL}/documents/projects/${projectId}`);
 }
 
-export async function _uploadDocumentToProject(projectId: number, file: File, name: string): Promise<ProjectDocument> {
+export async function uploadDocumentToProject(projectId: number, file: File, name: string): Promise<ProjectDocument> {
   const user = await getUserFromCookie();
   if (!user) {
     throw new Error("User not found");
@@ -764,15 +764,15 @@ export async function _uploadDocumentToProject(projectId: number, file: File, na
   return await authPostFormData(`${API_URL}/documents/upload`, formData);
 }
 
-export async function _linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
+export async function linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
   return await authPostData(`${API_URL}/documents/${documentId}/projects`, { projectIds: [projectId] });
 }
 
-export async function _unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {
+export async function unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {
   return await authDeleteData(`${API_URL}/documents/${documentId}/projects/${projectId}`);
 }
 
-export async function _downloadProjectDocument(documentId: number): Promise<{
+export async function downloadProjectDocument(documentId: number): Promise<{
   blob: Blob;
   filename: string;
 }> {
