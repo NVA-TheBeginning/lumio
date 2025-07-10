@@ -54,7 +54,9 @@
       "nursery": {
         "noAwaitInLoop": "error",
         "noFloatingPromises": "error",
-        "noMisusedPromises": "error"
+        "noMisusedPromises": "error",
+        "useExhaustiveSwitchCases": "error",
+        "noImportCycles": "error"
       },
       "suspicious": {
         "noDuplicateElseIf": "error",

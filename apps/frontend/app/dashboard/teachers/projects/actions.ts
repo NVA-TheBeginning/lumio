@@ -7,9 +7,9 @@ import {
   authPostData,
   authPostFormData,
   authPutData,
-  PaginationMeta,
+  type PaginationMeta,
 } from "@/lib/utils";
-import { Member, MembersResponse } from "../promotions/action";
+import type { Member, MembersResponse } from "../promotions/action";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
@@ -160,9 +160,10 @@ export async function getAllStudentProjects(
   page: number,
   size: number,
 ): Promise<{ pagination: PaginationMeta; data: getAllStudentProjects[] }> {
-  return await authFetchData<{ pagination: PaginationMeta; data: getAllStudentProjects[] }>(
-    `${API_URL}/projects/myprojects?page=${page}&size=${size}`,
-  );
+  return await authFetchData<{
+    pagination: PaginationMeta;
+    data: getAllStudentProjects[];
+  }>(`${API_URL}/projects/myprojects?page=${page}&size=${size}`);
 }
 
 export async function createProject(data: CreateProjectData): Promise<void> {
@@ -417,7 +418,9 @@ export async function deleteGroup(groupId: number) {
 }
 
 export async function addMembersToGroup(groupId: number, studentIds: number[]) {
-  return await authPostData(`${API_URL}/groups/${groupId}/students`, { studentIds });
+  return await authPostData(`${API_URL}/groups/${groupId}/students`, {
+    studentIds,
+  });
 }
 
 export async function removeMemberFromGroup(groupId: number, userId: number) {
@@ -765,7 +768,9 @@ export async function uploadDocumentToProject(projectId: number, file: File, nam
 }
 
 export async function linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
-  await authPostData(`${API_URL}/documents/${documentId}/projects`, { projectIds: [projectId] });
+  await authPostData(`${API_URL}/documents/${documentId}/projects`, {
+    projectIds: [projectId],
+  });
 }
 
 export async function unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {

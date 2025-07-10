@@ -1,7 +1,7 @@
 "use server";
 import { LoginFormValues } from "@/components/login-form";
 import { setUserCookie } from "@/lib/cookie";
-import { Role } from "./page";
+import { Role } from "@/lib/types";
 
 interface LoginResponse {
   id: string;

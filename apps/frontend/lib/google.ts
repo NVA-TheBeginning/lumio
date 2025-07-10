@@ -1,7 +1,7 @@
 "use server";
 
-import { Role } from "@/app/login/page";
 import { setUserCookie } from "@/lib/cookie";
+import { Role } from "@/lib/types";
 
 interface LoginResponse {
   id: string;
