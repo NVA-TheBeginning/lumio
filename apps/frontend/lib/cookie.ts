@@ -1,6 +1,12 @@
 "use server";
 import { cookies } from "next/headers";
-import { isTruthy } from "./utils";
+
+export function isTruthy(value: string | undefined | null): value is string {
+  if (value === undefined || value === null) {
+    return false;
+  }
+  return Boolean(value.trim());
+}
 
 interface User {
   id: string;
@@ -78,7 +84,10 @@ export async function getUserFromCookie(): Promise<User | null> {
   }
 }
 
-export async function getTokens(): Promise<{ accessToken: string | null; refreshToken: string | null }> {
+export async function getTokens(): Promise<{
+  accessToken: string | null;
+  refreshToken: string | null;
+}> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken");
   const refreshToken = cookieStore.get("refreshToken");

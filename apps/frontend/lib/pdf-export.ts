@@ -1,7 +1,7 @@
 import { pdf } from "@react-pdf/renderer";
-import { PresentationType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
+import type { PresentationType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
 import { PresentationOrdersPDF } from "@/components/projects/presentations/presentation-orders-pdf";
-import { OrderWithGroup } from "@/types/presentation-orders";
+import type { OrderWithGroup } from "@/types/presentation-orders";
 
 interface ExportPDFOptions {
   presentation: PresentationType;
