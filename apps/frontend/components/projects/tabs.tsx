@@ -4,6 +4,7 @@ import type { ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectDeliverables } from "./tabs/deliverables";
 import { ProjectEvaluations } from "./tabs/evaluations";
+import { ProjectDocuments } from "./tabs/documents";
 import { ProjectGroups } from "./tabs/groups";
 import { ProjectOverview } from "./tabs/overview";
 import { ProjectPresentations } from "./tabs/presentations";
@@ -39,6 +40,12 @@ export function ProjectTabs({ project, activeTab, setActiveTab }: ProjectTabsPro
             Livrables
           </TabsTrigger>
           <TabsTrigger
+            value="documents"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none h-10 pb-2"
+          >
+            Documents
+          </TabsTrigger>
+          <TabsTrigger
             value="evaluations"
             className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none h-10 pb-2"
           >
@@ -69,6 +76,10 @@ export function ProjectTabs({ project, activeTab, setActiveTab }: ProjectTabsPro
 
           <TabsContent value="deliverables" className="mt-0">
             <ProjectDeliverables project={project} />
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-0">
+            <ProjectDocuments project={project} />
           </TabsContent>
 
           <TabsContent value="evaluations" className="mt-0">
