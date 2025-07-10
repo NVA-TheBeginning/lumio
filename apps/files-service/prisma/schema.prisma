@@ -94,6 +94,8 @@ model Documents {
   mimeType    String
   uploadedAt  DateTime @default(now())
 
+  ProjectDocuments ProjectDocuments[]
+
   @@map("DOCUMENTS")
   @@schema("files_schema")
 }
@@ -102,6 +104,8 @@ model ProjectDocuments {
   id         Int @id @default(autoincrement())
   projectId  Int
   documentId Int
+
+  document Documents @relation(fields: [documentId], references: [id])
 
   @@map("PROJECT_DOCUMENTS")
   @@schema("files_schema")
