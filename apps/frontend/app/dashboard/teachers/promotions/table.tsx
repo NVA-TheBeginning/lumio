@@ -81,7 +81,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     return allMembers.filter(
       (member) =>
         member.firstname.toLowerCase().includes(lowerCaseQuery) ||
-        member.lastname?.toLowerCase().includes(lowerCaseQuery) ||
+        member.lastname.toLowerCase().includes(lowerCaseQuery) ||
         member.email.toLowerCase().includes(lowerCaseQuery),
     );
   }, [allMembers, searchQuery]);

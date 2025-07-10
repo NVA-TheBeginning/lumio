@@ -1,5 +1,6 @@
 "use server";
 import { cookies } from "next/headers";
+import { isTruthy } from "./utils";
 
 interface User {
   id: string;
@@ -61,7 +62,7 @@ export async function getUserFromCookie(): Promise<User | null> {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user");
   try {
-    if (!userCookie?.value) {
+    if (!isTruthy(userCookie?.value)) {
       return null;
     }
 

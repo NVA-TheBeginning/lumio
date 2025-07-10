@@ -84,7 +84,7 @@ export default function ParametersForm({
           firstname: values.firstname,
           lastname: values.lastname,
           email: values.email,
-          newPassword: values.newPassword || undefined,
+          newPassword: values.newPassword ?? undefined,
         });
         return true;
       } catch (error) {

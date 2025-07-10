@@ -322,7 +322,7 @@ export default function ReportEditor({ reportId }: { reportId: number }) {
                   <Label htmlFor="markdown-content">Contenu Markdown</Label>
                   <Textarea
                     id="markdown-content"
-                    value={currentSection?.contentMarkdown || ""}
+                    value={currentSection?.contentMarkdown ?? ""}
                     onChange={(e) => updateSection(activeSection, "contentMarkdown", e.target.value)}
                     placeholder="# Titre&#10;&#10;Votre contenu en **Markdown**...&#10;&#10;- Liste à puces&#10;- Autre élément&#10;&#10;## Sous-titre&#10;&#10;Paragraphe avec *italique* et **gras**."
                     className="min-h-[400px] font-mono resize-none"

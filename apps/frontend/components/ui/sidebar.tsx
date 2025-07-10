@@ -485,7 +485,7 @@ function SidebarMenuButton({
     />
   );
 
-  if (!tooltip) {
+  if (tooltip == null || tooltip === "") {
     return button;
   }
 

@@ -24,9 +24,16 @@ export function formatDateTime(dateString: string): string {
   return date.toLocaleDateString("fr-FR", options);
 }
 
+export function isTruthy(value: string | undefined | null): value is string {
+  if (value === undefined || value === null) {
+    return false;
+  }
+  return Boolean(value.trim());
+}
+
 export async function authFetchData<T>(url: string): Promise<T> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(url, {
@@ -46,7 +53,7 @@ export async function authFetchData<T>(url: string): Promise<T> {
 
 export async function authPostData<T>(url: string, data: unknown): Promise<T> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(url, {
@@ -67,7 +74,7 @@ export async function authPostData<T>(url: string, data: unknown): Promise<T> {
 
 export async function authPostFormData<T>(url: string, formData: FormData): Promise<T> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(url, {
@@ -87,7 +94,7 @@ export async function authPostFormData<T>(url: string, formData: FormData): Prom
 
 export async function authPutData<T>(url: string, data: unknown): Promise<T> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(url, {
@@ -108,7 +115,7 @@ export async function authPutData<T>(url: string, data: unknown): Promise<T> {
 
 export async function authPatchData<T>(url: string, data: unknown): Promise<T> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(url, {
@@ -129,7 +136,7 @@ export async function authPatchData<T>(url: string, data: unknown): Promise<T> {
 
 export async function authDeleteData<T = void>(url: string): Promise<T> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(url, {

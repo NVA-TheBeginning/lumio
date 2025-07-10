@@ -97,8 +97,8 @@ export function StudentsSidebar({ user, ...props }: { user: NavUserProps } & Rea
         <NavUser
           user={{
             firstname: user.firstname,
-            email: user.email || "",
-            role: user?.role || "STUDENT",
+            email: user.email,
+            role: user.role,
           }}
         />
       </SidebarFooter>

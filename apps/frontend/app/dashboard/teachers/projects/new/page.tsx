@@ -84,7 +84,7 @@ export default function CreateProjectForm() {
   const watchPromotionIds = watch("promotionIds");
 
   useEffect(() => {
-    const currentPromotionIds = watchPromotionIds ?? [];
+    const currentPromotionIds = watchPromotionIds;
     const currentGroupSettings = getValues("groupSettings") ?? [];
     const existingSettingsMap = new Map(currentGroupSettings.map((setting) => [setting.promotionId, setting]));
 

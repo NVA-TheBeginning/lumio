@@ -16,7 +16,7 @@ export async function updateProfile(data: {
     throw new Error("User ID is missing");
   }
 
-  const res = await fetch(`${API_URL}/users/${user?.id}`, {
+  const res = await fetch(`${API_URL}/users/${user.id}`, {
     method: "PATCH",
     body: JSON.stringify({
       firstname,
@@ -37,16 +37,16 @@ export async function updateProfile(data: {
     accessToken: undefined,
     refreshToken: undefined,
     user: {
-      id: user?.id,
-      role: user?.role,
+      id: user.id,
+      role: user.role,
       firstname,
       lastname,
       email,
     },
   });
 
-  if (newPassword && user?.id) {
-    const res = await fetch(`${API_URL}/users/${user?.id}/password`, {
+  if (newPassword && user.id) {
+    const res = await fetch(`${API_URL}/users/${user.id}/password`, {
       method: "PATCH",
       body: JSON.stringify({
         newPassword,

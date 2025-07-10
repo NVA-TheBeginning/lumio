@@ -239,11 +239,11 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
       groupSettings: {
         projectId: id,
         promotionId: promotion.id,
-        minMembers: groupSettings?.minMembers ?? 1,
-        maxMembers: groupSettings?.maxMembers ?? 10,
-        mode: groupSettings?.mode ?? "MANUAL",
-        deadline: groupSettings?.deadline ?? null,
-        updatedAt: groupSettings?.updatedAt ?? new Date().toISOString(),
+        minMembers: groupSettings.minMembers,
+        maxMembers: groupSettings.maxMembers,
+        mode: groupSettings.mode,
+        deadline: groupSettings.deadline,
+        updatedAt: groupSettings.updatedAt,
       },
       groups: groups.map((group) => ({
         id: group.id,

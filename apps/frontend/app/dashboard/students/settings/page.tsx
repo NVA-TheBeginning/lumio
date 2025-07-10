@@ -9,5 +9,5 @@ export default async function ServerSettingsPage() {
     return <div>Vous devez être connecté pour accéder à cette page.</div>;
   }
 
-  return <ParametersForm firstname={user?.firstname} lastname={user?.lastname} email={user?.email} />;
+  return <ParametersForm firstname={user.firstname} lastname={user.lastname} email={user.email} />;
 }
