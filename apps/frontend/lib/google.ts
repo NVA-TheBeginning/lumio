@@ -16,7 +16,7 @@ interface LoginResponse {
 }
 
 export async function googleOAuthLogin(token: string): Promise<Role | undefined> {
-  const API_URL = process.env.API_URL || "http://localhost:3000";
+  const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
   const response = await fetch(`${API_URL}/auth/oauth/google`, {
     method: "POST",

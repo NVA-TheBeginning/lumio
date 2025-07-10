@@ -126,7 +126,7 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
     const shuffledGroupIds = [...allGroups].sort(() => Math.random() - 0.5).map((group) => group.id);
 
     const optimisticOrders = shuffledGroupIds.map((groupId, index) => ({
-      id: localOrders.find((order) => order.groupId === groupId)?.id || 0,
+      id: localOrders.find((order) => order.groupId === groupId)?.id ?? 0,
       groupId,
       orderNumber: index + 1,
       presentationId: presentation.id,
@@ -274,7 +274,7 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
                         <div>
                           <div className="font-medium">{order.group?.name || `Groupe ${order.groupId}`}</div>
                           <div className="text-sm text-muted-foreground">
-                            {order.group?.members.length || 0} membres
+                            {order.group?.members.length ?? 0} membres
                           </div>
                         </div>
                       </div>

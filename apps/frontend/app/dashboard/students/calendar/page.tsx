@@ -30,7 +30,7 @@ export default function CalendarPage() {
     const projectMap = new Map<number, Project>();
 
     events.forEach((event) => {
-      if (event.projectId && event.projectName && event.projectColor) {
+      if (event.projectId != null && event.projectName != null && event.projectColor != null) {
         projectMap.set(event.projectId, {
           id: event.projectId,
           name: event.projectName,

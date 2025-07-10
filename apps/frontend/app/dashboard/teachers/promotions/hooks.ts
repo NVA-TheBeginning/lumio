@@ -21,12 +21,12 @@ export function usePromotionMembers(promotionId: number | null, page: number, si
   return useQuery({
     queryKey: ["promotions", promotionId, "members", page, size],
     queryFn: async () => {
-      if (!promotionId) {
+      if (promotionId == null || promotionId === 0) {
         return { data: [], size: 0, page: 1, pageSize: size, totalPages: 1 };
       }
-      return getPromotionMembers(promotionId, page, size);
+      return await getPromotionMembers(promotionId, page, size);
     },
-    enabled: !!promotionId,
+    enabled: promotionId != null && promotionId !== 0,
   });
 }
 
@@ -36,7 +36,7 @@ export function useCreatePromotion() {
   return useMutation({
     mutationFn: createPromotion,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+      void queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },
   });
 }
@@ -47,7 +47,7 @@ export function useDeletePromotion() {
   return useMutation({
     mutationFn: deletePromotion,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+      void queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },
   });
 }
@@ -59,7 +59,7 @@ export function useRemoveMember() {
     mutationFn: ({ promotionId, memberId }: { promotionId: number; memberId: number }) =>
       removeMember(promotionId, memberId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+      void queryClient.invalidateQueries({ queryKey: ["promotions"] });
     },
   });
 }

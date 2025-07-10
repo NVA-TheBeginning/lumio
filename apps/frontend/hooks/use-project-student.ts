@@ -7,8 +7,8 @@ import {
 
 export function useProjectStudent(projectId: number) {
   return useQuery({
-    queryKey: ["project-student", Number(projectId)],
-    queryFn: () => getProjectByIdStudent(Number(projectId)),
+    queryKey: ["project-student", projectId],
+    queryFn: () => getProjectByIdStudent(projectId),
   });
 }
 
@@ -18,8 +18,8 @@ export function useJoinGroup() {
   return useMutation({
     mutationFn: ({ groupId, studentIds }: { groupId: number; studentIds: number[] }) =>
       addMembersToGroup(groupId, studentIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project-student"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project-student"] });
     },
   });
 }
@@ -29,8 +29,8 @@ export function useLeaveGroup() {
 
   return useMutation({
     mutationFn: ({ groupId, userId }: { groupId: number; userId: number }) => removeMemberFromGroup(groupId, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project-student"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project-student"] });
     },
   });
 }

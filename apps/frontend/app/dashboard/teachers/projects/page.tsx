@@ -65,7 +65,7 @@ export default function ProjectList() {
   });
 
   const promotions = useMemo(() => {
-    if (!projects || projects.length === 0) return [];
+    if (projects.length === 0) return [];
 
     const promotionSet = new Set<string>();
 
@@ -177,7 +177,13 @@ export default function ProjectList() {
           <p className="mt-2">
             {projectsError instanceof Error ? projectsError.message : "Une erreur s'est produite. Veuillez réessayer."}
           </p>
-          <Button className="mt-4" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["projects"] })}>
+          <Button
+            className="mt-4"
+            size="sm"
+            onClick={() => {
+              void queryClient.invalidateQueries({ queryKey: ["projects"] });
+            }}
+          >
             Réessayer
           </Button>
         </div>
@@ -201,7 +207,12 @@ export default function ProjectList() {
         </div>
         <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
           {projects.length > 0 && (
-            <Button size="sm" onClick={() => router.push("/dashboard/teachers/projects/new")}>
+            <Button
+              size="sm"
+              onClick={() => {
+                router.push("/dashboard/teachers/projects/new");
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Nouveau projet
             </Button>
@@ -217,7 +228,9 @@ export default function ProjectList() {
               placeholder="Rechercher un projet..."
               className="pl-10"
               value={filters.search}
-              onChange={(e) => handleFilterChange({ search: e.target.value })}
+              onChange={(e) => {
+                handleFilterChange({ search: e.target.value });
+              }}
             />
           </div>
           <div className="flex gap-2">
@@ -397,7 +410,7 @@ export default function ProjectList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedProjects?.map((project) => (
+          {paginatedProjects.map((project) => (
             <Card key={project.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
@@ -426,7 +439,9 @@ export default function ProjectList() {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => router.push(`/dashboard/teachers/projects/${project.id}`)}
+                  onClick={() => {
+                    router.push(`/dashboard/teachers/projects/${project.id}`);
+                  }}
                 >
                   Voir détails
                 </Button>
@@ -440,7 +455,13 @@ export default function ProjectList() {
         <div className="text-center py-12 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-medium">Aucun projet trouvé</h3>
           <p className="text-gray-500 mt-2">Modifiez vos critères de recherche ou créez un nouveau projet</p>
-          <Button className="mt-4" size="sm" onClick={() => router.push("/dashboard/teachers/projects/new")}>
+          <Button
+            className="mt-4"
+            size="sm"
+            onClick={() => {
+              router.push("/dashboard/teachers/projects/new");
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Nouveau projet
           </Button>
@@ -452,7 +473,9 @@ export default function ProjectList() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => handlePageChange(currentPage - 1)}
+            onClick={() => {
+              handlePageChange(currentPage - 1);
+            }}
             disabled={currentPage === 1}
             aria-label="Page précédente"
           >
@@ -479,7 +502,9 @@ export default function ProjectList() {
                   variant={currentPage === pageToShow ? "default" : "outline"}
                   size="icon"
                   className="w-8 h-8"
-                  onClick={() => handlePageChange(pageToShow)}
+                  onClick={() => {
+                    handlePageChange(pageToShow);
+                  }}
                   aria-label={`Page ${pageToShow}`}
                   aria-current={currentPage === pageToShow ? "page" : undefined}
                 >
@@ -492,7 +517,9 @@ export default function ProjectList() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => handlePageChange(currentPage + 1)}
+            onClick={() => {
+              handlePageChange(currentPage + 1);
+            }}
             disabled={currentPage === totalPages}
             aria-label="Page suivante"
           >

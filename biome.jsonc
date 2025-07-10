@@ -53,7 +53,8 @@
       },
       "nursery": {
         "noAwaitInLoop": "error",
-        "noFloatingPromises": "error"
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error"
       },
       "suspicious": {
         "noDuplicateElseIf": "error",

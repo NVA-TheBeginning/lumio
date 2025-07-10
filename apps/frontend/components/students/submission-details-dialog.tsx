@@ -208,7 +208,12 @@ export function SubmissionDetailsDialog({
             </AlertDialog>
           )}
 
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          >
             Fermer
           </Button>
         </DialogFooter>

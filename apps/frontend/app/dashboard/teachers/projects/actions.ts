@@ -11,7 +11,7 @@ import {
 } from "@/lib/utils";
 import { Member, MembersResponse } from "../promotions/action";
 
-const API_URL = process.env.API_URL || "http://localhost:3000";
+const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
 interface Project {
   id: number;
@@ -239,11 +239,11 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
       groupSettings: {
         projectId: id,
         promotionId: promotion.id,
-        minMembers: groupSettings?.minMembers ?? 1,
-        maxMembers: groupSettings?.maxMembers ?? 10,
-        mode: groupSettings?.mode ?? "MANUAL",
-        deadline: groupSettings?.deadline ?? null,
-        updatedAt: groupSettings?.updatedAt ?? new Date().toISOString(),
+        minMembers: groupSettings.minMembers,
+        maxMembers: groupSettings.maxMembers,
+        mode: groupSettings.mode,
+        deadline: groupSettings.deadline,
+        updatedAt: groupSettings.updatedAt,
       },
       groups: groups.map((group) => ({
         id: group.id,
@@ -571,9 +571,9 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
   const contentDisposition = response.headers.get("content-disposition");
   let filename = `submission-${submissionId}.zip`;
 
-  if (contentDisposition) {
+  if (contentDisposition !== null && contentDisposition !== "") {
     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-    if (filenameMatch?.[1]) {
+    if (filenameMatch?.[1] !== undefined && filenameMatch[1] !== "") {
       filename = filenameMatch[1];
     }
   }
@@ -668,7 +668,7 @@ export async function updateRule(ruleId: number, ruleData: UpdateRuleData): Prom
 
 export async function deleteRule(ruleId: number): Promise<void> {
   const url = `${API_URL}/rules/${ruleId}`;
-  return await authDeleteData(url);
+  await authDeleteData(url);
 }
 
 export async function getRule(ruleId: number): Promise<DeliverableRule> {
@@ -765,11 +765,11 @@ export async function uploadDocumentToProject(projectId: number, file: File, nam
 }
 
 export async function linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
-  return await authPostData(`${API_URL}/documents/${documentId}/projects`, { projectIds: [projectId] });
+  await authPostData(`${API_URL}/documents/${documentId}/projects`, { projectIds: [projectId] });
 }
 
 export async function unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {
-  return await authDeleteData(`${API_URL}/documents/${documentId}/projects/${projectId}`);
+  await authDeleteData(`${API_URL}/documents/${documentId}/projects/${projectId}`);
 }
 
 export async function downloadProjectDocument(documentId: number): Promise<{

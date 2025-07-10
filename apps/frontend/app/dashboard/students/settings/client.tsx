@@ -29,7 +29,10 @@ const profileSchema = z
   })
   .refine(
     (data) => {
-      if (data.newPassword || data.confirmPassword) {
+      if (
+        (data.newPassword != null && data.newPassword !== "") ||
+        (data.confirmPassword != null && data.confirmPassword !== "")
+      ) {
         return data.newPassword === data.confirmPassword;
       }
       return true;
@@ -41,7 +44,7 @@ const profileSchema = z
   )
   .refine(
     (data) => {
-      if (data.newPassword) {
+      if (data.newPassword != null && data.newPassword !== "") {
         return data.newPassword.length >= 8;
       }
       return true;
@@ -84,7 +87,7 @@ export default function ParametersForm({
           firstname: values.firstname,
           lastname: values.lastname,
           email: values.email,
-          newPassword: values.newPassword || undefined,
+          newPassword: values.newPassword ?? undefined,
         });
         return true;
       } catch (error) {

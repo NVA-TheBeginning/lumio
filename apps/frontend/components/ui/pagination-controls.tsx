@@ -66,7 +66,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
 
               return pages.map((pageNum) =>
                 pageNum === null ? (
-                  <PaginationItem key={`ellipsis-${pageNum}-${Math.random()}`}>
+                  <PaginationItem key={`ellipsis-${pageNum ?? 0}-${Math.random()}`}>
                     <PaginationEllipsis />
                   </PaginationItem>
                 ) : (

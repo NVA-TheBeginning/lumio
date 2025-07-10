@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { type Document, deleteDocument, getDocuments } from "@/app/dashboard/teachers/documents/actions";
+import { deleteDocument, getDocuments } from "@/app/dashboard/teachers/documents/actions";
 import DocumentList from "@/components/documents-list";
 import { Button } from "@/components/ui/button";
 import UploadModal from "@/components/upload-modal";
@@ -17,7 +17,7 @@ export default function DocumentDrive() {
     isLoading,
     isError,
     error,
-  } = useQuery<Document[], Error>({
+  } = useQuery({
     queryKey: ["documents"],
     queryFn: getDocuments,
   });
@@ -25,12 +25,12 @@ export default function DocumentDrive() {
   const deleteDocumentMutation = useMutation({
     mutationFn: deleteDocument,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
   });
 
   const handleDocumentUploaded = () => {
-    queryClient.invalidateQueries({ queryKey: ["documents"] });
+    void queryClient.invalidateQueries({ queryKey: ["documents"] });
   };
 
   const handleDocumentDeleted = async (id: number) => {
@@ -49,17 +49,30 @@ export default function DocumentDrive() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Espace Documents</h1>
-        <Button onClick={() => setIsUploading(true)} className="flex items-center gap-2">
+        <Button
+          onClick={() => {
+            setIsUploading(true);
+          }}
+          className="flex items-center gap-2"
+        >
           <PlusIcon size={16} />
           Ajouter
         </Button>
       </div>
 
-      <DocumentList documents={documents || []} isLoading={isLoading} onDocumentDeleted={handleDocumentDeleted} />
+      <DocumentList
+        documents={documents ?? []}
+        isLoading={isLoading}
+        onDocumentDeleted={(id) => {
+          void handleDocumentDeleted(id);
+        }}
+      />
 
       <UploadModal
         isOpen={isUploading}
-        onClose={() => setIsUploading(false)}
+        onClose={() => {
+          setIsUploading(false);
+        }}
         onDocumentUploaded={handleDocumentUploaded}
       />
     </div>

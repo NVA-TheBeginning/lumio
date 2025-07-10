@@ -207,7 +207,7 @@ const DraggableStudent: React.FC<DraggableStudentProps> = ({
 
 export function ProjectGroups({ project }: { project: ProjectType }) {
   const queryClient = useQueryClient();
-  const [activePromotionId, setActivePromotionId] = useState<number>(project.promotions[0]?.id || 0);
+  const [activePromotionId, setActivePromotionId] = useState<number>(project.promotions[0]?.id ?? 0);
   const [showSettingsDialog, setShowSettingsDialog] = useState<boolean>(false);
   const [showCreateGroupsDialog, setShowCreateGroupsDialog] = useState<boolean>(false);
   const [editingGroup, setEditingGroup] = useState<{
@@ -440,7 +440,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
 
   const progress = useMemo(() => {
     const totalStudents = allStudents.length;
-    const assignedStudents = groups?.reduce((sum, group) => sum + group.members.length, 0) || 0;
+    const assignedStudents = groups?.reduce((sum, group) => sum + group.members.length, 0) ?? 0;
     return totalStudents > 0 ? (assignedStudents / totalStudents) * 100 : 0;
   }, [allStudents, groups]);
 
@@ -499,7 +499,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                               <div className="text-muted-foreground">Non assignés</div>
                             </div>
                             <div>
-                              <div className="font-medium">{groups?.length || 0} groupes</div>
+                              <div className="font-medium">{groups?.length ?? 0} groupes</div>
                               <div className="text-muted-foreground">Créés</div>
                             </div>
                           </div>
@@ -518,7 +518,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                               <span className="font-medium">Assignation terminée</span>
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {groups?.length || 0} groupes • {allStudents.length} étudiants
+                              {groups?.length ?? 0} groupes • {allStudents.length} étudiants
                             </div>
                           </div>
                         )}
@@ -561,7 +561,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                         <Input
                                           type="number"
                                           {...field}
-                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) ?? 0)}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -578,7 +578,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                         <Input
                                           type="number"
                                           {...field}
-                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) ?? 0)}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -684,7 +684,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                 <div className="flex justify-between items-center">
                   <h4 className="text-lg font-semibold flex items-center">
                     <Users className="h-5 w-5 mr-2" />
-                    Groupes d'étudiants ({groups?.length || 0})
+                    Groupes d'étudiants ({groups?.length ?? 0})
                   </h4>
                   <div className="flex items-center gap-2">
                     {groupSettings?.mode === "RANDOM" &&
@@ -730,7 +730,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                     <Input
                                       type="number"
                                       {...field}
-                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value) ?? 0)}
                                     />
                                   </FormControl>
                                   <FormMessage />

@@ -2,7 +2,7 @@
 import { getTokens } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPostFormData } from "@/lib/utils";
 
-const API_URL = process.env.API_URL || "http://localhost:3000";
+const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
 export interface SubmissionData {
   groupId: number;
@@ -47,7 +47,7 @@ export async function submitDeliverable(deliverableId: number, data: SubmissionD
     formData.append("file", data.file);
   }
 
-  if (data.gitUrl) {
+  if (data.gitUrl != null && data.gitUrl !== "") {
     formData.append("gitUrl", data.gitUrl);
   }
 
@@ -55,9 +55,10 @@ export async function submitDeliverable(deliverableId: number, data: SubmissionD
 }
 
 export async function getSubmissions(groupId: number, deliverableId?: number): Promise<SubmissionMetadataResponse[]> {
-  const url = deliverableId
-    ? `${API_URL}/deliverables/${groupId}/submissions?idDeliverable=${deliverableId}`
-    : `${API_URL}/deliverables/${groupId}/submissions`;
+  const url =
+    deliverableId != null
+      ? `${API_URL}/deliverables/${groupId}/submissions?idDeliverable=${deliverableId}`
+      : `${API_URL}/deliverables/${groupId}/submissions`;
   return await authFetchData(url);
 }
 
@@ -66,7 +67,7 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
   filename: string;
 }> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (accessToken == null || accessToken === "") {
     throw new Error("Access token is missing");
   }
 
@@ -84,9 +85,9 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
   const contentDisposition = response.headers.get("content-disposition");
   let filename = `submission-${submissionId}.zip`;
 
-  if (contentDisposition) {
+  if (contentDisposition != null && contentDisposition !== "") {
     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-    if (filenameMatch?.[1]) {
+    if (filenameMatch?.[1] != null && filenameMatch[1] !== "") {
       filename = filenameMatch[1];
     }
   }
@@ -96,7 +97,7 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
 }
 
 export async function deleteSubmission(submissionId: number): Promise<void> {
-  return await authDeleteData(`${API_URL}/submissions/${submissionId}`);
+  await authDeleteData(`${API_URL}/submissions/${submissionId}`);
 }
 
 export async function downloadProjectDocument(documentId: number): Promise<{
@@ -104,7 +105,7 @@ export async function downloadProjectDocument(documentId: number): Promise<{
   filename: string;
 }> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (accessToken == null || accessToken === "") {
     throw new Error("Access token is missing");
   }
 
@@ -121,15 +122,15 @@ export async function downloadProjectDocument(documentId: number): Promise<{
 
   const data = await response.json();
 
-  if (!data.file) {
+  if (data.file == null) {
     throw new Error("Invalid response format from server");
   }
 
-  if (!data.mimeType) {
+  if (data.mimeType == null) {
     throw new Error("Missing mimeType in response");
   }
 
-  const uint8Array = new Uint8Array(data.file.data || data.file);
+  const uint8Array = new Uint8Array(data.file.data ?? data.file);
   const blob = new Blob([uint8Array], { type: data.mimeType });
 
   const filename = `document-${documentId}`;

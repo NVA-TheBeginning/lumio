@@ -76,15 +76,15 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   const currentUserGroup = project?.groups.find((group) => group.members.some((member) => member.id === currentUserId));
 
   const { data: submissions, refetch: refetchSubmissions } = useSubmissions(
-    currentUserGroup?.id || 0,
+    currentUserGroup?.id ?? 0,
     undefined,
     !!currentUserGroup,
   );
 
   const { data: presentationOrders } = useStudentPresentationOrder(
     projectId,
-    project?.promotionId || 0,
-    currentUserGroup?.id || 0,
+    project?.promotionId ?? 0,
+    currentUserGroup?.id ?? 0,
   );
 
   const [submissionDialog, setSubmissionDialog] = useState<{
@@ -117,10 +117,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
       submissionDate: new Date(submission.submissionDate),
       groupId: submission.groupId,
       penalty: submission.penalty,
-      type: submission.type || deliverable.type,
+      type: submission.type,
       status: submission.status,
       lastModified: new Date(submission.lastModified),
-      gitUrl: submission.gitUrl || "",
+      gitUrl: submission.gitUrl ?? "",
       error: submission.error,
     };
 
@@ -135,16 +135,16 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     setSubmissionDetailsDialog({ open: false, submission: null, deliverable: null });
   };
 
-  const handleSubmissionSuccess = () => {
+  const handleSubmissionSuccess = async () => {
     handleCloseSubmissionDialog();
-    refetch();
-    refetchSubmissions();
+    await refetch();
+    await refetchSubmissions();
   };
 
-  const handleSubmissionDeleted = () => {
+  const handleSubmissionDeleted = async () => {
     handleCloseSubmissionDetailsDialog();
-    refetch();
-    refetchSubmissions();
+    await refetch();
+    await refetchSubmissions();
   };
 
   if (isLoading || !project) {
@@ -160,7 +160,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     );
   }
 
-  const completedDeliverables = submissions?.length || 0;
+  const completedDeliverables = submissions?.length ?? 0;
   const totalDeliverables = project.deliverables.length;
   const projectProgress = totalDeliverables > 0 ? (completedDeliverables / totalDeliverables) * 100 : 0;
 
@@ -234,10 +234,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
         groupSettings: {
           projectId: project.id,
           promotionId: project.promotionId,
-          minMembers: project.groupSettings?.minMembers || 1,
-          maxMembers: project.groupSettings?.maxMembers || 10,
-          mode: project.groupSettings?.mode || "MANUAL",
-          deadline: project.groupSettings?.deadline || "",
+          minMembers: project.groupSettings.minMembers ?? 1,
+          maxMembers: project.groupSettings.maxMembers ?? 10,
+          mode: project.groupSettings.mode,
+          deadline: project.groupSettings.deadline,
           updatedAt: new Date().toISOString(),
         },
         groups: project.groups,
@@ -455,7 +455,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {project.documents?.length > 0 ? (
+                  {project.documents.length > 0 ? (
                     project.documents.map((document) => (
                       <div
                         key={document.id}
@@ -716,10 +716,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
               <div>
                 <h4 className="font-medium mb-3">Notes et commentaires</h4>
-                {project.submissions?.some((s) => s.grade) ? (
+                {project.submissions.some((s) => s.grade) ? (
                   <div className="space-y-4">
                     {project.submissions
-                      .filter((s) => s.grade)
+                      .filter((s) => s.grade !== null && !Number.isNaN(s.grade))
                       .map((submission, index) => (
                         <Card key={index}>
                           <CardContent className="pt-4">

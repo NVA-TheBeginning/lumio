@@ -14,9 +14,9 @@ export function useDeleteSubmission() {
 
   return useMutation({
     mutationFn: (submissionId: number) => deleteSubmission(submissionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["project-student"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      await queryClient.invalidateQueries({ queryKey: ["project-student"] });
     },
   });
 }

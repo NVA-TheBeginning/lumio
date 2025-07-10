@@ -81,7 +81,7 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
     } catch (error: unknown) {
       console.error("Erreur lors de la soumission:", error);
 
-      if (error instanceof Error && error.message?.includes("does not meet the required rules")) {
+      if (error instanceof Error && error.message.includes("does not meet the required rules")) {
         const ruleViolations = error.message
           .split("\n")
           .filter((line: string) => line.trim() && !line.includes("does not meet the required rules"))
@@ -151,7 +151,9 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
 
           <Tabs
             value={submissionType}
-            onValueChange={(value) => setSubmissionType(value as "file" | "git")}
+            onValueChange={(value) => {
+              setSubmissionType(value as "file" | "git");
+            }}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">

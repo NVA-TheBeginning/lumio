@@ -98,7 +98,14 @@ export default function ReportsPage() {
                     </p>
                   )}
                   <div className="pt-2">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => handleEditReport(report.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        handleEditReport(report.id);
+                      }}
+                    >
                       Éditer
                     </Button>
                   </div>

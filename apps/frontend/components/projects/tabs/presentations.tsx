@@ -175,7 +175,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Users className="h-4 w-4 text-muted-foreground" />
-                                    <Badge variant="outline">{getActivePromotion()?.groups.length || 0} groupes</Badge>
+                                    <Badge variant="outline">{getActivePromotion()?.groups.length ?? 0} groupes</Badge>
                                   </div>
                                 </div>
                               </CardContent>
@@ -263,7 +263,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
                             </div>
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4 text-muted-foreground" />
-                              <Badge variant="outline">{getActivePromotion()?.groups.length || 0} groupes</Badge>
+                              <Badge variant="outline">{getActivePromotion()?.groups.length ?? 0} groupes</Badge>
                             </div>
                           </div>
                         </CardContent>

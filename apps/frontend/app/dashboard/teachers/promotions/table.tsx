@@ -81,7 +81,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     return allMembers.filter(
       (member) =>
         member.firstname.toLowerCase().includes(lowerCaseQuery) ||
-        member.lastname?.toLowerCase().includes(lowerCaseQuery) ||
+        member.lastname.toLowerCase().includes(lowerCaseQuery) ||
         member.email.toLowerCase().includes(lowerCaseQuery),
     );
   }, [allMembers, searchQuery]);
@@ -93,7 +93,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   }, [filteredMembers]);
 
   const totalFilteredCount = filteredMembers.length;
-  const totalCount = membersResponse?.size || 0;
+  const totalCount = membersResponse?.size ?? 0;
   const totalPages = membersResponse?.totalPages || 1;
 
   const removeMutation = useRemoveMember();

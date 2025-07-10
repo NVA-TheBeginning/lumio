@@ -68,12 +68,12 @@ export default function CreateProjectForm() {
   });
 
   const { watch, setValue, getValues } = form;
-  const groupSettings = watch("groupSettings") || [];
+  const groupSettings = watch("groupSettings") ?? [];
 
   const createProjectMutation = useMutation({
     mutationFn: (data: CreateProjectFormValues) => createProject(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
       router.push("/dashboard/teachers/projects");
     },
     onError: (error: Error) => {
@@ -84,8 +84,8 @@ export default function CreateProjectForm() {
   const watchPromotionIds = watch("promotionIds");
 
   useEffect(() => {
-    const currentPromotionIds = watchPromotionIds || [];
-    const currentGroupSettings = getValues("groupSettings") || [];
+    const currentPromotionIds = watchPromotionIds;
+    const currentGroupSettings = getValues("groupSettings") ?? [];
     const existingSettingsMap = new Map(currentGroupSettings.map((setting) => [setting.promotionId, setting]));
 
     if (currentPromotionIds.length === 0) {

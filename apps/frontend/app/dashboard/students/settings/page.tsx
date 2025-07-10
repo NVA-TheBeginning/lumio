@@ -5,9 +5,9 @@ import ParametersForm from "./client";
 export default async function ServerSettingsPage() {
   const user = await getUserFromCookie();
 
-  if (!user?.email) {
+  if (user?.email == null || user.email === "") {
     return <div>Vous devez être connecté pour accéder à cette page.</div>;
   }
 
-  return <ParametersForm firstname={user?.firstname} lastname={user?.lastname} email={user?.email} />;
+  return <ParametersForm firstname={user.firstname} lastname={user.lastname} email={user.email} />;
 }

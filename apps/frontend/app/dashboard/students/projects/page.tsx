@@ -59,8 +59,8 @@ export default function ProjectList() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const projects = projectsResponse?.data || [];
-  const pagination = projectsResponse?.pagination || {
+  const projects = projectsResponse?.data ?? [];
+  const pagination = projectsResponse?.pagination ?? {
     totalRecords: 0,
     currentPage: 1,
     totalPages: 1,
@@ -141,7 +141,13 @@ export default function ProjectList() {
           <p className="mt-2">
             {projectsError instanceof Error ? projectsError.message : "Une erreur s'est produite. Veuillez réessayer."}
           </p>
-          <Button className="mt-4" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["projects"] })}>
+          <Button
+            className="mt-4"
+            size="sm"
+            onClick={() => {
+              void queryClient.invalidateQueries({ queryKey: ["projects"] });
+            }}
+          >
             Réessayer
           </Button>
         </div>
@@ -177,7 +183,9 @@ export default function ProjectList() {
               placeholder="Rechercher un projet..."
               className="pl-10"
               value={filters.search}
-              onChange={(e) => handleFilterChange({ search: e.target.value })}
+              onChange={(e) => {
+                handleFilterChange({ search: e.target.value });
+              }}
             />
           </div>
           <div className="flex gap-2">
@@ -199,7 +207,9 @@ export default function ProjectList() {
                     <h4 className="font-medium">Statut du groupe</h4>
                     <Select
                       value={filters.hasGroup}
-                      onValueChange={(value: string) => handleFilterChange({ hasGroup: value })}
+                      onValueChange={(value: string) => {
+                        handleFilterChange({ hasGroup: value });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner un statut" />
@@ -278,13 +288,23 @@ export default function ProjectList() {
             {filters.hasGroup !== "all" && (
               <Badge variant="outline" className="flex items-center gap-1">
                 {groupStatusOptions.find((opt) => opt.value === filters.hasGroup)?.label}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange({ hasGroup: "all" })} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => {
+                    handleFilterChange({ hasGroup: "all" });
+                  }}
+                />
               </Badge>
             )}
             {filters.search && (
               <Badge variant="outline" className="flex items-center gap-1">
                 Recherche: {filters.search}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange({ search: "" })} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => {
+                    handleFilterChange({ search: "" });
+                  }}
+                />
               </Badge>
             )}
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={clearAllFilters}>
@@ -360,7 +380,13 @@ export default function ProjectList() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 border-t pt-4">
-                <Button size="sm" onClick={() => handleViewProject(project.id)} className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    handleViewProject(project.id);
+                  }}
+                  className="flex items-center gap-2"
+                >
                   <Eye className="h-4 w-4" />
                   Voir le projet
                 </Button>
@@ -372,11 +398,13 @@ export default function ProjectList() {
 
       {!isLoadingProjects && pagination.totalPages > 1 && (
         <div className="flex justify-center items-center mt-8 gap-2">
-          {pagination.prevPage && (
+          {pagination.prevPage != null && (
             <Button
               variant="outline"
               size="icon"
-              onClick={() => handlePageChange(pagination.prevPage ?? 1)}
+              onClick={() => {
+                handlePageChange(pagination.prevPage ?? 1);
+              }}
               disabled={!pagination.prevPage}
               aria-label="Page précédente"
             >
@@ -404,7 +432,9 @@ export default function ProjectList() {
                   variant={pagination.currentPage === pageToShow ? "default" : "outline"}
                   size="icon"
                   className="w-8 h-8"
-                  onClick={() => handlePageChange(pageToShow)}
+                  onClick={() => {
+                    handlePageChange(pageToShow);
+                  }}
                   aria-label={`Page ${pageToShow}`}
                   aria-current={pagination.currentPage === pageToShow ? "page" : undefined}
                 >
@@ -414,11 +444,13 @@ export default function ProjectList() {
             })}
           </div>
 
-          {pagination.nextPage && (
+          {pagination.nextPage != null && (
             <Button
               variant="outline"
               size="icon"
-              onClick={() => handlePageChange(pagination.nextPage ?? pagination.totalPages)}
+              onClick={() => {
+                handlePageChange(pagination.nextPage ?? pagination.totalPages);
+              }}
               disabled={!pagination.nextPage}
               aria-label="Page suivante"
             >

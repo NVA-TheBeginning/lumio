@@ -9,7 +9,7 @@ export function useStudentPresentationOrder(projectId: number, promotionId: numb
 
       const presentations = await getPresentations(projectId, promotionId);
 
-      if (!presentations?.length) return null;
+      if (!presentations.length) return null;
 
       const presentationOrders = await Promise.all(
         presentations.map(async (presentation) => {
@@ -18,7 +18,7 @@ export function useStudentPresentationOrder(projectId: number, promotionId: numb
 
           return {
             presentation,
-            order: groupOrder || null,
+            order: groupOrder ?? null,
           };
         }),
       );
