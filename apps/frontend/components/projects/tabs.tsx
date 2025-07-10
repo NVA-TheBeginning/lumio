@@ -3,8 +3,8 @@
 import type { ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectDeliverables } from "./tabs/deliverables";
-import { ProjectEvaluations } from "./tabs/evaluations";
 import { ProjectDocuments } from "./tabs/documents";
+import { ProjectEvaluations } from "./tabs/evaluations";
 import { ProjectGroups } from "./tabs/groups";
 import { ProjectOverview } from "./tabs/overview";
 import { ProjectPresentations } from "./tabs/presentations";

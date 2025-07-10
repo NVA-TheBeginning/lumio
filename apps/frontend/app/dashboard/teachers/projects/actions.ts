@@ -734,6 +734,7 @@ export async function updateGrade(gradeId: number, data: { gradeValue?: number; 
 
 export async function getFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {
   return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/final-grades`);
+}
 export interface ProjectDocument {
   id: number;
   name: string;
@@ -744,11 +745,11 @@ export interface ProjectDocument {
   projectId?: number;
 }
 
-export async function getProjectDocuments(projectId: number): Promise<ProjectDocument[]> {
+export async function _getProjectDocuments(projectId: number): Promise<ProjectDocument[]> {
   return await authFetchData(`${API_URL}/documents/projects/${projectId}`);
 }
 
-export async function uploadDocumentToProject(projectId: number, file: File, name: string): Promise<ProjectDocument> {
+export async function _uploadDocumentToProject(projectId: number, file: File, name: string): Promise<ProjectDocument> {
   const user = await getUserFromCookie();
   if (!user) {
     throw new Error("User not found");
@@ -763,15 +764,15 @@ export async function uploadDocumentToProject(projectId: number, file: File, nam
   return await authPostFormData(`${API_URL}/documents/upload`, formData);
 }
 
-export async function linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
+export async function _linkDocumentToProject(documentId: number, projectId: number): Promise<void> {
   return await authPostData(`${API_URL}/documents/${documentId}/projects`, { projectIds: [projectId] });
 }
 
-export async function unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {
+export async function _unlinkDocumentFromProject(documentId: number, projectId: number): Promise<void> {
   return await authDeleteData(`${API_URL}/documents/${documentId}/projects/${projectId}`);
 }
 
-export async function downloadProjectDocument(documentId: number): Promise<{
+export async function _downloadProjectDocument(documentId: number): Promise<{
   blob: Blob;
   filename: string;
 }> {
