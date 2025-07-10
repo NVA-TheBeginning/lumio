@@ -22,15 +22,15 @@ describe("CriteriaController", () => {
   it("create calls proxy.forwardRequest", async () => {
     const dto: CreateCriteriaDto = { name: "Test", weight: 10, type: "REPORT", individual: false };
     (proxy.forwardRequest as jest.Mock).mockResolvedValue({ id: 3, ...dto });
-    const result = await controller.create(1, dto);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/projects/1/criteria", "POST", dto);
+    const result = await controller.create(1, 2, dto);
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/projects/1/promotions/2/criteria", "POST", dto);
     expect(result).toEqual({ id: 3, ...dto });
   });
 
   it("findAll calls proxy.forwardRequest", async () => {
     (proxy.forwardRequest as jest.Mock).mockReturnValue(Promise.resolve([]));
-    const result = await controller.findAll(2);
-    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/projects/2/criteria", "GET");
+    const result = await controller.findAll(1, 2);
+    expect(proxy.forwardRequest).toHaveBeenCalledWith("evaluation", "/projects/1/promotions/2/criteria", "GET");
     expect(result).toEqual([]);
   });
 

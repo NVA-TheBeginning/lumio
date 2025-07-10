@@ -1,45 +1,110 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-**/*node_modules
-**/*.next
+# Dependencies
+**/node_modules/
 .pnp
 .pnp.js
+**/bun.lockb
 
-# testing
-coverage
+# Testing
+coverage/
+*.lcov
 
-# next.js
-.next/
-out/
-build
-dist
+# Next.js
+**/.next/
+**/out/
 
-# misc
-.DS_Store
-*.pem
+# Production/Build
+**/build/
+**/dist/
 
-# debug
+# Environment files
+.env
+.env.*
+!.env.example
+!packages/database/.env
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+bun-debug.log*
 
-# local env files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-!packages/database/.env
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# turbo
+# Turbo
 .turbo
-.env
 
-# We use Bun as a package manager
+# Vercel
+.vercel
+
+# Package managers (we use Bun)
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Editors
+.idea/
+*.swp
+*.swo
+*~
 lumio.iml
-.*
-!.vscode
-!.github
+
+# Vim swap files
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# Claude settings
+**/.claude/**
+.claude
+
+# Rust (plagiarism-service)
+target/
+debug/
+**/*.rs.bk
+*.pdb
+apps/plagiarism-service/extract/
+
+# Miscellaneous
+.cache/
+.npm/
+.eslintcache
+*.pid
+*.seed
+*.pid.lock
