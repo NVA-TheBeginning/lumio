@@ -59,7 +59,6 @@ export default function TeacherReportsPage() {
     setSelectedReportId(null);
   };
 
-  // Extract unique projects and promotions from reports for filtering
   const { projects, promotions } = useMemo(() => {
     if (!reports) return { projects: [], promotions: [] };
 
@@ -67,8 +66,12 @@ export default function TeacherReportsPage() {
     const promotionsMap = new Map<number, string>();
 
     reports.forEach((report) => {
-      projectsMap.set(report.projectId, `Projet ${report.projectId}`);
-      promotionsMap.set(report.promotionId, `Promotion ${report.promotionId}`);
+      if (report.project) {
+        projectsMap.set(report.project.id, report.project.name);
+      }
+      if (report.promotion) {
+        promotionsMap.set(report.promotion.id, report.promotion.name);
+      }
     });
 
     return {
@@ -81,14 +84,21 @@ export default function TeacherReportsPage() {
     if (!reports) return [];
 
     return reports.filter((report) => {
-      const matchesProject = filters.projectIds.length === 0 || filters.projectIds.includes(report.projectId);
-      const matchesPromotion = filters.promotionIds.length === 0 || filters.promotionIds.includes(report.promotionId);
+      const matchesProject =
+        filters.projectIds.length === 0 || (report.project && filters.projectIds.includes(report.project.id));
+      const matchesPromotion =
+        filters.promotionIds.length === 0 || (report.promotion && filters.promotionIds.includes(report.promotion.id));
       const matchesSearch =
         filters.search === "" ||
         report.sections.some(
           (section) =>
             section.title.toLowerCase().includes(filters.search.toLowerCase()) ||
             section.contentMarkdown?.toLowerCase().includes(filters.search.toLowerCase()),
+        ) ||
+        report.project?.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        report.group?.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        report.group?.members.some((member) =>
+          `${member.firstname} ${member.lastname}`.toLowerCase().includes(filters.search.toLowerCase()),
         );
       const matchesStatus =
         filters.status === "all" ||
@@ -197,7 +207,7 @@ export default function TeacherReportsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="Rechercher dans les rapports..."
+              placeholder="Rechercher..."
               className="pl-10"
               value={filters.search}
               onChange={(e) => handleFilterChange({ search: e.target.value })}
@@ -331,71 +341,132 @@ export default function TeacherReportsPage() {
       {/* Reports Grid */}
       {filteredReports && filteredReports.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredReports.map((report) => (
-            <Card key={report.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Rapport #{report.id}</span>
-                  {report.submittedAt ? (
-                    <Badge variant="default" className="ml-auto">
-                      Soumis
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="ml-auto">
-                      Brouillon
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="w-4 h-4" />
+          {filteredReports.map((report) => {
+            const isEmpty = report.sections.length === 0;
+            const hasEmptyContent =
+              report.sections.length > 0 &&
+              report.sections.every((section) => !section.contentMarkdown || section.contentMarkdown.trim() === "");
+
+            return (
+              <Card
+                key={report.id}
+                className={`hover:shadow-md transition-shadow ${isEmpty || hasEmptyContent ? "border-orange-200 bg-orange-50/50" : ""}`}
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className={`w-5 h-5 ${isEmpty || hasEmptyContent ? "text-orange-500" : ""}`} />
                     <span>
-                      Projet {report.projectId} • Promotion {report.promotionId}
+                      Rapport {report.group?.name ? `(${report.group.name})` : ""} #{report.id}
                     </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {report.sections.length} section{report.sections.length > 1 ? "s" : ""}
-                  </p>
-                  {report.updatedAt && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Modifié le {formatDate(report.updatedAt.toString())}
+                    {isEmpty && (
+                      <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-100">
+                        Vide
+                      </Badge>
+                    )}
+                    {report.submittedAt ? (
+                      <Badge variant="default" className="ml-auto">
+                        Soumis
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="ml-auto">
+                        Brouillon
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>
+                        {report.project?.name || `Projet ${report.projectId}`} •{" "}
+                        {report.promotion?.name || `Promotion ${report.promotionId}`}
+                      </span>
+                    </div>
+                    {report.group && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Groupe:</strong> {report.group.name}
+                        {report.group.members.length > 0 && (
+                          <div className="mt-1">
+                            <strong>Membres:</strong>{" "}
+                            {report.group.members.map((member) => `${member.firstname} ${member.lastname}`).join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {report.sections.length === 0 ? (
+                        <span className="text-orange-600 font-medium">Rapport vide - Aucune section</span>
+                      ) : (
+                        `${report.sections.length} section${report.sections.length > 1 ? "s" : ""}`
+                      )}
                     </p>
-                  )}
-                  {report.submittedAt && (
-                    <p className="text-xs text-green-600 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Soumis le {formatDate(report.submittedAt.toString())}
-                    </p>
-                  )}
-                  <div className="pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full flex items-center gap-2"
-                      onClick={() => handleViewReport(report.id)}
-                    >
-                      <Eye className="w-4 h-4" />
-                      Consulter
-                    </Button>
+                    {report.sections.length > 0 &&
+                      report.sections.every(
+                        (section) => !section.contentMarkdown || section.contentMarkdown.trim() === "",
+                      ) && <p className="text-sm text-orange-600 font-medium">⚠️ Sections sans contenu</p>}
+                    {report.updatedAt && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Modifié le {formatDate(report.updatedAt.toString())}
+                      </p>
+                    )}
+                    {report.submittedAt && (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Soumis le {formatDate(report.submittedAt.toString())}
+                      </p>
+                    )}
+                    <div className="pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full flex items-center gap-2"
+                        onClick={() => handleViewReport(report.id)}
+                      >
+                        <Eye className="w-4 h-4" />
+                        Consulter
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
-        <div className="text-center py-12 border rounded-lg bg-gray-50">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium">Aucun rapport trouvé</h3>
-          <p className="text-gray-500 mt-2">
-            {reports?.length === 0
-              ? "Aucun rapport n'a encore été créé par les étudiants"
-              : "Modifiez vos critères de recherche pour afficher plus de rapports"}
-          </p>
+        <div className="text-center py-16 border rounded-lg bg-gray-50">
+          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+          <h3 className="text-xl font-medium text-gray-900 mb-2">Aucun rapport trouvé</h3>
+          {reports?.length === 0 ? (
+            <div className="space-y-2">
+              <p className="text-gray-600">Aucun rapport n'a encore été créé par les étudiants.</p>
+              <p className="text-sm text-gray-500">
+                Les rapports apparaîtront ici une fois que les étudiants commenceront à travailler sur leurs projets.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-gray-600">Aucun rapport ne correspond à vos critères de recherche.</p>
+              <div className="text-sm text-gray-500 space-y-1">
+                <p>Essayez de :</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Modifier votre terme de recherche</li>
+                  <li>Ajuster les filtres de projet ou promotion</li>
+                  <li>Changer le statut de soumission</li>
+                </ul>
+              </div>
+              {activeFiltersCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Effacer tous les filtres
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
