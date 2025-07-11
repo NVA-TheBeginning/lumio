@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, Filter, GraduationCap, Save, Search, Trophy, User, Users } from "lucide-react";
+import { Eye, EyeOff, Filter, GraduationCap, Save, Search, Settings, Trophy, User, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,7 @@ import {
   ProjectType,
   updateGrade,
 } from "@/app/dashboard/teachers/projects/actions";
+import { CriteriaManagement } from "@/components/projects/criteria-management";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const [gradesDisplayMode, setGradesDisplayMode] = useState<"criteria" | "group">("criteria");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showCriteriaManagement, setShowCriteriaManagement] = useState(false);
 
   const { data: criteria = [], isLoading: criteriaLoading } = useQuery({
     queryKey: ["criteria", project.id, activePromotion],
@@ -206,24 +208,36 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
           <h1 className="text-2xl font-bold">Évaluations</h1>
           <p className="text-muted-foreground">Notez les groupes selon les critères définis</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setViewAllGrades(!viewAllGrades)}
-          className="flex items-center gap-2 shadow-sm"
-        >
-          {viewAllGrades ? (
-            <>
-              <EyeOff className="h-4 w-4" />
-              Masquer les notes
-            </>
-          ) : (
-            <>
-              <Eye className="h-4 w-4" />
-              Voir toutes les notes
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowCriteriaManagement(!showCriteriaManagement)}
+            className="flex items-center gap-2 shadow-sm"
+          >
+            <Settings className="h-4 w-4" />
+            Gérer les critères
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setViewAllGrades(!viewAllGrades)}
+            className="flex items-center gap-2 shadow-sm"
+          >
+            {viewAllGrades ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Masquer les notes
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4" />
+                Voir toutes les notes
+              </>
+            )}
+          </Button>
+        </div>
       </div>
+
+      {showCriteriaManagement && <CriteriaManagement projectId={project.id} promotionId={Number(activePromotion)} />}
 
       {viewAllGrades && (
         <Card className="shadow-lg border-2 border-blue-100">

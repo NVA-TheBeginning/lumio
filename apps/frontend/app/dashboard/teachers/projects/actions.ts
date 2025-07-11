@@ -1,5 +1,6 @@
 "use server";
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
+import type { CreateCriteriaDto, Criteria, UpdateCriteriaDto } from "@/lib/types";
 import {
   authDeleteData,
   authFetchData,
@@ -813,4 +814,24 @@ export async function downloadProjectDocument(documentId: number): Promise<{
   const filename = `document-${documentId}`;
 
   return { blob, filename };
+}
+
+export async function createCriteria(
+  projectId: number,
+  promotionId: number,
+  data: CreateCriteriaDto,
+): Promise<Criteria> {
+  return await authPostData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/criteria`, data);
+}
+
+export async function getAllCriteria(projectId: number, promotionId: number): Promise<Criteria[]> {
+  return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/criteria`);
+}
+
+export async function updateCriteria(criteriaId: number, data: UpdateCriteriaDto): Promise<Criteria> {
+  return await authPutData(`${API_URL}/criteria/${criteriaId}`, data);
+}
+
+export async function deleteCriteria(criteriaId: number): Promise<void> {
+  await authDeleteData(`${API_URL}/criteria/${criteriaId}`);
 }
