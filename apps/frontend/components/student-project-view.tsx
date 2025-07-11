@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useJoinGroup, useLeaveGroup, useProjectStudent } from "@/hooks/use-project-student";
+import { useFinalGrades, useJoinGroup, useLeaveGroup, useProjectStudent } from "@/hooks/use-project-student";
 import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
@@ -86,6 +86,8 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     project?.promotionId ?? 0,
     currentUserGroup?.id ?? 0,
   );
+
+  const { data: finalGrades } = useFinalGrades(projectId, project?.promotionId ?? 0, !!project && !!currentUserGroup);
 
   const [submissionDialog, setSubmissionDialog] = useState<{
     open: boolean;
@@ -715,23 +717,23 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
               <Separator />
 
               <div>
-                <h4 className="font-medium mb-3">Notes et commentaires</h4>
-                {project.submissions.some((s) => s.grade) ? (
+                <h4 className="font-medium mb-3">Note finale</h4>
+                {finalGrades && finalGrades.length > 0 ? (
                   <div className="space-y-4">
-                    {project.submissions
-                      .filter((s) => s.grade !== null && !Number.isNaN(s.grade))
-                      .map((submission, index) => (
-                        <Card key={index}>
+                    {finalGrades
+                      .filter((grade) => grade.groupId === currentUserGroup?.id)
+                      .map((finalGrade) => (
+                        <Card key={finalGrade.id} className="border-l-4 border-l-green-500">
                           <CardContent className="pt-4">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium">Étape #{index + 1}</p>
+                                <p className="font-medium text-lg">Note finale du projet</p>
                                 <p className="text-sm text-muted-foreground">
-                                  Soumis le : {submission.submittedAt ? formatDate(submission.submittedAt) : "N/A"}
+                                  Évalué le : {formatDate(finalGrade.createdAt)}
                                 </p>
                               </div>
-                              <Badge variant="outline" className="text-lg">
-                                {submission.grade}/20
+                              <Badge variant="outline" className="text-2xl px-4 py-2">
+                                {finalGrade.finalGrade}/20
                               </Badge>
                             </div>
                           </CardContent>
@@ -741,7 +743,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucune note disponible pour le moment</p>
+                    <p>Aucune note finale disponible pour le moment</p>
                   </div>
                 )}
               </div>

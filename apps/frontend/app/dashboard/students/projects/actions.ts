@@ -100,6 +100,21 @@ export async function deleteSubmission(submissionId: number): Promise<void> {
   await authDeleteData(`${API_URL}/submissions/${submissionId}`);
 }
 
+export interface FinalGrade {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  groupId: number;
+  finalGrade: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {
+  return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/final-grades`);
+}
+
 export async function downloadProjectDocument(documentId: number): Promise<{
   blob: Blob;
   filename: string;

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getFinalGrades } from "@/app/dashboard/students/projects/actions";
 import {
   addMembersToGroup,
   getProjectByIdStudent,
@@ -32,5 +33,13 @@ export function useLeaveGroup() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["project-student"] });
     },
+  });
+}
+
+export function useFinalGrades(projectId: number, promotionId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["final-grades", projectId, promotionId],
+    queryFn: () => getFinalGrades(projectId, promotionId),
+    enabled,
   });
 }
