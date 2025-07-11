@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getFinalGrades } from "@/app/dashboard/students/projects/actions";
 import {
   addMembersToGroup,
+  getDeliverableRules,
   getProjectByIdStudent,
   removeMemberFromGroup,
 } from "@/app/dashboard/teachers/projects/actions";
@@ -40,6 +41,14 @@ export function useFinalGrades(projectId: number, promotionId: number, enabled =
   return useQuery({
     queryKey: ["final-grades", projectId, promotionId],
     queryFn: () => getFinalGrades(projectId, promotionId),
+    enabled,
+  });
+}
+
+export function useDeliverableRules(deliverableId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["deliverable-rules", deliverableId],
+    queryFn: () => getDeliverableRules(deliverableId),
     enabled,
   });
 }

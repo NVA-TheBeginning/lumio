@@ -16,11 +16,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFinalGrades, useJoinGroup, useLeaveGroup, useProjectStudent } from "@/hooks/use-project-student";
+import {
+  useDeliverableRules,
+  useFinalGrades,
+  useJoinGroup,
+  useLeaveGroup,
+  useProjectStudent,
+} from "@/hooks/use-project-student";
 import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
 import { formatDate, formatDateTime } from "@/lib/utils";
+
+enum RuleType {
+  SIZE_LIMIT = "SIZE_LIMIT",
+  FILE_PRESENCE = "FILE_PRESENCE",
+  DIRECTORY_STRUCTURE = "DIRECTORY_STRUCTURE",
+}
+
+interface SizeLimitRuleDetails {
+  maxSizeInBytes: number;
+}
+
+interface FilePresenceRuleDetails {
+  requiredFiles: string[];
+  allowedExtensions?: string[];
+  forbiddenExtensions?: string[];
+}
+
+interface DirectoryStructureRuleDetails {
+  requiredDirectories: string[];
+  forbiddenDirectories?: string[];
+}
+
+interface DeliverableRule {
+  id: number;
+  deliverableId: number;
+  ruleType: RuleType;
+  ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
+}
 
 interface StudentProjectViewProps {
   projectId: number;
@@ -208,6 +242,124 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
   const groupDeadlineStatus = getGroupDeadlineStatus();
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+  };
+
+  const renderRuleDetails = (rule: DeliverableRule) => {
+    if (!rule?.ruleDetails) return null;
+
+    switch (rule.ruleType) {
+      case RuleType.SIZE_LIMIT: {
+        const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
+        return (
+          <div className="text-sm text-muted-foreground">
+            Taille maximale : {formatFileSize(sizeDetails?.maxSizeInBytes || 0)}
+          </div>
+        );
+      }
+      case RuleType.FILE_PRESENCE: {
+        const fileDetails = rule.ruleDetails as {
+          requiredFiles: string[];
+          allowedExtensions?: string[];
+          forbiddenExtensions?: string[];
+        };
+        return (
+          <div className="text-sm text-muted-foreground space-y-1">
+            {fileDetails?.requiredFiles?.length > 0 && (
+              <div>Fichiers requis : {fileDetails.requiredFiles.join(", ")}</div>
+            )}
+            {(fileDetails?.allowedExtensions?.length ?? 0) > 0 && (
+              <div>Extensions autorisées : {fileDetails.allowedExtensions?.join(", ")}</div>
+            )}
+            {(fileDetails?.forbiddenExtensions?.length ?? 0) > 0 && (
+              <div>Extensions interdites : {fileDetails.forbiddenExtensions?.join(", ")}</div>
+            )}
+          </div>
+        );
+      }
+      case RuleType.DIRECTORY_STRUCTURE: {
+        const dirDetails = rule.ruleDetails as {
+          requiredDirectories: string[];
+          forbiddenDirectories?: string[];
+        };
+        return (
+          <div className="text-sm text-muted-foreground space-y-1">
+            {dirDetails?.requiredDirectories?.length > 0 && (
+              <div>Dossiers requis : {dirDetails.requiredDirectories.join(", ")}</div>
+            )}
+            {(dirDetails?.forbiddenDirectories?.length ?? 0) > 0 && (
+              <div>Dossiers interdits : {dirDetails.forbiddenDirectories?.join(", ")}</div>
+            )}
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
+  };
+
+  const DeliverableRules = ({ deliverableId }: { deliverableId: number }) => {
+    const { data: rules, isLoading } = useDeliverableRules(deliverableId);
+
+    if (isLoading) return null;
+    if (!rules || rules.length === 0) return null;
+
+    const validRules = rules.filter((rule) => {
+      if (!rule?.ruleDetails) return false;
+
+      switch (rule.ruleType) {
+        case RuleType.SIZE_LIMIT: {
+          const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
+          return sizeDetails?.maxSizeInBytes > 0;
+        }
+        case RuleType.FILE_PRESENCE: {
+          const fileDetails = rule.ruleDetails as {
+            requiredFiles: string[];
+            allowedExtensions?: string[];
+            forbiddenExtensions?: string[];
+          };
+          return (
+            (fileDetails?.requiredFiles?.length ?? 0) > 0 ||
+            (fileDetails?.allowedExtensions?.length ?? 0) > 0 ||
+            (fileDetails?.forbiddenExtensions?.length ?? 0) > 0
+          );
+        }
+        case RuleType.DIRECTORY_STRUCTURE: {
+          const dirDetails = rule.ruleDetails as {
+            requiredDirectories: string[];
+            forbiddenDirectories?: string[];
+          };
+          return (
+            (dirDetails?.requiredDirectories?.length ?? 0) > 0 || (dirDetails?.forbiddenDirectories?.length ?? 0) > 0
+          );
+        }
+        default:
+          return false;
+      }
+    });
+
+    if (validRules.length === 0) return null;
+
+    return (
+      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+        <h5 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Règles de soumission :</h5>
+        <div className="space-y-2">
+          {validRules.map((rule) => (
+            <div key={rule.id} className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+              <div className="flex-1">{renderRuleDetails(rule)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const handleExportPDF = async () => {
     if (!(presentationOrders?.length && currentUserGroup && project)) return;
 
@@ -217,16 +369,14 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     const { presentation } = presentationOrder;
 
     try {
-      // Get all orders for this presentation to include all groups
       const allOrders = await getOrders(presentation.id);
 
-      // Map orders to include group information
       const ordersWithGroups = allOrders
         .map((order) => ({
           ...order,
           group: project.groups.find((group) => group.id === order.groupId),
         }))
-        .filter((order) => order.group); // Only include orders that have a group
+        .filter((order) => order.group);
 
       const promotionData = {
         id: project.promotionId,
@@ -395,6 +545,8 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                               </div>
                             </div>
                           </div>
+
+                          <DeliverableRules deliverableId={deliverable.id} />
 
                           <Separator className="my-4" />
 
