@@ -433,9 +433,6 @@ export default function ProjectList() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 border-t pt-4">
-                <Button variant="outline" size="sm">
-                  Modifier
-                </Button>
                 <Button
                   variant="default"
                   size="sm"
