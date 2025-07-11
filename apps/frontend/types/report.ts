@@ -35,3 +35,24 @@ export interface UpdateReportDto {
     contentHtml?: string;
   }[];
 }
+
+export interface ReportWithDetails extends Report {
+  project?: {
+    id: number;
+    name: string;
+  };
+  group?: {
+    id: number;
+    name: string;
+    members: {
+      id: number;
+      firstname: string;
+      lastname: string;
+      email: string;
+    }[];
+  };
+  promotion?: {
+    id: number;
+    name: string;
+  };
+}

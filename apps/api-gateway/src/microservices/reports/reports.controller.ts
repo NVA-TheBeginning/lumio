@@ -53,14 +53,13 @@ export class ReportsController {
     @Query("groupId", new ParseIntPipe({ optional: true })) groupId?: number,
     @Query("promotionId", new ParseIntPipe({ optional: true })) promotionId?: number,
   ): Promise<ReportResponseDto[]> {
-    if (!(projectId || groupId || promotionId)) {
-      return this.proxy.forwardRequest("report", "/reports", "GET");
-    }
-    return this.proxy.forwardRequest("report", "/reports", "GET", {
-      projectId,
-      groupId,
-      promotionId,
-    });
+    const params: Record<string, number> = {};
+
+    if (projectId !== undefined) params.projectId = projectId;
+    if (groupId !== undefined) params.groupId = groupId;
+    if (promotionId !== undefined) params.promotionId = promotionId;
+
+    return this.proxy.forwardRequest("report", "/reports", "GET", undefined, params);
   }
 
   @Get(":id")
