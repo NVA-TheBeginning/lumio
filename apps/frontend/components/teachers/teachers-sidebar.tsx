@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  BookOpen,
-  Calendar,
-  FileText,
-  GalleryVerticalEnd,
-  LayoutDashboard,
-  ListChecks,
-  Settings,
-  Users,
-} from "lucide-react";
+import { BookOpen, Calendar, FileText, GalleryVerticalEnd, LayoutDashboard, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
@@ -68,11 +59,6 @@ const navData = {
       title: "Documents",
       url: "/dashboard/teachers/documents",
       icon: <BookOpen className="size-4" />,
-    },
-    {
-      title: "Grilles de notation",
-      url: "/dashboard/teachers/grids",
-      icon: <ListChecks className="size-4" />,
     },
     {
       title: "Rapports",
