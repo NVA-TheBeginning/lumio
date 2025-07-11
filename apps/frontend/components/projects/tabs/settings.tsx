@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 export function ProjectSettings({ projectId }: { projectId: number }) {
   const router = useRouter();
@@ -48,26 +47,6 @@ export function ProjectSettings({ projectId }: { projectId: number }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Détection de plagiat</h3>
-                <p className="text-sm text-muted-foreground">
-                  Activer la détection automatique de plagiat pour les livrables
-                </p>
-              </div>
-              <Button variant="outline">Configurer</Button>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Notifications</h3>
-                <p className="text-sm text-muted-foreground">
-                  Configurer les notifications pour les événements du projet
-                </p>
-              </div>
-              <Button variant="outline">Configurer</Button>
-            </div>
-            <Separator />
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Exportation des données</h3>
