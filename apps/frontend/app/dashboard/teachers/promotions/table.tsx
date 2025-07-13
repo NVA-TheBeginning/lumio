@@ -40,7 +40,7 @@ import PaginationControls from "@/components/ui/pagination-controls";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isNotNull, isValidNumber } from "@/lib/utils";
 import { Member } from "./action";
 import { useAddMember, usePromotionMembers, useRemoveMember } from "./hooks";
 
@@ -94,7 +94,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
 
   const totalFilteredCount = filteredMembers.length;
   const totalCount = membersResponse?.size ?? 0;
-  const totalPages = membersResponse?.totalPages || 1;
+  const totalPages = membersResponse?.totalPages ?? 1;
 
   const removeMutation = useRemoveMember();
   const addMutation = useAddMember();
@@ -120,7 +120,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   };
 
   const handleDelete = async () => {
-    if (!(memberToDelete && promotionId)) return;
+    if (!(isNotNull(memberToDelete) && isValidNumber(promotionId))) return;
 
     removeMutation.mutate(
       {
@@ -140,7 +140,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
   };
 
   const onSubmit = (data: MemberFormValues) => {
-    if (!promotionId) return;
+    if (!isValidNumber(promotionId)) return;
 
     addMutation.mutate(
       {
@@ -169,7 +169,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     return <MembersTableSkeleton />;
   }
 
-  if (isError || !promotionId) {
+  if (isError || !isValidNumber(promotionId)) {
     return (
       <div className="rounded-md bg-destructive/15 p-4 text-destructive">
         <p>Une erreur est survenue lors du chargement des membres.</p>
@@ -298,7 +298,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {!paginatedMembers || paginatedMembers.length === 0 ? (
+            {!isNotNull(paginatedMembers) || paginatedMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   {searchQuery

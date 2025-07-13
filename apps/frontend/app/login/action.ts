@@ -2,18 +2,7 @@
 import { LoginFormValues } from "@/components/login-form";
 import { setUserCookie } from "@/lib/cookie";
 import { Role } from "@/lib/types";
-
-interface LoginResponse {
-  id: string;
-  email: string;
-  firstname: string;
-  lastname: string;
-  role: Role;
-  AuthTokens: {
-    accessToken: string;
-    refreshToken: string;
-  };
-}
+import { LoginResponse } from "@/types/auth";
 
 export async function loginApiClient(credentials: LoginFormValues): Promise<Role | undefined> {
   const API_URL = process.env.API_URL ?? "http://localhost:3000";

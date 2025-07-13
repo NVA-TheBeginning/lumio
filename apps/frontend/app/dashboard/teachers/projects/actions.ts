@@ -8,8 +8,19 @@ import {
   authPostData,
   authPostFormData,
   authPutData,
+  isNotEmpty,
+  isNotNull,
+  isValidNumber,
   type PaginationMeta,
 } from "@/lib/utils";
+import type { FinalGrade } from "@/types/evaluation";
+import type {
+  DeliverableRule,
+  DirectoryStructureRuleDetails,
+  FilePresenceRuleDetails,
+  RuleType,
+  SizeLimitRuleDetails,
+} from "@/types/rules";
 import type { Member, MembersResponse } from "../promotions/action";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
@@ -85,34 +96,6 @@ export interface DeliverableType {
   lateSubmissionPenalty: number;
   type: string[];
   createdAt: string;
-}
-
-export enum RuleType {
-  SIZE_LIMIT = "SIZE_LIMIT",
-  FILE_PRESENCE = "FILE_PRESENCE",
-  DIRECTORY_STRUCTURE = "DIRECTORY_STRUCTURE",
-}
-
-export interface SizeLimitRuleDetails {
-  maxSizeInBytes: number;
-}
-
-export interface FilePresenceRuleDetails {
-  requiredFiles: string[];
-  allowedExtensions?: string[];
-  forbiddenExtensions?: string[];
-}
-
-export interface DirectoryStructureRuleDetails {
-  requiredDirectories: string[];
-  forbiddenDirectories?: string[];
-}
-
-export interface DeliverableRule {
-  id: number;
-  deliverableId: number;
-  ruleType: RuleType;
-  ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
 }
 
 export interface CreateRuleData {
@@ -210,7 +193,7 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     authFetchData<ProjectDocument[]>(`${API_URL}/documents/projects/${id}`),
   ]);
 
-  if (!projectData) {
+  if (!isNotNull(projectData)) {
     throw new Error(`Project with ID ${id} not found`);
   }
 
@@ -223,8 +206,8 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     updatedAt: projectData.updatedAt,
     deletedAt: projectData.deletedAt,
     promotions: [],
-    deliverables: deliverablesData || [],
-    documents: documentsData || [],
+    deliverables: deliverablesData ?? [],
+    documents: documentsData ?? [],
   };
 
   const promotionPromises = projectData.promotions.map(async (promotion) => {
@@ -307,7 +290,7 @@ export interface ProjectStudentType {
 
 export async function getProjectByIdStudent(id: number): Promise<ProjectStudentType> {
   const data = await authFetchData<getProjectStudent>(`${API_URL}/projects/${id}/student`);
-  if (!data) {
+  if (!isNotNull(data)) {
     throw new Error(`Project with ID ${id} not found`);
   }
 
@@ -339,17 +322,17 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
     authFetchData<ProjectDocument[]>(`${API_URL}/documents/projects/${id}`),
   ]);
 
-  result.deliverables = deliverables || [];
-  result.documents = documents || [];
+  result.deliverables = deliverables ?? [];
+  result.documents = documents ?? [];
   result.submissions = [];
-  result.groupSettings = groupSettings || {
+  result.groupSettings = groupSettings ?? {
     minMembers: 0,
     maxMembers: 0,
     mode: "",
     deadline: "",
   };
 
-  if (groups) {
+  if (isNotNull(groups)) {
     result.groups = groups.map((group) => ({
       id: group.id,
       name: group.name,
@@ -557,7 +540,7 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
   filename: string;
 }> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isNotEmpty(accessToken)) {
     throw new Error("Access token is missing");
   }
 
@@ -618,7 +601,7 @@ export async function getAllPromotionSubmissions(
   promotionId: number,
   projectId?: number,
 ): Promise<PromotionSubmissionMetadataResponse[]> {
-  const url = projectId
+  const url = isValidNumber(projectId)
     ? `${API_URL}/promotions/${promotionId}/submissions?projectId=${projectId}`
     : `${API_URL}/promotions/${promotionId}/submissions`;
   return await authFetchData(url);
@@ -704,18 +687,6 @@ export interface Grade {
   updatedAt: string;
 }
 
-export interface FinalGrade {
-  id: number;
-  projectId: number;
-  promotionId: number;
-  groupId: number;
-  finalGrade: number;
-  comment?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Minimal evaluation API functions following existing patterns
 export async function getCriteria(projectId: number, promotionId: number): Promise<GradingCriteria[]> {
   return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/criteria`);
 }
@@ -755,7 +726,7 @@ export async function _getProjectDocuments(projectId: number): Promise<ProjectDo
 
 export async function uploadDocumentToProject(projectId: number, file: File, name: string): Promise<ProjectDocument> {
   const user = await getUserFromCookie();
-  if (!user) {
+  if (!isNotNull(user)) {
     throw new Error("User not found");
   }
 
@@ -783,7 +754,7 @@ export async function downloadProjectDocument(documentId: number): Promise<{
   filename: string;
 }> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isNotEmpty(accessToken)) {
     throw new Error("Access token is missing");
   }
 
@@ -800,15 +771,15 @@ export async function downloadProjectDocument(documentId: number): Promise<{
 
   const data = await response.json();
 
-  if (!data.file) {
+  if (!isNotNull(data.file)) {
     throw new Error("Invalid response format from server");
   }
 
-  if (!data.mimeType) {
+  if (!isNotEmpty(data.mimeType)) {
     throw new Error("Missing mimeType in response");
   }
 
-  const uint8Array = new Uint8Array(data.file.data || data.file);
+  const uint8Array = new Uint8Array(data.file.data ?? data.file);
   const blob = new Blob([uint8Array], { type: data.mimeType });
 
   const filename = `document-${documentId}`;

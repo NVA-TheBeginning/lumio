@@ -105,11 +105,9 @@ export function TeachersSidebar({ user, ...props }: { user: NavUserProps } & Rea
             {navData.navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild isActive={isActive(item.url) && (!item.items || item.items.length === 0)}>
-                  <HoverPrefetchLink href={item.url}>
-                    <span className="font-medium flex items-center gap-2">
-                      {item.icon}
-                      {item.title}
-                    </span>
+                  <HoverPrefetchLink href={item.url} className="font-medium">
+                    {item.icon}
+                    {item.title}
                   </HoverPrefetchLink>
                 </SidebarMenuButton>
                 {item.items?.length ? (
@@ -117,9 +115,7 @@ export function TeachersSidebar({ user, ...props }: { user: NavUserProps } & Rea
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
-                          <HoverPrefetchLink href={subItem.url}>
-                            <span>{subItem.title}</span>
-                          </HoverPrefetchLink>
+                          <HoverPrefetchLink href={subItem.url}>{subItem.title}</HoverPrefetchLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isNotEmpty, isNotNull } from "@/lib/utils";
 import { getReports } from "./actions";
 
 type ViewMode = "list" | "viewer";
@@ -83,29 +83,31 @@ export default function TeacherReportsPage() {
   const filteredReports = useMemo(() => {
     if (!reports) return [];
 
-    return reports.filter((report) => {
+    return reports.filter((report): report is typeof report => {
       const matchesProject =
-        filters.projectIds.length === 0 || (report.project && filters.projectIds.includes(report.project.id));
+        filters.projectIds.length === 0 ||
+        (report.project !== undefined && filters.projectIds.includes(report.project.id));
       const matchesPromotion =
-        filters.promotionIds.length === 0 || (report.promotion && filters.promotionIds.includes(report.promotion.id));
+        filters.promotionIds.length === 0 ||
+        (report.promotion !== undefined && filters.promotionIds.includes(report.promotion.id));
       const matchesSearch =
         filters.search === "" ||
         report.sections.some(
           (section) =>
             section.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-            section.contentMarkdown?.toLowerCase().includes(filters.search.toLowerCase()),
+            Boolean(section.contentMarkdown?.toLowerCase().includes(filters.search.toLowerCase())),
         ) ||
-        report.project?.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        report.group?.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        Boolean(report.project?.name.toLowerCase().includes(filters.search.toLowerCase())) ||
+        Boolean(report.group?.name.toLowerCase().includes(filters.search.toLowerCase())) ||
         report.group?.members.some((member) =>
           `${member.firstname} ${member.lastname}`.toLowerCase().includes(filters.search.toLowerCase()),
         );
       const matchesStatus =
         filters.status === "all" ||
-        (filters.status === "submitted" && report.submittedAt) ||
+        (filters.status === "submitted" && Boolean(report.submittedAt)) ||
         (filters.status === "draft" && !report.submittedAt);
 
-      return matchesProject && matchesPromotion && matchesSearch && matchesStatus;
+      return Boolean(matchesProject) && Boolean(matchesPromotion) && Boolean(matchesSearch) && Boolean(matchesStatus);
     });
   }, [reports, filters]);
 
@@ -339,13 +341,15 @@ export default function TeacherReportsPage() {
       </div>
 
       {/* Reports Grid */}
-      {filteredReports && filteredReports.length > 0 ? (
+      {isNotNull(filteredReports) && filteredReports.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredReports.map((report) => {
             const isEmpty = report.sections.length === 0;
             const hasEmptyContent =
               report.sections.length > 0 &&
-              report.sections.every((section) => !section.contentMarkdown || section.contentMarkdown.trim() === "");
+              report.sections.every(
+                (section) => !isNotEmpty(section.contentMarkdown) || section.contentMarkdown.trim() === "",
+              );
 
             return (
               <Card
@@ -356,7 +360,7 @@ export default function TeacherReportsPage() {
                   <CardTitle className="flex items-center gap-2">
                     <FileText className={`w-5 h-5 ${isEmpty || hasEmptyContent ? "text-orange-500" : ""}`} />
                     <span>
-                      Rapport {report.group?.name ? `(${report.group.name})` : ""} #{report.id}
+                      Rapport {isNotEmpty(report.group?.name) ? `(${report.group.name})` : ""} #{report.id}
                     </span>
                     {isEmpty && (
                       <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-100">
@@ -379,8 +383,8 @@ export default function TeacherReportsPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="w-4 h-4" />
                       <span>
-                        {report.project?.name || `Projet ${report.projectId}`} •{" "}
-                        {report.promotion?.name || `Promotion ${report.promotionId}`}
+                        {report.project?.name ?? `Projet ${report.projectId}`} •{" "}
+                        {report.promotion?.name ?? `Promotion ${report.promotionId}`}
                       </span>
                     </div>
                     {report.group && (
@@ -403,7 +407,7 @@ export default function TeacherReportsPage() {
                     </p>
                     {report.sections.length > 0 &&
                       report.sections.every(
-                        (section) => !section.contentMarkdown || section.contentMarkdown.trim() === "",
+                        (section) => !isNotEmpty(section.contentMarkdown) || section.contentMarkdown.trim() === "",
                       ) && <p className="text-sm text-orange-600 font-medium">⚠️ Sections sans contenu</p>}
                     {report.updatedAt && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1">

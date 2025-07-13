@@ -27,7 +27,7 @@ import { enUS } from "date-fns/locale/en-US";
 import { createContext, forwardRef, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, isNotEmpty } from "@/lib/utils";
 
 const monthEventVariants = cva("size-2 rounded-full", {
   variants: {
@@ -201,7 +201,7 @@ const CalendarViewTrigger = forwardRef<
 CalendarViewTrigger.displayName = "CalendarViewTrigger";
 
 const getColorVariant = (color?: string): VariantProps<typeof monthEventVariants>["variant"] => {
-  if (!color) return "default";
+  if (!isNotEmpty(color)) return "default";
 
   const colorMap: Record<string, VariantProps<typeof monthEventVariants>["variant"]> = {
     "#3b82f6": "blue",
@@ -233,7 +233,7 @@ const EventGroup = ({ events, hour }: { events: CalendarEvent[]; hour: Date }) =
               style={{
                 top: `${startPosition * 100}%`,
                 height: `${hoursDifference * 100}%`,
-                ...(event.projectColor && variant === "default"
+                ...(isNotEmpty(event.projectColor) && variant === "default"
                   ? {
                       backgroundColor: `${event.projectColor}30`,
                       borderLeftColor: event.projectColor,
@@ -242,7 +242,7 @@ const EventGroup = ({ events, hour }: { events: CalendarEvent[]; hour: Date }) =
                   : {}),
               }}
               onClick={() => onEventClick?.(event)}
-              title={event.description || event.title}
+              title={event.description ?? event.title}
             >
               {event.title}
             </button>
@@ -401,12 +401,12 @@ const CalendarMonthView = () => {
                     type="button"
                     className="px-1 rounded text-sm flex items-center gap-1 cursor-pointer hover:bg-muted/50"
                     onClick={() => onEventClick?.(event)}
-                    title={event.description || event.title}
+                    title={event.description ?? event.title}
                   >
                     <div
                       className={cn("shrink-0", monthEventVariants({ variant }))}
                       style={
-                        event.projectColor && variant === "default"
+                        isNotEmpty(event.projectColor) && variant === "default"
                           ? {
                               backgroundColor: event.projectColor,
                             }

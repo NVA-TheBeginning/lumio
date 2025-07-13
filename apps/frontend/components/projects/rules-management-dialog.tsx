@@ -6,13 +6,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   createRule,
-  DeliverableRule,
   DeliverableType,
-  DirectoryStructureRuleDetails,
   deleteRule,
-  FilePresenceRuleDetails,
   getDeliverableRules,
-  SizeLimitRuleDetails,
 } from "@/app/dashboard/teachers/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,16 +24,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type DeliverableRule,
+  type DirectoryStructureRuleDetails,
+  type FilePresenceRuleDetails,
+  RuleType,
+  type SizeLimitRuleDetails,
+} from "@/types/rules";
 
 interface RulesManagementDialogProps {
   children: React.ReactNode;
   deliverable: DeliverableType;
-}
-
-enum RuleType {
-  SIZE_LIMIT = "SIZE_LIMIT",
-  FILE_PRESENCE = "FILE_PRESENCE",
-  DIRECTORY_STRUCTURE = "DIRECTORY_STRUCTURE",
 }
 
 export function RulesManagementDialog({ children, deliverable }: RulesManagementDialogProps) {

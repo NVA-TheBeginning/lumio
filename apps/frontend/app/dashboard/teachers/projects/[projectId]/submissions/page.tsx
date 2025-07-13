@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadSubmission } from "@/lib/download-utils";
-import { formatBytes, formatDate } from "@/lib/utils";
+import { formatBytes, formatDate, isNotEmpty } from "@/lib/utils";
 
 export default function ProjectSubmissionsPage() {
   const params = useParams();
@@ -43,8 +43,8 @@ export default function ProjectSubmissionsPage() {
   const initialDeliverableId = searchParams.get("deliverableId");
   const queryClient = useQueryClient();
 
-  const [activePromotion, setActivePromotion] = useState<string>(initialPromotionId || "");
-  const [selectedDeliverable, setSelectedDeliverable] = useState<string>(initialDeliverableId || "all");
+  const [activePromotion, setActivePromotion] = useState<string>(initialPromotionId ?? "");
+  const [selectedDeliverable, setSelectedDeliverable] = useState<string>(initialDeliverableId ?? "all");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [acceptingSubmissions, setAcceptingSubmissions] = useState<Set<number>>(new Set());
@@ -129,13 +129,13 @@ export default function ProjectSubmissionsPage() {
 
   const getDeliverableName = (deliverableId: number) => {
     const deliverable = project?.deliverables.find((d) => d.id === deliverableId);
-    return deliverable?.name || `Livrable #${deliverableId}`;
+    return deliverable?.name ?? `Livrable #${deliverableId}`;
   };
 
   const getGroupName = (groupId: number) => {
     const promotion = project?.promotions.find((p) => p.id.toString() === activePromotion);
     const group = promotion?.groups.find((g) => g.id === groupId);
-    return group?.name || `Groupe #${groupId}`;
+    return group?.name ?? `Groupe #${groupId}`;
   };
 
   const handleDownloadSubmission = async (submissionId: number) => {
@@ -421,7 +421,7 @@ export default function ProjectSubmissionsPage() {
                                           -{submission.penalty}% pénalité
                                         </Badge>
                                       )}
-                                      {submission.error && <Badge variant="destructive">Erreur fichier</Badge>}
+                                      {Boolean(submission.error) && <Badge variant="destructive">Erreur fichier</Badge>}
                                       {(() => {
                                         const plagiarismResult = getPlagiarismResultForSubmission(
                                           submission.groupId,
@@ -448,7 +448,7 @@ export default function ProjectSubmissionsPage() {
                                         </div>
                                       )}
 
-                                      {submission.gitUrl && (
+                                      {isNotEmpty(submission.gitUrl) && (
                                         <div className="flex items-center gap-1">
                                           <GitBranch className="h-3.5 w-3.5" />
                                           <a
@@ -465,7 +465,7 @@ export default function ProjectSubmissionsPage() {
                                   </div>
 
                                   <div className="flex gap-2">
-                                    {submission.gitUrl && (
+                                    {isNotEmpty(submission.gitUrl) && (
                                       <Button variant="outline" size="sm" asChild>
                                         <a
                                           href={submission.gitUrl}
@@ -492,7 +492,7 @@ export default function ProjectSubmissionsPage() {
                                           : "Accepter"}
                                       </Button>
                                     )}
-                                    {submission.fileName && !submission.error && (
+                                    {isNotEmpty(submission.fileName) && !submission.error && (
                                       <Button
                                         variant="outline"
                                         size="sm"

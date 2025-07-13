@@ -1,7 +1,7 @@
 "use server";
 
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
-import { authFetchData, authPostFormData } from "@/lib/utils";
+import { authFetchData, authPostFormData, isNotEmpty } from "@/lib/utils";
 
 const API_URL = `${process.env.API_URL}/documents`;
 
@@ -60,7 +60,7 @@ interface DownloadDocumentResponse {
 
 export async function downloadDocument(id: number): Promise<DownloadDocumentResponse> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isNotEmpty(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(`${API_URL}/${id}`, {
@@ -80,7 +80,7 @@ export async function downloadDocument(id: number): Promise<DownloadDocumentResp
 
 export async function deleteDocument(id: number): Promise<void> {
   const { accessToken } = await getTokens();
-  if (!accessToken) {
+  if (!isNotEmpty(accessToken)) {
     throw new Error("Access token is missing");
   }
   const response = await fetch(`${API_URL}/${id}`, {

@@ -14,6 +14,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { isNotEmpty } from "@/lib/utils";
 
 interface PlagiarismMatch {
   matchedFolder: string;
@@ -62,7 +63,7 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
   };
 
   const severity = getPlagiarismSeverity(plagiarismResult.plagiarismPercentage);
-  const hasMatches = plagiarismResult.matches && plagiarismResult.matches.length > 0;
+  const hasMatches = Boolean(plagiarismResult.matches) && plagiarismResult.matches.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -116,7 +117,7 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
                     </Button>
                   </div>
                 </div>
-                {plagiarismResult.sha1 && (
+                {isNotEmpty(plagiarismResult.sha1) && (
                   <div className="space-y-2">
                     <span className="font-medium">Empreinte SHA1:</span>
                     <div className="flex items-center gap-2">

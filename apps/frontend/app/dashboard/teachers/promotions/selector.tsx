@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, isValidNumber } from "@/lib/utils";
 import { Promotion } from "./action";
 
 interface PromotionSelectorProps {
@@ -39,7 +39,7 @@ export function PromotionSelector({ value, onChange, promotions, isLoading, isEr
           <Button variant="outline" aria-expanded={open} className="w-[300px] justify-between">
             {isLoading ? (
               <Skeleton className="h-4 w-[200px]" />
-            ) : value && selectedPromotion ? (
+            ) : isValidNumber(value) && selectedPromotion ? (
               selectedPromotion.name
             ) : (
               "Sélectionner une promotion"

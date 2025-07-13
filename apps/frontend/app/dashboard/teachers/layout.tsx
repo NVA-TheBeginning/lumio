@@ -8,9 +8,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <DashboardClientLayout
       user={{
-        firstname: user?.firstname || null,
-        email: user?.email || "",
-        role: user?.role || "TEACHER",
+        firstname: user?.firstname ?? null,
+        email: user?.email ?? "",
+        role: user?.role ?? "TEACHER",
       }}
     >
       {children}

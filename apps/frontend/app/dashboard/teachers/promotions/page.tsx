@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { isValidNumber } from "@/lib/utils";
 import { deletePromotion } from "./action";
 import { usePromotions } from "./hooks";
 import { PromotionSelector } from "./selector";
@@ -62,7 +63,7 @@ export default function PromotionsPage() {
   const selectedPromotion = promotions?.find((p) => p.id === selectedPromotionId);
 
   const handleDeletePromotion = () => {
-    if (!selectedPromotionId) return;
+    if (!isValidNumber(selectedPromotionId)) return;
     deleteMutation.mutate(selectedPromotionId);
   };
 

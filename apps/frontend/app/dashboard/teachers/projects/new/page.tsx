@@ -201,7 +201,7 @@ export default function CreateProjectForm() {
                         <Select
                           onValueChange={(value) => {
                             const selectedId = Number.parseInt(value);
-                            const currentIds = field.value || [];
+                            const currentIds = field.value ?? [];
                             if (!currentIds.includes(selectedId)) {
                               field.onChange([...currentIds, selectedId]);
                             }
