@@ -4,6 +4,7 @@ import { BookOpen, Calendar, FileText, GalleryVerticalEnd, LayoutDashboard, Sett
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 
 import {
   Sidebar,
@@ -104,19 +105,21 @@ export function TeachersSidebar({ user, ...props }: { user: NavUserProps } & Rea
             {navData.navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild isActive={isActive(item.url) && (!item.items || item.items.length === 0)}>
-                  <Link href={item.url} className="font-medium" prefetch={true}>
-                    {item.icon}
-                    {item.title}
-                  </Link>
+                  <HoverPrefetchLink href={item.url}>
+                    <span className="font-medium flex items-center gap-2">
+                      {item.icon}
+                      {item.title}
+                    </span>
+                  </HoverPrefetchLink>
                 </SidebarMenuButton>
                 {item.items?.length ? (
                   <SidebarMenuSub>
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
-                          <Link href={subItem.url} prefetch={false}>
-                            {subItem.title}
-                          </Link>
+                          <HoverPrefetchLink href={subItem.url}>
+                            <span>{subItem.title}</span>
+                          </HoverPrefetchLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}

@@ -6,6 +6,7 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteProject, ProjectType } from "@/app/dashboard/teachers/projects/actions";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -78,17 +79,23 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/teachers/projects")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+            <HoverPrefetchLink href="/dashboard/teachers/projects">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </HoverPrefetchLink>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/dashboard/teachers">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink asChild>
+                    <HoverPrefetchLink href="/dashboard/teachers">Dashboard</HoverPrefetchLink>
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/dashboard/teachers/projects">Projets</BreadcrumbLink>
+                  <BreadcrumbLink asChild>
+                    <HoverPrefetchLink href="/dashboard/teachers/projects">Projets</HoverPrefetchLink>
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>

@@ -4,6 +4,7 @@ import { BookOpen, Calendar, FileText, GalleryVerticalEnd, LayoutDashboard, Sett
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { NavUser, NavUserProps } from "@/components/nav-user";
 import {
   Sidebar,
@@ -83,10 +84,12 @@ export function StudentsSidebar({ user, ...props }: { user: NavUserProps } & Rea
             {navData.navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                  <Link href={item.url} className="font-medium" prefetch={true}>
-                    {item.icon}
-                    {item.title}
-                  </Link>
+                  <HoverPrefetchLink href={item.url}>
+                    <span className="font-medium flex items-center gap-2">
+                      {item.icon}
+                      {item.title}
+                    </span>
+                  </HoverPrefetchLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
