@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "1gb",
     },
+    turbopackPersistentCaching: true,
   },
   env: {
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
