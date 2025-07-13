@@ -1,6 +1,7 @@
 "use server";
 import { getTokens } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPostFormData } from "@/lib/utils";
+import type { FinalGrade } from "@/types/evaluation";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
@@ -98,17 +99,6 @@ export async function getSubmissionDownloadData(submissionId: number): Promise<{
 
 export async function deleteSubmission(submissionId: number): Promise<void> {
   await authDeleteData(`${API_URL}/submissions/${submissionId}`);
-}
-
-export interface FinalGrade {
-  id: number;
-  projectId: number;
-  promotionId: number;
-  groupId: number;
-  finalGrade: number;
-  comment?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export async function getFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {

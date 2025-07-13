@@ -8,6 +8,18 @@ export function isTruthy(value: string | undefined | null): value is string {
   return Boolean(value.trim());
 }
 
+export function isNotNull<T>(value: T | null | undefined): value is T {
+  return value != null;
+}
+
+export function isNotEmpty(value: string | undefined | null): value is string {
+  return value != null && value !== "";
+}
+
+export function isValidNumber(value: number | undefined | null): value is number {
+  return value != null && !Number.isNaN(value);
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

@@ -103,7 +103,7 @@ export default function ProjectList() {
       dateLimit.setMonth(now.getMonth() - 3);
     }
 
-    return projects.filter((project) => {
+    return projects.filter((project): project is typeof project => {
       const matchesPromotion =
         filters.promotions.length === 0 ||
         project.promotions.some((promotion) => filters.promotions.includes(promotion.name));
@@ -114,9 +114,9 @@ export default function ProjectList() {
         project.description.toLowerCase().includes(filters.search.toLowerCase());
 
       const projectDate = new Date(project.createdAt);
-      const matchesDate = filters.dateRange === "all" || (dateLimit && projectDate >= dateLimit);
+      const matchesDate = filters.dateRange === "all" || (dateLimit !== null && projectDate >= dateLimit);
 
-      return matchesPromotion && matchesSearch && matchesDate;
+      return Boolean(matchesPromotion) && Boolean(matchesSearch) && Boolean(matchesDate);
     });
   }, [filters, projects, isLoadingProjects]);
 

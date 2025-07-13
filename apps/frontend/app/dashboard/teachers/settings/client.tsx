@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { isNotEmpty } from "@/lib/utils";
 import { updateProfile } from "./actions";
 
 const profileSchema = z
@@ -29,7 +30,7 @@ const profileSchema = z
   })
   .refine(
     (data) => {
-      if (data.newPassword || data.confirmPassword) {
+      if (isNotEmpty(data.newPassword) || isNotEmpty(data.confirmPassword)) {
         return data.newPassword === data.confirmPassword;
       }
       return true;
@@ -41,7 +42,7 @@ const profileSchema = z
   )
   .refine(
     (data) => {
-      if (data.newPassword) {
+      if (isNotEmpty(data.newPassword)) {
         return data.newPassword.length >= 8;
       }
       return true;

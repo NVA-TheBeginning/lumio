@@ -27,34 +27,7 @@ import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
 import { formatDate, formatDateTime } from "@/lib/utils";
-
-enum RuleType {
-  SIZE_LIMIT = "SIZE_LIMIT",
-  FILE_PRESENCE = "FILE_PRESENCE",
-  DIRECTORY_STRUCTURE = "DIRECTORY_STRUCTURE",
-}
-
-interface SizeLimitRuleDetails {
-  maxSizeInBytes: number;
-}
-
-interface FilePresenceRuleDetails {
-  requiredFiles: string[];
-  allowedExtensions?: string[];
-  forbiddenExtensions?: string[];
-}
-
-interface DirectoryStructureRuleDetails {
-  requiredDirectories: string[];
-  forbiddenDirectories?: string[];
-}
-
-interface DeliverableRule {
-  id: number;
-  deliverableId: number;
-  ruleType: RuleType;
-  ruleDetails: SizeLimitRuleDetails | FilePresenceRuleDetails | DirectoryStructureRuleDetails;
-}
+import { type DeliverableRule, RuleType } from "@/types/rules";
 
 interface StudentProjectViewProps {
   projectId: number;

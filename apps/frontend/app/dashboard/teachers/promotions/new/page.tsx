@@ -25,6 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getUserFromCookie } from "@/lib/cookie";
+import { isNotEmpty, isNotNull } from "@/lib/utils";
 import { useCreatePromotion } from "../hooks";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -84,15 +85,15 @@ const validateCSVData = (data: StudentData[]): { valid: boolean; errors: string[
   data.forEach((student, index) => {
     const rowNum = index + 1;
 
-    if (!student.nom) {
+    if (!isNotEmpty(student.nom)) {
       errors.push(`Ligne ${rowNum}: Le nom est manquant`);
     }
 
-    if (!student.prenom) {
+    if (!isNotEmpty(student.prenom)) {
       errors.push(`Ligne ${rowNum}: Le prénom est manquant`);
     }
 
-    if (!student.email) {
+    if (!isNotEmpty(student.email)) {
       errors.push(`Ligne ${rowNum}: L'email est manquant`);
     } else if (!EMAIL_REGEX.test(student.email)) {
       errors.push(`Ligne ${rowNum}: L'email '${student.email}' est invalide`);
@@ -170,7 +171,7 @@ export default function CreatePromotionForm() {
     setCsvErrors([]);
     form.setValue("students_csv", "");
     const fileInput = document.getElementById("csv-upload") as HTMLInputElement;
-    if (fileInput) fileInput.value = "";
+    if (isNotNull(fileInput)) fileInput.value = "";
   }, [form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {

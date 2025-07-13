@@ -84,11 +84,9 @@ export function StudentsSidebar({ user, ...props }: { user: NavUserProps } & Rea
             {navData.navMain.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                  <HoverPrefetchLink href={item.url}>
-                    <span className="font-medium flex items-center gap-2">
-                      {item.icon}
-                      {item.title}
-                    </span>
+                  <HoverPrefetchLink href={item.url} className="font-medium">
+                    {item.icon}
+                    {item.title}
                   </HoverPrefetchLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

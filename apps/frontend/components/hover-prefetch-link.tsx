@@ -1,14 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 
-export function HoverPrefetchLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const [active, setActive] = useState(false);
-
-  return (
-    <Link href={href} prefetch={active ? null : false} onMouseEnter={() => setActive(true)}>
-      {children}
-    </Link>
-  );
+interface HoverPrefetchLinkProps {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
 }
+
+export const HoverPrefetchLink = forwardRef<HTMLAnchorElement, HoverPrefetchLinkProps>(
+  ({ href, children, className, ...props }, ref) => {
+    const [active, setActive] = useState(false);
+
+    return (
+      <Link
+        ref={ref}
+        href={href}
+        prefetch={active ? null : false}
+        onMouseEnter={() => setActive(true)}
+        className={className}
+        {...props}
+      >
+        {children}
+      </Link>
+    );
+  },
+);
+
+HoverPrefetchLink.displayName = "HoverPrefetchLink";

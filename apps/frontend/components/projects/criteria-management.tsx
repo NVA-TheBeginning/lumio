@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useCreateCriteria, useCriteria, useDeleteCriteria, useUpdateCriteria } from "@/hooks/use-criteria";
 import { type Criteria, CriterionType } from "@/lib/types";
+import { isValidNumber } from "@/lib/utils";
 
 const criteriaSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -87,7 +88,7 @@ export function CriteriaManagement({ projectId, promotionId }: CriteriaManagemen
   };
 
   const onUpdateSubmit = async (data: CriteriaFormData): Promise<void> => {
-    if (!editingId) return;
+    if (!isValidNumber(editingId)) return;
 
     try {
       await updateMutation.mutateAsync({

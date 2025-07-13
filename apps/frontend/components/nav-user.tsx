@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { clearUserCookie } from "@/lib/cookie";
+import { isNotEmpty } from "@/lib/utils";
 
 export interface NavUserProps {
   firstname: string | null;
@@ -50,7 +51,7 @@ export function NavUser({ user }: { user: NavUserProps }) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="grid flex-1 text-left text-sm leading-tight">
-                {user.firstname && <span className="truncate font-semibold">{user.firstname}</span>}
+                {isNotEmpty(user.firstname) && <span className="truncate font-semibold">{user.firstname}</span>}
                 <span className="truncate text-xs">{user.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -65,7 +66,7 @@ export function NavUser({ user }: { user: NavUserProps }) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  {user.firstname && <span className="truncate font-semibold">{user.firstname}</span>}
+                  {isNotEmpty(user.firstname) && <span className="truncate font-semibold">{user.firstname}</span>}
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>

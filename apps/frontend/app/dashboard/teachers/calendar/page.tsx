@@ -15,6 +15,7 @@ import {
   CalendarYearView,
 } from "@/components/full-calendar";
 import { ModeToggle } from "@/components/toggle-theme";
+import { isNotEmpty, isValidNumber } from "@/lib/utils";
 import { useCalendarEvents } from "./use-calendar";
 
 interface Project {
@@ -30,7 +31,7 @@ export default function CalendarPage() {
     const projectMap = new Map<number, Project>();
 
     events.forEach((event) => {
-      if (event.projectId && event.projectName && event.projectColor) {
+      if (isValidNumber(event.projectId) && isNotEmpty(event.projectName) && isNotEmpty(event.projectColor)) {
         projectMap.set(event.projectId, {
           id: event.projectId,
           name: event.projectName,

@@ -99,7 +99,7 @@ export function GoogleOAuthButton({ className }: GoogleOAuthButtonProps) {
         clearInterval(initializeGoogleSignIn);
 
         window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "",
           callback: handleCredentialResponse,
           auto_select: false,
         });

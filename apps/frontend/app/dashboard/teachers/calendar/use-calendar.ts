@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import type { CalendarEvent } from "@/components/full-calendar";
+import { isNotNull } from "@/lib/utils";
 import { CalendarParams, CalendarPromotion, getCalendarDeliverables, getPromotions } from "./actions";
 
 function transformToCalendarEvents(promotions: CalendarPromotion[]): CalendarEvent[] {
@@ -80,7 +81,7 @@ export function useCalendarEvents(params?: CalendarParams) {
       try {
         const promotions = await getCalendarDeliverables(params);
 
-        if (!promotions) {
+        if (!isNotNull(promotions)) {
           return [];
         }
 
@@ -94,7 +95,7 @@ export function useCalendarEvents(params?: CalendarParams) {
         }
 
         const validPromotions = promotions.filter((promotion) => {
-          if (!promotion || typeof promotion !== "object") {
+          if (!isNotNull(promotion) || typeof promotion !== "object") {
             return false;
           }
 

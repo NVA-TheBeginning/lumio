@@ -1,6 +1,7 @@
 "use server";
 
 import { getTokens, getUserFromCookie, setUserCookie } from "@/lib/cookie";
+import { isNotEmpty } from "@/lib/utils";
 
 export async function updateProfile(data: {
   firstname: string;
@@ -12,7 +13,7 @@ export async function updateProfile(data: {
   const { accessToken } = await getTokens();
   const API_URL = process.env.API_URL ?? "http://localhost:3000";
   const user = await getUserFromCookie();
-  if (!user?.id) {
+  if (!isNotEmpty(user?.id)) {
     throw new Error("User ID is missing");
   }
 
@@ -25,7 +26,7 @@ export async function updateProfile(data: {
     }),
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken ?? ""}`,
     },
   });
 
@@ -45,7 +46,7 @@ export async function updateProfile(data: {
     },
   });
 
-  if (newPassword && user.id) {
+  if (isNotEmpty(newPassword) && isNotEmpty(user.id)) {
     const res = await fetch(`${API_URL}/users/${user.id}/password`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -53,7 +54,7 @@ export async function updateProfile(data: {
       }),
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken ?? ""}`,
       },
     });
 

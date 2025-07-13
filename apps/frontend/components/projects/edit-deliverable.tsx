@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { isNotEmpty } from "@/lib/utils";
 
 interface EditDeliverableDialogProps {
   open: boolean;
@@ -64,7 +65,7 @@ export function EditDeliverableDialog({
   useEffect(() => {
     if (deliverable) {
       setName(deliverable.name);
-      setDescription(deliverable.description || "");
+      setDescription(isNotEmpty(deliverable.description) ? deliverable.description : "");
       const date = new Date(deliverable.deadline);
       const offset = date.getTimezoneOffset();
       const localDate = new Date(date.getTime() - offset * 60 * 1000);

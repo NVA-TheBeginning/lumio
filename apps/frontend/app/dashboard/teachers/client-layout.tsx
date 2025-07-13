@@ -43,7 +43,7 @@ export default function DashboardClientLayout({ user, children }: DashboardClien
     let currentPath = "/dashboard";
     for (let i = 1; i < paths.length; i++) {
       currentPath += `/${paths[i]}`;
-      const pathSegment = paths[i] || "";
+      const pathSegment = paths[i] ?? "";
       breadcrumbs.push({
         label: pathSegment.charAt(0).toUpperCase() + pathSegment.slice(1),
         path: currentPath,
