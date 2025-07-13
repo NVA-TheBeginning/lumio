@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { getPromotions } from "@/app/dashboard/teachers/promotions/action";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -389,9 +390,11 @@ export default function CreateProjectForm() {
           )}
 
           <CardFooter className="flex justify-between border rounded-lg p-4">
-            <Button type="button" variant="outline" onClick={() => router.push("/dashboard/teachers/projects")}>
-              Annuler
-            </Button>
+            <HoverPrefetchLink href="/dashboard/teachers/projects">
+              <Button type="button" variant="outline">
+                Annuler
+              </Button>
+            </HoverPrefetchLink>
             <Button
               type="submit"
               disabled={createProjectMutation.isPending || isLoadingPromotions || form.formState.isSubmitting}

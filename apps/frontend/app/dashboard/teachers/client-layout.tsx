@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import React from "react";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { NavUserProps } from "@/components/nav-user";
 import { TeachersSidebar } from "@/components/teachers/teachers-sidebar";
 import {
@@ -70,7 +71,9 @@ export default function DashboardClientLayout({ user, children }: DashboardClien
                   <React.Fragment key={`${crumb.path}-${index}`}>
                     {index < visibleBreadcrumbs.length - 1 ? (
                       <BreadcrumbItem>
-                        <BreadcrumbLink href={crumb.path}>{crumb.label}</BreadcrumbLink>
+                        <BreadcrumbLink asChild>
+                          <HoverPrefetchLink href={crumb.path}>{crumb.label}</HoverPrefetchLink>
+                        </BreadcrumbLink>
                       </BreadcrumbItem>
                     ) : (
                       <BreadcrumbItem>

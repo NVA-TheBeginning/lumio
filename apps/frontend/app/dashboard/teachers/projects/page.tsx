@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Filter, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -433,15 +434,11 @@ export default function ProjectList() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 border-t pt-4">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => {
-                    router.push(`/dashboard/teachers/projects/${project.id}`);
-                  }}
-                >
-                  Voir détails
-                </Button>
+                <HoverPrefetchLink href={`/dashboard/teachers/projects/${project.id}`}>
+                  <Button variant="default" size="sm">
+                    Voir détails
+                  </Button>
+                </HoverPrefetchLink>
               </CardFooter>
             </Card>
           ))}

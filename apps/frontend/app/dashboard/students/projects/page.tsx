@@ -2,8 +2,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Eye, Filter, Search, SlidersHorizontal, Users, X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,6 @@ const groupStatusOptions = [
 ];
 
 export default function ProjectList() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState<FilterState>({
@@ -122,10 +121,6 @@ export default function ProjectList() {
       hasGroup: "all",
       search: "",
     });
-  };
-
-  const handleViewProject = (projectId: number) => {
-    router.push(`/dashboard/students/projects/${projectId}`);
   };
 
   const handleItemsPerPageChange = (newSize: string) => {
@@ -380,16 +375,12 @@ export default function ProjectList() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 border-t pt-4">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    handleViewProject(project.id);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="h-4 w-4" />
-                  Voir le projet
-                </Button>
+                <HoverPrefetchLink href={`/dashboard/students/projects/${project.id}`}>
+                  <Button size="sm" className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Voir le projet
+                  </Button>
+                </HoverPrefetchLink>
               </CardFooter>
             </Card>
           ))}
