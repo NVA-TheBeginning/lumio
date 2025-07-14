@@ -5,7 +5,7 @@ import { MoreHorizontal, Search, Trash2, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import { z } from "zod/v4";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +47,7 @@ import { useAddMember, usePromotionMembers, useRemoveMember } from "./hooks";
 const memberFormSchema = z.object({
   lastname: z.string().min(1, "Le nom est requis"),
   firstname: z.string().min(1, "Le prénom est requis"),
-  email: z.string().email("L'adresse email n'est pas valide"),
+  email: z.email({ error: "L'adresse email n'est pas valide" }),
 });
 
 type MemberFormValues = z.infer<typeof memberFormSchema>;
