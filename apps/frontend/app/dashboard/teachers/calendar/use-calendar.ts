@@ -41,7 +41,7 @@ function transformToCalendarEvents(promotions: CalendarPromotion[]): CalendarEve
             id: `deliverable-${deliverable.id}-${project.projectId}-${promotion.promotionId}`,
             start: deadlineDate,
             end: deadlineDate,
-            title: title,
+            title,
             color: variantColor,
 
             allDay: true,

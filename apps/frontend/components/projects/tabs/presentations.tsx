@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isNotNull } from "@/lib/utils";
 
 interface ProjectPresentationsProps {
   project: ProjectType;
@@ -31,7 +31,7 @@ interface ProjectPresentationsProps {
 
 export function ProjectPresentations({ project }: ProjectPresentationsProps) {
   const queryClient = useQueryClient();
-  const [activePromotion, setActivePromotion] = useState<string>(project.promotions[0]?.id.toString() || "");
+  const [activePromotion, setActivePromotion] = useState<string>(project.promotions[0]?.id.toString() ?? "");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedPresentation, setSelectedPresentation] = useState<PresentationType | null>(null);
@@ -45,7 +45,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
   const deleteMutation = useMutation({
     mutationFn: (presentation: PresentationType) => deletePresentation(presentation.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["presentations", project.id, activePromotion] });
+      void queryClient.invalidateQueries({ queryKey: ["presentations", project.id, activePromotion] });
       toast.success("Soutenance supprimée avec succès");
     },
     onError: () => {
@@ -163,7 +163,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <span>{formatDate(presentation.startDatetime)}</span>
                                   </div>
-                                  {presentation.endDatetime && (
+                                  {isNotNull(presentation.endDatetime) && (
                                     <div className="flex items-center gap-2">
                                       <Clock className="h-4 w-4 text-muted-foreground" />
                                       <span>Fin: {formatDate(presentation.endDatetime)}</span>
@@ -251,7 +251,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
                               <Calendar className="h-4 w-4 text-muted-foreground" />
                               <span>{formatDate(presentation.startDatetime)}</span>
                             </div>
-                            {presentation.endDatetime && (
+                            {isNotNull(presentation.endDatetime) && (
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-muted-foreground" />
                                 <span>Fin: {formatDate(presentation.endDatetime)}</span>
@@ -290,7 +290,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
         project={project}
         promotionId={Number(activePromotion)}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["presentations", project.id, activePromotion] });
+          void queryClient.invalidateQueries({ queryKey: ["presentations", project.id, activePromotion] });
         }}
       />
 
@@ -299,7 +299,7 @@ export function ProjectPresentations({ project }: ProjectPresentationsProps) {
         onOpenChange={setShowEditDialog}
         presentation={selectedPresentation}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["presentations", project.id, activePromotion] });
+          void queryClient.invalidateQueries({ queryKey: ["presentations", project.id, activePromotion] });
         }}
       />
     </div>

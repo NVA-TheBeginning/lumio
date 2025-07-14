@@ -47,10 +47,10 @@ export function ProjectDocuments({ project }: ProjectDocumentsProps) {
 
   const uploadMutation = useMutation({
     mutationFn: async ({ file, name }: { file: File; name: string }) => {
-      return uploadDocumentToProject(project.id, file, name);
+      return await uploadDocumentToProject(project.id, file, name);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
+      void queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
       setUploadDialogOpen(false);
       setSelectedFile(null);
       setDocumentName("");
@@ -63,10 +63,10 @@ export function ProjectDocuments({ project }: ProjectDocumentsProps) {
 
   const linkMutation = useMutation({
     mutationFn: async (documentId: number) => {
-      return linkDocumentToProject(documentId, project.id);
+      return await linkDocumentToProject(documentId, project.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
+      void queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
       setLinkDialogOpen(false);
       setSelectedDocumentId("");
       toast.success("Document lié au projet avec succès");
@@ -78,10 +78,10 @@ export function ProjectDocuments({ project }: ProjectDocumentsProps) {
 
   const unlinkMutation = useMutation({
     mutationFn: async (documentId: number) => {
-      return unlinkDocumentFromProject(documentId, project.id);
+      return await unlinkDocumentFromProject(documentId, project.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
+      void queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
       toast.success("Document dissocié du projet");
     },
     onError: (error) => {
@@ -152,7 +152,7 @@ export function ProjectDocuments({ project }: ProjectDocumentsProps) {
   };
 
   const availableDocuments =
-    allDocuments?.filter((doc) => !project.documents.some((projDoc) => projDoc.id === doc.id)) || [];
+    allDocuments?.filter((doc) => !project.documents.some((projDoc) => projDoc.id === doc.id)) ?? [];
 
   return (
     <div className="space-y-6">

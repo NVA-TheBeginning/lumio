@@ -58,6 +58,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isNotNull, isTruthy } from "@/lib/utils";
 
 const groupSettingsSchema = z.object({
   minMembers: z.number().positive(),
@@ -114,7 +115,7 @@ const DropZone: React.FC<DropZoneProps> = ({ groupId, children, onDrop, classNam
 
       try {
         const studentData = e.dataTransfer?.getData("application/json");
-        if (studentData) {
+        if (isTruthy(studentData)) {
           const student: DraggedStudent = JSON.parse(studentData);
           onDrop(student.id, groupId);
         }
@@ -228,10 +229,10 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const updateSettingsMutation = useMutation({
     mutationFn: (data: GroupSettingsUpdateDto) => updateGroupSettings(project.id, activePromotionId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
-      queryClient.setQueryData(["projects", Number(project.id)], (oldData: ProjectType | undefined) => {
+      queryClient.setQueryData(["projects", project.id], (oldData: ProjectType | undefined) => {
         if (!oldData) return oldData;
         const updatedPromotions = oldData.promotions.map((p) => {
           if (p.id === activePromotionId) {
@@ -249,8 +250,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const createGroupsMutation = useMutation({
     mutationFn: (data: CreateGroupsDto) => createGroups(project.id, activePromotionId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
       setShowCreateGroupsDialog(false);
     },
@@ -259,8 +260,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const updateGroupMutation = useMutation({
     mutationFn: ({ groupId, data }: { groupId: number; data: { name: string } }) => updateGroup(groupId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
       setEditingGroup(null);
     },
@@ -269,8 +270,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const deleteGroupMutation = useMutation({
     mutationFn: (groupId: number) => deleteGroup(groupId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
       project.promotions.forEach((promotion) => {
         promotion.groups = promotion.groups.filter((group) => group.id !== groupToDelete);
@@ -283,8 +284,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
     mutationFn: ({ groupId, studentIds }: { groupId: number; studentIds: number[] }) =>
       addMembersToGroup(groupId, studentIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
       toast.success("Étudiant ajouté au groupe");
     },
@@ -293,8 +294,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const removeMemberMutation = useMutation({
     mutationFn: ({ groupId, userId }: { groupId: number; userId: number }) => removeMemberFromGroup(groupId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
       toast.success("Étudiant retiré du groupe");
     },
@@ -303,8 +304,8 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const randomizeStudentsMutation = useMutation({
     mutationFn: () => randomizeStudentsToGroups(project.id, activePromotionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", Number(project.id)],
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
       });
       toast.success("Les étudiants ont été répartis aléatoirement dans les groupes");
     },
@@ -313,11 +314,11 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const settingsForm = useHookForm<z.infer<typeof groupSettingsSchema>>({
     resolver: zodResolver(groupSettingsSchema),
     defaultValues: {
-      minMembers: activePromotion?.groupSettings?.minMembers || 1,
-      maxMembers: activePromotion?.groupSettings?.maxMembers || 5,
-      mode: activePromotion?.groupSettings?.mode || "FREE",
-      deadline: activePromotion?.groupSettings?.deadline
-        ? formatDateForInput(activePromotion?.groupSettings?.deadline)
+      minMembers: activePromotion?.groupSettings.minMembers ?? 1,
+      maxMembers: activePromotion?.groupSettings.maxMembers ?? 5,
+      mode: activePromotion?.groupSettings.mode ?? "FREE",
+      deadline: isNotNull(activePromotion?.groupSettings.deadline)
+        ? formatDateForInput(activePromotion.groupSettings.deadline)
         : formatDateForInput(new Date().toISOString()),
     },
   });
@@ -333,7 +334,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const updateGroupForm = useHookForm<z.infer<typeof updateGroupSchema>>({
     resolver: zodResolver(updateGroupSchema),
     defaultValues: {
-      name: editingGroup?.name || "",
+      name: editingGroup?.name ?? "",
     },
   });
 
@@ -370,7 +371,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const handleUpdateGroup = (data: z.infer<typeof updateGroupSchema>) => {
     if (editingGroup) {
       updateGroupMutation.mutate({
-        groupId: Number(editingGroup.id),
+        groupId: editingGroup.id,
         data: { name: data.name },
       });
     }
@@ -411,7 +412,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
   const groupSettings = currentPromotion?.groupSettings;
 
   const unassignedStudents = useMemo((): Member[] => {
-    if (!allStudents || allStudents.length === 0) return [];
+    if (allStudents.length === 0) return [];
     if (!groups || groups.length === 0) return allStudents;
 
     const assignedStudentIds = new Set(groups.flatMap((group) => group.members.map((member) => member.id)));
@@ -561,7 +562,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                         <Input
                                           type="number"
                                           {...field}
-                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) ?? 0)}
+                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -578,7 +579,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                         <Input
                                           type="number"
                                           {...field}
-                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) ?? 0)}
+                                          onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -730,7 +731,7 @@ export function ProjectGroups({ project }: { project: ProjectType }) {
                                     <Input
                                       type="number"
                                       {...field}
-                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value) ?? 0)}
+                                      onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
                                     />
                                   </FormControl>
                                   <FormMessage />

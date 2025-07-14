@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { useDeleteSubmission } from "@/hooks/use-submissions";
 import { downloadSubmission } from "@/lib/download-utils";
+import { isNotEmpty, isTruthy } from "@/lib/utils";
 
 interface SubmissionDetailsProps {
   open: boolean;
@@ -100,9 +101,9 @@ export function SubmissionDetailsDialog({
   };
 
   const openGitRepo = () => {
-    if (submission.type.includes("GIT") && submission.gitUrl) {
+    if (submission.type.includes("GIT") && isTruthy(submission.gitUrl)) {
       const gitUrl = submission.gitUrl.startsWith("https://") ? submission.gitUrl : null;
-      if (gitUrl) {
+      if (isNotEmpty(gitUrl)) {
         window.open(gitUrl, "_blank");
       } else {
         toast.error("URL Git non disponible");

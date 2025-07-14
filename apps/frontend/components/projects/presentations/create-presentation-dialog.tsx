@@ -64,7 +64,7 @@ export function CreatePresentationDialog({
 
     const data: CreatePresentationData = {
       projectId: project.id,
-      promotionId: promotionId,
+      promotionId,
       startDatetime: new Date(formData.startDatetime).toISOString(),
       endDatetime: formData.endDatetime ? new Date(formData.endDatetime).toISOString() : undefined,
       durationPerGroup: formData.durationPerGroup,

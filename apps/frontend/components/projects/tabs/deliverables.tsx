@@ -26,8 +26,8 @@ export function ProjectDeliverables({ project }: ProjectDeliverablesProps) {
   const [selectedDeliverable, setSelectedDeliverable] = useState<DeliverableType | null>(null);
 
   const refreshProjectData = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["projects", Number(project.id)],
+    void queryClient.invalidateQueries({
+      queryKey: ["projects", project.id],
     });
   };
 

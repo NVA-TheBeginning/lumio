@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isNotEmpty } from "@/lib/utils";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -123,7 +124,7 @@ export default function UploadModal({ isOpen, onClose, onDocumentUploaded }: Upl
             />
           </div>
 
-          {error && <div className="text-sm font-medium text-destructive">{error}</div>}
+          {isNotEmpty(error) && <div className="text-sm font-medium text-destructive">{error}</div>}
 
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={handleClose} disabled={uploadMutation.isPending}>

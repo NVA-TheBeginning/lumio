@@ -20,25 +20,43 @@ bun run build
 bun run build:ci
 ```
 
+### Development Guidelines
+- **Always use TanStack Query (React Query)** for all data fetching and mutations
+- **Always use Bun** as package manager, runtime, and test runner
+- **Never use `any` type** - use proper TypeScript types
+- **Write small and readable code** - prefer composition over large functions
+- **Always use shadcn/ui components** for UI elements - don't create custom components when shadcn/ui alternatives exist
+- **Use strict type checking for nullable conditions** - always use utility functions from `/lib/utils.ts` for boolean expressions:
+  - `isNotEmpty(value)` for string checks (instead of `value`)
+  - `isValidNumber(value)` for number checks (instead of `value`)
+  - `isNotNull(value)` for general null checks (instead of `value`)
+  - `isTruthy(value)` for string truthiness checks (instead of `value`)
+  - Never use nullable values directly in conditionals (e.g., avoid `if (user?.name)`, use `if (isTruthy(user?.name))`)
+  - Implement utility functions for common checks if needed
+- **Always run verification commands** before committing changes:
+  You can skip the `test` command if you are only modifying frontend code, but always run `lint` and `build`:
+  ```bash
+  bun run lint
+  bun run test
+  bun run build
+  ```
+
 ### Code Quality
 ```bash
-# Format code with Biome
-bun run format
-
-# Lint and fix issues with Biome
+# Format & Lint and fix issues with Biome
 bun run lint
 ```
 
 ### Testing
 ```bash
 # Run all tests
-bun run test
+bun run test:ci
 ```
 
 ### Database
 ```bash
 # Run Prisma commands across services
-bun prisma
+bun run prisma
 ```
 
 ### Frontend Development
@@ -80,19 +98,6 @@ The application consists of 8 core services orchestrated through an API Gateway:
 - Swagger documentation federation through API Gateway
 - React Hook Form + Zod for frontend form validation
 - TanStack Query for state management
-
-### Development Guidelines
-- **Always use TanStack Query (React Query)** for all data fetching and mutations
-- **Always use Bun** as package manager, runtime, and test runner
-- **Never use `any` type** - use proper TypeScript types
-- **Write small and readable code** - prefer composition over large functions
-- **Always use shadcn/ui components** for UI elements - don't create custom components when shadcn/ui alternatives exist
-- **Always run verification commands** before committing changes:
-  ```bash
-  bun run lint
-  bun run test
-  bun run build
-  ```
 
 ## Database Schema
 Each service has its own Prisma schema:

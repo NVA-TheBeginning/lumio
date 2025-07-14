@@ -2,7 +2,7 @@
 
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { PresentationType, PromotionType } from "@/app/dashboard/teachers/projects/actions";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate, formatDateTime, isNotEmpty } from "@/lib/utils";
 import { OrderWithGroup } from "@/types/presentation-orders";
 
 interface PresentationOrdersPDFProps {
@@ -138,7 +138,7 @@ export const PresentationOrdersPDF = ({ presentation, promotion, orders }: Prese
           <Text style={styles.infoLabel}>Date de début:</Text>
           <Text style={styles.infoValue}>{formatDateTime(presentation.startDatetime)}</Text>
         </View>
-        {presentation.endDatetime && (
+        {isNotEmpty(presentation.endDatetime) && (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Date de fin:</Text>
             <Text style={styles.infoValue}>{formatDateTime(presentation.endDatetime)}</Text>
@@ -160,14 +160,14 @@ export const PresentationOrdersPDF = ({ presentation, promotion, orders }: Prese
           <View key={order.id} style={styles.orderItem}>
             <Text style={styles.orderNumber}>#{index + 1}</Text>
             <View style={styles.orderContent}>
-              <Text style={styles.groupName}>{order.group?.name || `Groupe ${order.groupId}`}</Text>
+              <Text style={styles.groupName}>{order.group?.name ?? `Groupe ${order.groupId}`}</Text>
               <Text style={styles.scheduledTime}>
                 Programmé à:{" "}
                 {calculateScheduledTime(index + 1, presentation.startDatetime, presentation.durationPerGroup)}
               </Text>
               <Text style={styles.membersTitle}>Membres ({order.group?.members.length ?? 0}):</Text>
               <Text style={styles.membersList}>
-                {order.group?.members.map((member) => `${member.firstname} ${member.lastname}`).join(", ") ||
+                {order.group?.members.map((member) => `${member.firstname} ${member.lastname}`).join(", ") ??
                   "Aucun membre"}
               </Text>
             </View>

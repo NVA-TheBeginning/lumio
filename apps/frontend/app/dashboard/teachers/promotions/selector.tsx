@@ -30,7 +30,7 @@ export function PromotionSelector({ value, onChange, promotions, isLoading, isEr
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const selectedPromotion = promotions?.find((p) => p.id === value);
+  const selectedPromotion = promotions.find((p) => p.id === value);
 
   return (
     <div className="flex items-center space-x-4">
@@ -62,7 +62,7 @@ export function PromotionSelector({ value, onChange, promotions, isLoading, isEr
                 <div className="p-2 text-sm text-destructive">Erreur lors du chargement des promotions.</div>
               ) : (
                 <CommandGroup>
-                  {promotions?.map((promotion) => (
+                  {promotions.map((promotion) => (
                     <CommandItem
                       key={promotion.id}
                       value={promotion.name}

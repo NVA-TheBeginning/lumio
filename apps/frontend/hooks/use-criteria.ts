@@ -31,7 +31,7 @@ export function useCreateCriteria() {
       data: CreateCriteriaDto;
     }) => createCriteria(projectId, promotionId, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["criteria", variables.projectId, variables.promotionId],
       });
     },
@@ -52,7 +52,7 @@ export function useUpdateCriteria() {
       promotionId: number;
     }) => updateCriteria(criteriaId, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["criteria", variables.projectId, variables.promotionId],
       });
     },
@@ -66,7 +66,7 @@ export function useDeleteCriteria() {
     mutationFn: ({ criteriaId }: { criteriaId: number; projectId: number; promotionId: number }) =>
       deleteCriteria(criteriaId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["criteria", variables.projectId, variables.promotionId],
       });
     },

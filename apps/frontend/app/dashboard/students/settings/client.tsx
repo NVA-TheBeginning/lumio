@@ -106,7 +106,7 @@ export default function ParametersForm({
     },
   });
 
-  const onSubmit = (values: ProfileFormValues) => {
+  const onSubmit = (values: ProfileFormValues): void => {
     mutation.mutate(values);
   };
 

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isNotEmpty } from "@/lib/utils";
 
 interface EditPresentationDialogProps {
   open: boolean;
@@ -43,7 +44,7 @@ export function EditPresentationDialog({ open, onOpenChange, presentation, onSuc
 
       setFormData({
         startDatetime: formatDateForInput(presentation.startDatetime),
-        endDatetime: presentation.endDatetime ? formatDateForInput(presentation.endDatetime) : "",
+        endDatetime: isNotEmpty(presentation.endDatetime) ? formatDateForInput(presentation.endDatetime) : "",
         durationPerGroup: presentation.durationPerGroup,
       });
     }
