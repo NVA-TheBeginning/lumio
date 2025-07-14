@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { isTruthy } from "@/lib/utils";
 import { ReportSection, UpdateReportDto } from "@/types/report";
 
 export default function ReportEditor({ reportId, readOnly = false }: { reportId: number; readOnly?: boolean }) {
@@ -210,7 +211,7 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
                       <div className="flex items-center gap-2">
                         <GripVertical className="w-4 h-4 text-muted-foreground" />
                         <div>
-                          <p className="font-medium text-sm">{section.title || `Section ${index + 1}`}</p>
+                          <p className="font-medium text-sm">{section.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {section.contentMarkdown?.length ?? 0} caractères
                           </p>
@@ -279,11 +280,9 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
                 <div className="space-y-8">
                   {sections.map((section, index) => (
                     <div key={index} className="border-b pb-6 last:border-b-0">
-                      <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-muted">
-                        {section.title || `Section ${index + 1}`}
-                      </h2>
+                      <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-muted">{section.title}</h2>
                       <div className="prose prose-sm max-w-none">
-                        {section.contentMarkdown ? (
+                        {isTruthy(section.contentMarkdown) ? (
                           <div
                             className="space-y-4"
                             // biome-ignore lint/security/noDangerouslySetInnerHtml: We trust the markdown content here
@@ -300,13 +299,13 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
                 </div>
               </CardContent>
             </Card>
-          ) : !readOnly ? (
+          ) : (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5" />
-                    {currentSection?.title || `Section ${activeSection + 1}`}
+                    {currentSection?.title ?? `Section ${activeSection + 1}`}
                   </CardTitle>
                   <Badge variant="secondary">
                     Section {activeSection + 1} sur {sections.length}
@@ -318,7 +317,7 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
                   <Label htmlFor="section-title">Titre de la section</Label>
                   <Input
                     id="section-title"
-                    value={currentSection?.title || ""}
+                    value={currentSection?.title ?? ""}
                     onChange={(e) => updateSection(activeSection, "title", e.target.value)}
                     placeholder="Entrez le titre de la section..."
                   />
@@ -360,7 +359,7 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
                 </div>
               </CardContent>
             </Card>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

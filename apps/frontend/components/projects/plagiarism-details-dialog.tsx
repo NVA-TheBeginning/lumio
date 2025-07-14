@@ -39,7 +39,7 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
   const [isOpen, setIsOpen] = useState(false);
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
     toast.success("Copié dans le presse-papiers");
   };
 
@@ -124,7 +124,7 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
                       <code className="bg-background border px-3 py-2 rounded text-xs font-mono flex-1">
                         {plagiarismResult.sha1.substring(0, 16)}...
                       </code>
-                      <Button variant="ghost" size="sm" onClick={() => copyToClipboard(plagiarismResult.sha1 || "")}>
+                      <Button variant="ghost" size="sm" onClick={() => copyToClipboard(plagiarismResult.sha1 ?? "")}>
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
@@ -186,7 +186,7 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
                         </div>
                       </div>
 
-                      {match.flags && match.flags.length > 0 && (
+                      {match.flags.length > 0 && (
                         <div className="mt-3">
                           <span className="font-medium text-sm">Indicateurs détectés:</span>
                           <div className="flex flex-wrap gap-1 mt-1">

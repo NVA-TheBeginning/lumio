@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { isValidNumber } from "@/lib/utils";
 
 interface ProjectEvaluationsProps {
   project: ProjectType;
@@ -26,7 +27,7 @@ interface ProjectEvaluationsProps {
 
 export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const queryClient = useQueryClient();
-  const [activePromotion, setActivePromotion] = useState<string>(project.promotions[0]?.id.toString() || "");
+  const [activePromotion, setActivePromotion] = useState<string>(project.promotions[0]?.id.toString() ?? "");
   const [grades, setGrades] = useState<Record<string, { value: number; comment?: string }>>({});
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
   const [viewAllGrades, setViewAllGrades] = useState(false);
@@ -54,7 +55,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     mutationFn: ({ gradeId, data }: { gradeId: number; data: { gradeValue?: number; comment?: string } }) =>
       updateGrade(gradeId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grades"] });
+      void queryClient.invalidateQueries({ queryKey: ["grades"] });
       toast.success("Note mise à jour");
     },
     onError: () => {
@@ -71,7 +72,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       data: { groupId: number; gradeValue: number; comment?: string };
     }) => createGrade(criteriaId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grades"] });
+      void queryClient.invalidateQueries({ queryKey: ["grades"] });
       toast.success("Note créée");
     },
     onError: () => {
@@ -80,7 +81,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   });
 
   const activePromotion_obj = project.promotions.find((p) => p.id.toString() === activePromotion);
-  const allGroups = activePromotion_obj?.groups || [];
+  const allGroups = activePromotion_obj?.groups ?? [];
 
   // Filter groups based on selection and search
   const filteredGroups = useMemo(() => {
@@ -143,7 +144,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   };
 
   const handleCommentChange = (criteriaId: number, groupId: number, comment: string, studentId?: number) => {
-    const key = studentId ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     setGrades((prev) => ({
       ...prev,
       [key]: { value: prev[key]?.value ?? 0, comment },
@@ -153,7 +154,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   };
 
   const saveGrade = (criteriaId: number, groupId: number, studentId?: number) => {
-    const key = studentId ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     const gradeData = grades[key];
     const existingGrade = gradeMatrix[key];
 
@@ -179,17 +180,17 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   };
 
   const getGradeValue = (criteriaId: number, groupId: number, studentId?: number): number => {
-    const key = studentId ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     return grades[key]?.value ?? gradeMatrix[key]?.gradeValue ?? 0;
   };
 
   const getGradeComment = (criteriaId: number, groupId: number, studentId?: number): string => {
-    const key = studentId ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     return grades[key]?.comment ?? gradeMatrix[key]?.comment ?? "";
   };
 
   const isPending = (criteriaId: number, groupId: number, studentId?: number): boolean => {
-    const key = studentId ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     return pendingUpdates.has(key);
   };
 

@@ -60,8 +60,8 @@ export async function getReports(filters?: ReportFilters): Promise<ReportWithDet
         return {
           ...report,
           project: projectData ? { id: projectData.id, name: projectData.name } : undefined,
-          group: group,
-          promotion: promotion,
+          group,
+          promotion,
         } as ReportWithDetails;
       }),
     );

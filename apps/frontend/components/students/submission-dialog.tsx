@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isTruthy } from "@/lib/utils";
 
 interface SubmissionDialogProps {
   open: boolean;
@@ -84,7 +85,7 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
       if (error instanceof Error && error.message.includes("does not meet the required rules")) {
         const ruleViolations = error.message
           .split("\n")
-          .filter((line: string) => line.trim() && !line.includes("does not meet the required rules"))
+          .filter((line: string) => isTruthy(line.trim()) && !line.includes("does not meet the required rules"))
           .map((line: string) => line.trim());
 
         if (ruleViolations.length > 0) {

@@ -26,7 +26,7 @@ import {
 import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate, formatDateTime, isNotNull, isValidNumber } from "@/lib/utils";
 import { type DeliverableRule, RuleType } from "@/types/rules";
 
 interface StudentProjectViewProps {
@@ -224,14 +224,12 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   };
 
   const renderRuleDetails = (rule: DeliverableRule) => {
-    if (!rule?.ruleDetails) return null;
-
     switch (rule.ruleType) {
       case RuleType.SIZE_LIMIT: {
         const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
         return (
           <div className="text-sm text-muted-foreground">
-            Taille maximale : {formatFileSize(sizeDetails?.maxSizeInBytes || 0)}
+            Taille maximale : {formatFileSize(sizeDetails.maxSizeInBytes)}
           </div>
         );
       }
@@ -243,13 +241,13 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
         };
         return (
           <div className="text-sm text-muted-foreground space-y-1">
-            {fileDetails?.requiredFiles?.length > 0 && (
+            {fileDetails.requiredFiles.length > 0 && (
               <div>Fichiers requis : {fileDetails.requiredFiles.join(", ")}</div>
             )}
-            {(fileDetails?.allowedExtensions?.length ?? 0) > 0 && (
+            {(fileDetails.allowedExtensions?.length ?? 0) > 0 && (
               <div>Extensions autorisées : {fileDetails.allowedExtensions?.join(", ")}</div>
             )}
-            {(fileDetails?.forbiddenExtensions?.length ?? 0) > 0 && (
+            {(fileDetails.forbiddenExtensions?.length ?? 0) > 0 && (
               <div>Extensions interdites : {fileDetails.forbiddenExtensions?.join(", ")}</div>
             )}
           </div>
@@ -262,10 +260,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
         };
         return (
           <div className="text-sm text-muted-foreground space-y-1">
-            {dirDetails?.requiredDirectories?.length > 0 && (
+            {dirDetails.requiredDirectories.length > 0 && (
               <div>Dossiers requis : {dirDetails.requiredDirectories.join(", ")}</div>
             )}
-            {(dirDetails?.forbiddenDirectories?.length ?? 0) > 0 && (
+            {(dirDetails.forbiddenDirectories?.length ?? 0) > 0 && (
               <div>Dossiers interdits : {dirDetails.forbiddenDirectories?.join(", ")}</div>
             )}
           </div>
@@ -283,12 +281,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     if (!rules || rules.length === 0) return null;
 
     const validRules = rules.filter((rule) => {
-      if (!rule?.ruleDetails) return false;
-
       switch (rule.ruleType) {
         case RuleType.SIZE_LIMIT: {
           const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
-          return sizeDetails?.maxSizeInBytes > 0;
+          return sizeDetails.maxSizeInBytes > 0;
         }
         case RuleType.FILE_PRESENCE: {
           const fileDetails = rule.ruleDetails as {
@@ -297,9 +293,9 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             forbiddenExtensions?: string[];
           };
           return (
-            (fileDetails?.requiredFiles?.length ?? 0) > 0 ||
-            (fileDetails?.allowedExtensions?.length ?? 0) > 0 ||
-            (fileDetails?.forbiddenExtensions?.length ?? 0) > 0
+            fileDetails.requiredFiles.length > 0 ||
+            (fileDetails.allowedExtensions?.length ?? 0) > 0 ||
+            (fileDetails.forbiddenExtensions?.length ?? 0) > 0
           );
         }
         case RuleType.DIRECTORY_STRUCTURE: {
@@ -307,9 +303,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             requiredDirectories: string[];
             forbiddenDirectories?: string[];
           };
-          return (
-            (dirDetails?.requiredDirectories?.length ?? 0) > 0 || (dirDetails?.forbiddenDirectories?.length ?? 0) > 0
-          );
+          return dirDetails.requiredDirectories.length > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0;
         }
         default:
           return false;
@@ -334,7 +328,8 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   };
 
   const handleExportPDF = async () => {
-    if (!(presentationOrders?.length && currentUserGroup && project)) return;
+    if (!(isValidNumber(presentationOrders?.length) && presentationOrders.length > 0 && isNotNull(currentUserGroup)))
+      return;
 
     const presentationOrder = presentationOrders[0];
     if (!presentationOrder?.order) return;
@@ -359,8 +354,8 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
         groupSettings: {
           projectId: project.id,
           promotionId: project.promotionId,
-          minMembers: project.groupSettings.minMembers ?? 1,
-          maxMembers: project.groupSettings.maxMembers ?? 10,
+          minMembers: project.groupSettings.minMembers,
+          maxMembers: project.groupSettings.maxMembers,
           mode: project.groupSettings.mode,
           deadline: project.groupSettings.deadline,
           updatedAt: new Date().toISOString(),
@@ -436,7 +431,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Prochaine échéance</p>
                     <p className="text-2xl font-bold">
-                      {project.deliverables.length > 0 && project.deliverables[0]?.deadline
+                      {project.deliverables.length > 0 && isNotNull(project.deliverables[0]?.deadline)
                         ? formatDate(project.deliverables[0].deadline)
                         : "Aucune"}
                     </p>
@@ -452,15 +447,19 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Prochaine soutenance</p>
                     <p className="text-2xl font-bold">
-                      {presentationOrders?.length && presentationOrders[0]?.order?.scheduledDatetime
+                      {isValidNumber(presentationOrders?.length) &&
+                      presentationOrders.length > 0 &&
+                      isNotNull(presentationOrders[0]?.order?.scheduledDatetime)
                         ? formatDate(presentationOrders[0].order.scheduledDatetime)
                         : "Soutenance non programmée"}
                     </p>
-                    {presentationOrders?.length && presentationOrders[0]?.order && (
-                      <p className="text-sm text-muted-foreground">
-                        Position #{presentationOrders[0].order.orderNumber}
-                      </p>
-                    )}
+                    {isValidNumber(presentationOrders?.length) &&
+                      presentationOrders.length > 0 &&
+                      isNotNull(presentationOrders[0]?.order) && (
+                        <p className="text-sm text-muted-foreground">
+                          Position #{presentationOrders[0].order.orderNumber}
+                        </p>
+                      )}
                   </div>
                   <Calendar className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -785,14 +784,16 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium">Soutenances</h4>
-                  {presentationOrders?.length && currentUserGroup && (
-                    <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Exporter PDF
-                    </Button>
-                  )}
+                  {isValidNumber(presentationOrders?.length) &&
+                    presentationOrders.length > 0 &&
+                    isNotNull(currentUserGroup) && (
+                      <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Exporter PDF
+                      </Button>
+                    )}
                 </div>
-                {presentationOrders?.length ? (
+                {isValidNumber(presentationOrders?.length) && presentationOrders.length > 0 ? (
                   <div className="space-y-4">
                     {presentationOrders.map(({ presentation, order }) => (
                       <Card key={presentation.id} className="border-l-4 border-l-blue-500">
@@ -810,7 +811,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                                 {presentation.durationPerGroup}min
                               </Badge>
                             </div>
-                            {order?.scheduledDatetime && (
+                            {isNotNull(order?.scheduledDatetime) && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4 text-blue-500" />
                                 <span className="font-medium">Horaire programmé :</span>
@@ -821,7 +822,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                               <Users className="h-4 w-4" />
                               <span>
                                 Passage en{" "}
-                                {order?.orderNumber
+                                {isNotNull(order?.orderNumber) && isValidNumber(order.orderNumber)
                                   ? `${order.orderNumber}${order.orderNumber === 1 ? "er" : "ème"}`
                                   : "position"}
                               </span>

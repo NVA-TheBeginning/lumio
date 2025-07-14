@@ -28,14 +28,15 @@ type PaginationLinkProps = {
   React.ComponentProps<"a">;
 
 function PaginationLink({ className, isActive, size = "icon", ...props }: PaginationLinkProps) {
+  const active = Boolean(isActive);
   return (
     <a
-      aria-current={isActive ? "page" : undefined}
+      aria-current={active ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
         buttonVariants({
-          variant: isActive ? "outline" : "ghost",
+          variant: active ? "outline" : "ghost",
           size,
         }),
         className,

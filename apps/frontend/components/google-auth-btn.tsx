@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { googleOAuthLogin } from "@/lib/google";
+import { isNotNull } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -95,7 +96,7 @@ export function GoogleOAuthButton({ className }: GoogleOAuthButtonProps) {
     const cleanup = loadGoogleScript();
 
     const initializeGoogleSignIn = setInterval(() => {
-      if (window.google?.accounts?.id) {
+      if (isNotNull(window.google) && isNotNull(window.google.accounts) && isNotNull(window.google.accounts.id)) {
         clearInterval(initializeGoogleSignIn);
 
         window.google.accounts.id.initialize({

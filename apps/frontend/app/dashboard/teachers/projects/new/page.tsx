@@ -101,7 +101,7 @@ export default function CreateProjectForm() {
           return existingSetting;
         }
         return {
-          promotionId: promotionId,
+          promotionId,
           minMembers: 1,
           maxMembers: 5,
           mode: "FREE",
@@ -113,7 +113,7 @@ export default function CreateProjectForm() {
     setValue("groupSettings", newGroupSettings, { shouldDirty: true, shouldValidate: true });
   }, [getValues, setValue, watchPromotionIds]);
 
-  const onSubmit = async (data: CreateProjectFormValues) => {
+  const onSubmit = (data: CreateProjectFormValues): void => {
     createProjectMutation.mutate(data);
   };
 
@@ -201,7 +201,7 @@ export default function CreateProjectForm() {
                         <Select
                           onValueChange={(value) => {
                             const selectedId = Number.parseInt(value);
-                            const currentIds = field.value ?? [];
+                            const currentIds = field.value;
                             if (!currentIds.includes(selectedId)) {
                               field.onChange([...currentIds, selectedId]);
                             }
@@ -228,7 +228,7 @@ export default function CreateProjectForm() {
                       </FormControl>
                     )}
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {field.value?.map((promotionId) => {
+                      {field.value.map((promotionId) => {
                         const promotion = promotions.find((p) => p.id === promotionId);
                         return promotion ? (
                           <div

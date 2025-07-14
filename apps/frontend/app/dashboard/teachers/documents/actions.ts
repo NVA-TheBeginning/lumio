@@ -3,7 +3,7 @@
 import { getTokens, getUserFromCookie } from "@/lib/cookie";
 import { authFetchData, authPostFormData, isNotEmpty } from "@/lib/utils";
 
-const API_URL = `${process.env.API_URL}/documents`;
+const API_URL = `${process.env.API_URL ?? "http://localhost:3000"}/documents`;
 
 export interface Document {
   id: number;
@@ -20,13 +20,11 @@ export async function getDocuments(): Promise<Document[]> {
     throw new Error("User not found");
   }
   const userId = user.id;
-  const response = (await authFetchData(`${API_URL}?userId=${userId}`)) as Document[];
-  return response;
+  return await authFetchData<Document[]>(`${API_URL}?userId=${userId}`);
 }
 
 export async function getDocumentById(id: number): Promise<Document> {
-  const response = (await authFetchData(`${API_URL}/${id}`)) as Document;
-  return response;
+  return await authFetchData<Document>(`${API_URL}/${id}`);
 }
 
 export async function uploadDocument(file: File, name: string): Promise<Document> {
@@ -42,9 +40,7 @@ export async function uploadDocument(file: File, name: string): Promise<Document
   formData.append("userId", user.id.toString());
 
   try {
-    const response = await authPostFormData(`${API_URL}/upload`, formData);
-
-    return response as Document;
+    return await authPostFormData<Document>(`${API_URL}/upload`, formData);
   } catch (error) {
     console.error("Upload document error:", error);
     throw error;
@@ -75,7 +71,7 @@ export async function downloadDocument(id: number): Promise<DownloadDocumentResp
     throw new Error("Failed to download document");
   }
 
-  return (await response.json()) as Promise<DownloadDocumentResponse>;
+  return (await response.json()) as DownloadDocumentResponse;
 }
 
 export async function deleteDocument(id: number): Promise<void> {

@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, isNotNull } from "@/lib/utils";
 
 const PasswordInput = React.forwardRef<HTMLInputElement, React.ComponentProps<typeof Input>>(
   ({ className, ...props }, ref) => {
@@ -28,7 +28,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, React.ComponentProps<ty
           onClick={() => setShowPassword((prev) => !prev)}
           disabled={disabled}
         >
-          {showPassword && !disabled ? (
+          {showPassword && isNotNull(disabled) && !disabled ? (
             <EyeIcon className="h-4 w-4" aria-hidden="true" />
           ) : (
             <EyeOffIcon className="h-4 w-4" aria-hidden="true" />

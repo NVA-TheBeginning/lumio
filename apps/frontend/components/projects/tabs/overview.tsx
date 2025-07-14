@@ -34,17 +34,17 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       idPromotion: number;
       status: ProjectStatus;
     }) => {
-      return await updateProjectStatus(idProject, idPromotion, status as ProjectStatus);
+      return await updateProjectStatus(idProject, idPromotion, status);
     },
     onSuccess: () => {
       toast.success("Statut du projet mis à jour");
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["projects", project.id],
       });
     },
   });
 
-  const getStatusDisplayText = (status: ProjectStatus | string) => {
+  const getStatusDisplayText = (status: string) => {
     switch (status) {
       case ProjectStatus.VISIBLE:
         return "Visible";
@@ -65,11 +65,12 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
     });
   };
 
-  const upcomingDeliverables =
-    project.deliverables?.filter((deliverable) => {
+  const upcomingDeliverables = project.deliverables
+    .filter((deliverable) => {
       const deadlineDate = new Date(deliverable.deadline);
       return deadlineDate >= new Date();
-    }) || [];
+    })
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -89,7 +90,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Promotions associées</h3>
               <ul className="mt-2 space-y-2">
-                {project.promotions?.map((promotion) => (
+                {project.promotions.map((promotion) => (
                   <li
                     key={promotion.id}
                     className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
@@ -133,7 +134,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </li>
-                )) || []}
+                ))}
               </ul>
             </div>
           </CardContent>
@@ -166,7 +167,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {deliverable.type?.map((type: string, index: number) => (
+                        {deliverable.type.map((type: string, index: number) => (
                           <Badge key={index} variant="outline" className="text-xs">
                             {type}
                           </Badge>

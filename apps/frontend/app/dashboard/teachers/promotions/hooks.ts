@@ -76,7 +76,7 @@ export const useAddMember = () => {
       member: { lastname: string; firstname: string; email: string }[];
     }) => addMembers(promotionId, member),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["promotions", variables.promotionId, "members"],
       });
     },

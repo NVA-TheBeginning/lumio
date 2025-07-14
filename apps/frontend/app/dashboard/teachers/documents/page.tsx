@@ -26,16 +26,16 @@ export default function DocumentDrive() {
   const deleteDocumentMutation = useMutation({
     mutationFn: deleteDocument,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
   });
 
   const handleDocumentUploaded = () => {
-    queryClient.invalidateQueries({ queryKey: ["documents"] });
+    void queryClient.invalidateQueries({ queryKey: ["documents"] });
   };
 
-  const handleDocumentDeleted = async (id: number) => {
-    await deleteDocumentMutation.mutateAsync(id);
+  const handleDocumentDeleted = (id: number) => {
+    void deleteDocumentMutation.mutateAsync(id);
   };
 
   if (isError) {
@@ -50,17 +50,24 @@ export default function DocumentDrive() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Espace Documents</h1>
-        <Button onClick={() => setIsUploading(true)} className="flex items-center gap-2">
+        <Button
+          onClick={() => {
+            setIsUploading(true);
+          }}
+          className="flex items-center gap-2"
+        >
           <PlusIcon size={16} />
           Ajouter
         </Button>
       </div>
 
-      <DocumentList documents={documents || []} isLoading={isLoading} onDocumentDeleted={handleDocumentDeleted} />
+      <DocumentList documents={documents ?? []} isLoading={isLoading} onDocumentDeleted={handleDocumentDeleted} />
 
       <UploadModal
         isOpen={isUploading}
-        onClose={() => setIsUploading(false)}
+        onClose={() => {
+          setIsUploading(false);
+        }}
         onDocumentUploaded={handleDocumentUploaded}
       />
     </div>

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
-
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +19,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { isValidNumber } from "@/lib/utils";
 import { NavUser, NavUserProps } from "../nav-user";
 
 const navData = {
@@ -110,7 +110,7 @@ export function TeachersSidebar({ user, ...props }: { user: NavUserProps } & Rea
                     {item.title}
                   </HoverPrefetchLink>
                 </SidebarMenuButton>
-                {item.items?.length ? (
+                {isValidNumber(item.items?.length) && item.items.length > 0 ? (
                   <SidebarMenuSub>
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>

@@ -64,7 +64,7 @@ export default function ProjectSubmissionsPage() {
     mutationFn: acceptSubmission,
     onSuccess: (_, submissionId) => {
       toast.success("Soumission acceptée avec succès");
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["promotion-submissions", activePromotion, projectId],
       });
       setAcceptingSubmissions((prev) => {
@@ -183,7 +183,7 @@ export default function ProjectSubmissionsPage() {
       }>(["plagiarism-results", activePromotion, projectId, deliverableId.toString()]);
       if (!plagiarismQuery) return null;
 
-      return plagiarismQuery.folderResults?.find((folder) => folder.folderName.startsWith(`${groupId}-`));
+      return plagiarismQuery.folderResults.find((folder) => folder.folderName.startsWith(`${groupId}-`));
     };
   }, [activePromotion, projectId, queryClient]);
 
@@ -231,7 +231,7 @@ export default function ProjectSubmissionsPage() {
 
       if (searchTerm) {
         const groupName = getGroupName(submission.groupId).toLowerCase();
-        const fileName = submission.fileName?.toLowerCase() || "";
+        const fileName = submission.fileName.toLowerCase();
         const deliverableName = getDeliverableName(submission.deliverableId).toLowerCase();
 
         return (
@@ -249,9 +249,7 @@ export default function ProjectSubmissionsPage() {
     return filteredSubmissions.reduce(
       (acc, submission) => {
         const deliverableId = submission.deliverableId;
-        if (!acc[deliverableId]) {
-          acc[deliverableId] = [];
-        }
+        acc[deliverableId] ??= [];
         acc[deliverableId].push(submission);
         return acc;
       },
@@ -313,7 +311,7 @@ export default function ProjectSubmissionsPage() {
                 ))}
               </TabsList>
 
-              {project?.promotions.map((promotion) => (
+              {project.promotions.map((promotion) => (
                 <TabsContent key={promotion.id} value={promotion.id.toString()}>
                   <div className="flex flex-col gap-4 mb-6">
                     <div className="flex items-center gap-4">
@@ -482,7 +480,9 @@ export default function ProjectSubmissionsPage() {
                                       <Button
                                         variant="default"
                                         size="sm"
-                                        onClick={() => handleAcceptSubmission(submission.submissionId)}
+                                        onClick={() => {
+                                          void handleAcceptSubmission(submission.submissionId);
+                                        }}
                                         disabled={acceptingSubmissions.has(submission.submissionId)}
                                         className="bg-green-600 hover:bg-green-700"
                                       >
@@ -492,11 +492,13 @@ export default function ProjectSubmissionsPage() {
                                           : "Accepter"}
                                       </Button>
                                     )}
-                                    {isNotEmpty(submission.fileName) && !submission.error && (
+                                    {isNotEmpty(submission.fileName) && submission.error !== true && (
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => handleDownloadSubmission(submission.submissionId)}
+                                        onClick={() => {
+                                          void handleDownloadSubmission(submission.submissionId);
+                                        }}
                                       >
                                         <Download className="h-4 w-4" />
                                       </Button>

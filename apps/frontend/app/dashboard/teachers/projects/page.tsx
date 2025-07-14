@@ -127,10 +127,7 @@ export default function ProjectList() {
         const dateB = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       }
-      if (sortBy === "title") {
-        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      }
-      return 0;
+      return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
     });
   }, [filteredProjects, sortBy, sortOrder]);
 
@@ -357,7 +354,7 @@ export default function ProjectList() {
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-gray-500">Filtres actifs:</span>
-            {filters.promotions?.map((promotion) => (
+            {filters.promotions.map((promotion) => (
               <Badge key={promotion} variant="outline" className="flex items-center gap-1">
                 {promotion}
                 <X className="h-3 w-3 cursor-pointer" onClick={() => handlePromotionToggle(promotion)} />

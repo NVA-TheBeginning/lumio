@@ -44,7 +44,7 @@ export default function PromotionsPage() {
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+      void queryClient.invalidateQueries({ queryKey: ["promotions"] });
       setIsDeleteDialogOpen(false);
     },
     onError: (error) => {
@@ -89,7 +89,7 @@ export default function PromotionsPage() {
           <PromotionSelector
             value={selectedPromotionId}
             onChange={setSelectedPromotionId}
-            promotions={promotions || []}
+            promotions={promotions ?? []}
             isLoading={isLoading}
             isError={isError}
           />

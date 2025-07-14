@@ -99,10 +99,7 @@ export default function ProjectList() {
         const dateB = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       }
-      if (sortBy === "title") {
-        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      }
-      return 0;
+      return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
     });
   }, [filteredProjects, sortBy, sortOrder]);
 

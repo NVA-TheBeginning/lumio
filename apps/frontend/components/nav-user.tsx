@@ -73,7 +73,7 @@ export function NavUser({ user }: { user: NavUserProps }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push(`${user.role?.toLowerCase()}s/settings`)}>
+              <DropdownMenuItem onClick={() => router.push(`${user.role.toLowerCase()}s/settings`)}>
                 <Cog className="mr-2 h-4 w-4" />
                 Paramètres
               </DropdownMenuItem>

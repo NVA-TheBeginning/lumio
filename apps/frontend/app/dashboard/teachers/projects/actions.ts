@@ -206,8 +206,8 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     updatedAt: projectData.updatedAt,
     deletedAt: projectData.deletedAt,
     promotions: [],
-    deliverables: deliverablesData ?? [],
-    documents: documentsData ?? [],
+    deliverables: deliverablesData,
+    documents: documentsData,
   };
 
   const promotionPromises = projectData.promotions.map(async (promotion) => {
@@ -322,15 +322,10 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
     authFetchData<ProjectDocument[]>(`${API_URL}/documents/projects/${id}`),
   ]);
 
-  result.deliverables = deliverables ?? [];
-  result.documents = documents ?? [];
+  result.deliverables = deliverables;
+  result.documents = documents;
   result.submissions = [];
-  result.groupSettings = groupSettings ?? {
-    minMembers: 0,
-    maxMembers: 0,
-    mode: "",
-    deadline: "",
-  };
+  result.groupSettings = groupSettings;
 
   if (isNotNull(groups)) {
     result.groups = groups.map((group) => ({

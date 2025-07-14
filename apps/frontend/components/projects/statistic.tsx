@@ -32,11 +32,11 @@ export function ProjectStatistics({ project }: ProjectStatisticsProps) {
             <p className="text-sm text-muted-foreground">Étudiants</p>
           </div>
           <div className="bg-muted/50 p-4 rounded-md text-center">
-            <p className="text-2xl font-bold">{project.deliverables?.length ?? 0}</p>
+            <p className="text-2xl font-bold">{project.deliverables.length}</p>
             <p className="text-sm text-muted-foreground">Livrables</p>
           </div>
           <div className="bg-muted/50 p-4 rounded-md text-center">
-            <p className="text-2xl font-bold">{project.documents?.length ?? 0}</p>
+            <p className="text-2xl font-bold">{project.documents.length}</p>
             <p className="text-sm text-muted-foreground">Documents</p>
           </div>
         </div>

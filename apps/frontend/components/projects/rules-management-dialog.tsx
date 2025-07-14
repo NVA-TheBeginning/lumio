@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { isNotNull, isValidNumber } from "@/lib/utils";
 import {
   type DeliverableRule,
   type DirectoryStructureRuleDetails,
@@ -66,7 +67,7 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
       toast.success("Règle créée avec succès");
       setShowCreateForm(false);
       resetForm();
-      queryClient.invalidateQueries({ queryKey: ["deliverable-rules", deliverable.id] });
+      void queryClient.invalidateQueries({ queryKey: ["deliverable-rules", deliverable.id] });
     },
     onError: (error) => {
       console.error("Failed to create rule:", error);
@@ -83,7 +84,7 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
 
       queryClient.setQueryData<DeliverableRule[]>(
         ["deliverable-rules", deliverable.id],
-        (old) => old?.filter((rule) => rule.id !== ruleId) || [],
+        (old) => old?.filter((rule) => rule.id !== ruleId) ?? [],
       );
 
       return { previousRules };
@@ -99,7 +100,7 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
       toast.error("Erreur lors de la suppression de la règle");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["deliverable-rules", deliverable.id] });
+      void queryClient.invalidateQueries({ queryKey: ["deliverable-rules", deliverable.id] });
     },
   });
 
@@ -208,13 +209,13 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
         }
 
         const parts: string[] = [];
-        if (parsedDetails.requiredFiles?.length) {
+        if (parsedDetails.requiredFiles.length) {
           parts.push(`Fichiers requis: ${parsedDetails.requiredFiles.join(", ")}`);
         }
-        if (parsedDetails.allowedExtensions?.length) {
+        if (isValidNumber(parsedDetails.allowedExtensions?.length) && parsedDetails.allowedExtensions.length > 0) {
           parts.push(`Extensions autorisées: ${parsedDetails.allowedExtensions.join(", ")}`);
         }
-        if (parsedDetails.forbiddenExtensions?.length) {
+        if (isValidNumber(parsedDetails.forbiddenExtensions?.length) && parsedDetails.forbiddenExtensions.length > 0) {
           parts.push(`Extensions interdites: ${parsedDetails.forbiddenExtensions.join(", ")}`);
         }
         return parts.join(" | ");
@@ -234,10 +235,13 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
         }
 
         const dirParts: string[] = [];
-        if (parsedDetails.requiredDirectories?.length) {
+        if (parsedDetails.requiredDirectories.length) {
           dirParts.push(`Dossiers requis: ${parsedDetails.requiredDirectories.join(", ")}`);
         }
-        if (parsedDetails.forbiddenDirectories?.length) {
+        if (
+          isValidNumber(parsedDetails.forbiddenDirectories?.length) &&
+          parsedDetails.forbiddenDirectories.length > 0
+        ) {
           dirParts.push(`Dossiers interdits: ${parsedDetails.forbiddenDirectories.join(", ")}`);
         }
         return dirParts.join(" | ");
@@ -285,7 +289,7 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
                 <Loader2 className="h-6 w-6 animate-spin" />
                 <span className="ml-2">Chargement des règles...</span>
               </div>
-            ) : error ? (
+            ) : isNotNull(error) ? (
               <div className="text-center p-8 text-red-600">
                 Erreur lors du chargement des règles. Veuillez réessayer.
               </div>
@@ -353,7 +357,7 @@ export function RulesManagementDialog({ children, deliverable }: RulesManagement
                         id="maxSize"
                         type="number"
                         value={maxSizeInBytes}
-                        onChange={(e) => setMaxSizeInBytes(Number(e.target.value) ?? 0)}
+                        onChange={(e) => setMaxSizeInBytes(Number(e.target.value))}
                         placeholder="10485760"
                       />
                       <p className="text-sm text-muted-foreground mt-1">

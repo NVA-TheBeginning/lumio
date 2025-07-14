@@ -210,7 +210,7 @@ const getColorVariant = (color?: string): VariantProps<typeof monthEventVariants
     "#8b5cf6": "purple",
   };
 
-  return colorMap[color] || "default";
+  return colorMap[color] ?? "default";
 };
 
 const EventGroup = ({ events, hour }: { events: CalendarEvent[]; hour: Date }) => {
@@ -432,14 +432,10 @@ const CalendarYearView = () => {
   const { view, date, today, locale } = useCalendar();
 
   const months = useMemo(() => {
-    if (!view) {
-      return [];
-    }
-
     return Array.from({ length: 12 }).map((_, i) => {
       return getDaysInMonth(setMonth(date, i));
     });
-  }, [date, view]);
+  }, [date]);
 
   const weekDays = useMemo(() => generateWeekdays(locale), [locale]);
 
@@ -494,7 +490,7 @@ const CalendarNextTrigger = forwardRef<HTMLButtonElement, React.HTMLAttributes<H
         setDate(addWeeks(date, 1));
       } else if (view === "month") {
         setDate(addMonths(date, 1));
-      } else if (view === "year") {
+      } else {
         setDate(addYears(date, 1));
       }
     }, [date, view, setDate]);
@@ -532,7 +528,7 @@ const CalendarPrevTrigger = forwardRef<HTMLButtonElement, React.HTMLAttributes<H
         setDate(subWeeks(date, 1));
       } else if (view === "month") {
         setDate(subMonths(date, 1));
-      } else if (view === "year") {
+      } else {
         setDate(subYears(date, 1));
       }
     }, [date, view, setDate]);

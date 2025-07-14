@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exportPresentationOrdersToPDF } from "@/lib/pdf-export";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, isNotNull } from "@/lib/utils";
 import { OrderWithGroup } from "@/types/presentation-orders";
 
 interface PresentationOrdersManagerProps {
@@ -30,16 +30,16 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", presentation.id],
     queryFn: () => getOrders(presentation.id),
-    enabled: !!presentation,
+    enabled: isNotNull(presentation),
   });
 
-  const assignedGroupIds = new Set(orders?.map((order) => order.groupId) || []);
-  const allGroups = promotion.groups || [];
+  const assignedGroupIds = new Set(orders?.map((order) => order.groupId));
+  const allGroups = promotion.groups;
   const unassignedGroups = allGroups.filter((group) => !assignedGroupIds.has(group.id));
 
   const ordersWithGroups: OrderWithGroup[] = useMemo(
     () =>
-      (orders || [])
+      (orders ?? [])
         .map((order) => ({
           ...order,
           group: promotion.groups.find((group) => group.id === order.groupId),
@@ -54,13 +54,12 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
 
   const initializeOrdersMutation = useMutation({
     mutationFn: () => {
-      if (!presentation) throw new Error("No presentation");
-      if (!allGroups.length) throw new Error("No groups");
+      if (allGroups.length === 0) throw new Error("No groups");
       const allGroupIds = allGroups.map((group) => group.id);
       return saveOrders(presentation.id, { groupIds: allGroupIds });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders", presentation.id] });
+      void queryClient.invalidateQueries({ queryKey: ["orders", presentation.id] });
       toast.success("Ordre de passage initialisé");
     },
     onError: () => {
@@ -69,12 +68,9 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
   });
 
   const saveOrdersMutation = useMutation({
-    mutationFn: (data: SaveOrdersData) => {
-      if (!presentation) throw new Error("No presentation selected");
-      return saveOrders(presentation.id, data);
-    },
+    mutationFn: (data: SaveOrdersData) => saveOrders(presentation.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders", presentation.id] });
+      void queryClient.invalidateQueries({ queryKey: ["orders", presentation.id] });
       toast.success("Ordre sauvegardé");
     },
     onError: () => {
@@ -272,7 +268,7 @@ export function PresentationOrdersManager({ presentation, promotion }: Presentat
                           #{index + 1}
                         </Badge>
                         <div>
-                          <div className="font-medium">{order.group?.name || `Groupe ${order.groupId}`}</div>
+                          <div className="font-medium">{order.group?.name ?? `Groupe ${order.groupId}`}</div>
                           <div className="text-sm text-muted-foreground">
                             {order.group?.members.length ?? 0} membres
                           </div>

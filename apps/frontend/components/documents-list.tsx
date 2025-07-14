@@ -58,7 +58,6 @@ export default function DocumentListGrid({ documents, isLoading, onDocumentDelet
       let uint8Array: Uint8Array;
       if (
         typeof documentData.file === "object" &&
-        documentData.file !== null &&
         "data" in documentData.file &&
         Array.isArray(documentData.file.data)
       ) {

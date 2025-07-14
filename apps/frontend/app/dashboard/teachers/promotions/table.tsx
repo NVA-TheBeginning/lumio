@@ -72,7 +72,7 @@ export function MembersTable({ promotionId }: MembersTableProps) {
     isFetching,
   } = usePromotionMembers(promotionId, currentPage, pageSize);
 
-  const allMembers = membersResponse?.data || [];
+  const allMembers = membersResponse?.data ?? [];
 
   const filteredMembers = useMemo(() => {
     if (!searchQuery.trim()) return allMembers;
