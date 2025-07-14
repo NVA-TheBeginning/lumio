@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn, isNotNull } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const PasswordInput = React.forwardRef<HTMLInputElement, React.ComponentProps<typeof Input>>(
   ({ className, ...props }, ref) => {
