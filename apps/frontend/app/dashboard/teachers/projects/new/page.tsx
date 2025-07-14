@@ -6,7 +6,7 @@ import { CalendarIcon, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { getPromotions } from "@/app/dashboard/teachers/promotions/action";
 import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { Button } from "@/components/ui/button";

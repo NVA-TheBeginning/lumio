@@ -5,7 +5,7 @@ import { Edit3, Grid3x3, Plus, Save, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -20,7 +20,7 @@ import { isValidNumber } from "@/lib/utils";
 const criteriaSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   weight: z.number().min(0).max(100, "Le poids doit être entre 0 et 100"),
-  type: z.nativeEnum(CriterionType),
+  type: z.enum(CriterionType),
   individual: z.boolean(),
 });
 

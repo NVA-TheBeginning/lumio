@@ -19,7 +19,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm as useHookForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import { z } from "zod/v4";
 import {
   addMembersToGroup,
   type CreateGroupsDto,

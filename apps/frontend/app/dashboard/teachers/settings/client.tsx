@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -21,8 +21,8 @@ const profileSchema = z
     firstname: z.string().min(3, {
       message: "Le prénom doit contenir au moins 3 caractères.",
     }),
-    email: z.string().email({
-      message: "Veuillez entrer une adresse email valide.",
+    email: z.email({
+      error: "Veuillez entrer une adresse email valide.",
     }),
     currentPassword: z.string().optional(),
     newPassword: z.string().optional(),
