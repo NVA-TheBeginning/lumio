@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     reactCompiler: enableReactCompiler,
-    optimizePackageImports: ["@radix-ui/*"],
+    optimizePackageImports: ["@radix-ui/*", "framer-motion"],
     nodeMiddleware: true,
     browserDebugInfoInTerminal: true,
     serverActions: {
