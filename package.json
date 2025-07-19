@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "lumio",
-  "packageManager": "bun@1.2.18",
+  "packageManager": "bun@1.2.19",
   "scripts": {
     "build": "turbo run build",
     "build:ci": "turbo run build --affected",
@@ -18,16 +18,14 @@
     "@biomejs/biome": "2.1.2",
     "turbo": "^2.5.5"
   },
-  "workspaces": [
-    "apps/*"
-  ],
+  "workspaces": {
+    "linker": "isolated",
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ]
+  },
   "trustedDependencies": [
-    "@nestjs/core",
-    "@prisma/client",
-    "@prisma/engines",
-    "@scarf/scarf",
-    "esbuild",
-    "prisma",
-    "sharp"
+    "**"
   ]
 }
