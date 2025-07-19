@@ -247,15 +247,6 @@
       },
     },
   },
-  "trustedDependencies": [
-    "esbuild",
-    "sharp",
-    "@prisma/engines",
-    "@prisma/client",
-    "@scarf/scarf",
-    "prisma",
-    "@nestjs/core",
-  ],
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
