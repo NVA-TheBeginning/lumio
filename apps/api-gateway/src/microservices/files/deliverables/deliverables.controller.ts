@@ -58,7 +58,7 @@ export class DeliverablesController {
     description: "Filter deliverables by promotion ID",
   })
   async findAll(@Param() params: ProjectIdParams, @Query("promoId") promoId?: string): Promise<unknown> {
-    const queryString = promoId ? `?promoId=${promoId}` : "";
+    const queryString = promoId != null && promoId !== "" ? `?promoId=${promoId}` : "";
     return this.proxy.forwardRequest("files", `/projects/${params.projectId}/deliverables${queryString}`, "GET");
   }
 
@@ -99,16 +99,18 @@ export class DeliverablesController {
     @Query("projectId") projectId?: string,
   ): Promise<CalendarResponseDto[]> {
     const queryParams = [
-      promotionId && `promotionId=${promotionId}`,
-      startDate && `startDate=${startDate}`,
-      endDate && `endDate=${endDate}`,
-      projectId && `projectId=${projectId}`,
-    ].filter(Boolean);
+      promotionId != null && promotionId !== "" ? `promotionId=${promotionId}` : null,
+      startDate != null && startDate !== "" ? `startDate=${startDate}` : null,
+      endDate != null && endDate !== "" ? `endDate=${endDate}` : null,
+      projectId != null && projectId !== "" ? `projectId=${projectId}` : null,
+    ].filter((param): param is string => param !== null);
     const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
 
     const deliverables = await this.proxy.forwardRequest<DeliverableResponse[]>(
       "files",
-      promotionId ? `/calendar/promotion/${promotionId}${queryString}` : `/calendar${queryString}`,
+      promotionId != null && promotionId !== ""
+        ? `/calendar/promotion/${promotionId}${queryString}`
+        : `/calendar${queryString}`,
       "GET",
     );
 
@@ -151,7 +153,7 @@ export class DeliverablesController {
         .filter((project): project is NonNullable<typeof project> => project !== null);
     };
 
-    if (promotionId) {
+    if (promotionId != null && promotionId !== "" && !Number.isNaN(Number(promotionId))) {
       const promotion = promotionMap.get(Number(promotionId));
       if (!promotion) {
         return [];

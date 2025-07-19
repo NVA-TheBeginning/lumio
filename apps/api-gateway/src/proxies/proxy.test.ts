@@ -44,12 +44,11 @@ describe("MicroserviceProxyService", () => {
     expect(service).toBeDefined();
   });
 
-  test("throws if microservice URL not configured", async () => {
+  test("throws if microservice URL not configured", () => {
     spyOn(configService, "get").mockReturnValue(undefined);
 
-    await expect(service.forwardRequest("auth", "/foo", "GET")).rejects.toThrow(
-      'URL du microservice "auth" non configurée.',
-    );
+    const promise = service.forwardRequest("auth", "/foo", "GET");
+    expect(promise).rejects.toThrow('URL du microservice "auth" non configurée.');
   });
 
   describe("forwardRequest / success cases", () => {
@@ -169,7 +168,7 @@ describe("MicroserviceProxyService", () => {
       spyOn(configService, "get").mockReturnValue("http://test-service.com");
     });
 
-    test("transforms axios error into HttpException", async () => {
+    test("transforms axios error into HttpException", () => {
       const axiosErr = {
         isAxiosError: true,
         response: {
@@ -181,7 +180,8 @@ describe("MicroserviceProxyService", () => {
 
       axios.request = (() => Promise.reject(axiosErr)) as unknown as typeof axios.request;
 
-      expect(service.forwardRequest("auth", "/fail", "GET")).rejects.toMatchObject({
+      const promise = service.forwardRequest("auth", "/fail", "GET");
+      expect(promise).rejects.toMatchObject({
         status: 418,
         message: "[auth] I am a teapot",
       });

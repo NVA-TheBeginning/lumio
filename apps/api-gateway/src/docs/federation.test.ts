@@ -5,11 +5,11 @@ import axios from "axios";
 import { microservicesDocs } from "@/config/microservices.config.js";
 import { setupFederatedSwagger } from "./swagger-federation.js";
 
-mock.module("axios", () => ({
+void mock.module("axios", () => ({
   default: {
-    get: mock(() => Promise.resolve({ data: {} })),
+    get: mock(async () => await Promise.resolve({ data: {} })),
   },
-  get: mock(() => Promise.resolve({ data: {} })),
+  get: mock(async () => await Promise.resolve({ data: {} })),
 }));
 
 mock.module("@nestjs/swagger", () => ({

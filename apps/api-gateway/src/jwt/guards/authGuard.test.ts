@@ -87,7 +87,7 @@ describe("AuthGuard", () => {
         authorization: "Bearer invalid-token",
       };
 
-      (jwtService.verifyAsync as ReturnType<typeof mock>).mockRejectedValue(new Error("Invalid token"));
+      jwtService.verifyAsync.mockRejectedValue(new Error("Invalid token"));
 
       expect(authGuard.canActivate(mockExecutionContext as unknown as ExecutionContext)).rejects.toThrow(
         UnauthorizedException,
@@ -108,7 +108,7 @@ describe("AuthGuard", () => {
         authorization: "Bearer valid-token",
       };
 
-      (jwtService.verifyAsync as ReturnType<typeof mock>).mockResolvedValue(mockPayload);
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const result = await authGuard.canActivate(mockExecutionContext as unknown as ExecutionContext);
 
@@ -133,7 +133,7 @@ describe("AuthGuard", () => {
         authorization: "Bearer teacher-token",
       };
 
-      (jwtService.verifyAsync as ReturnType<typeof mock>).mockResolvedValue(teacherPayload);
+      jwtService.verifyAsync.mockResolvedValue(teacherPayload);
 
       const result = await authGuard.canActivate(mockExecutionContext as unknown as ExecutionContext);
 
@@ -155,7 +155,7 @@ describe("AuthGuard", () => {
         authorization: "Bearer admin-token",
       };
 
-      (jwtService.verifyAsync as ReturnType<typeof mock>).mockResolvedValue(adminPayload);
+      jwtService.verifyAsync.mockResolvedValue(adminPayload);
 
       const result = await authGuard.canActivate(mockExecutionContext as unknown as ExecutionContext);
 
@@ -177,7 +177,7 @@ describe("AuthGuard", () => {
         authorization: "Bearer custom-token",
       };
 
-      (jwtService.verifyAsync as ReturnType<typeof mock>).mockResolvedValue(customPayload);
+      jwtService.verifyAsync.mockResolvedValue(customPayload);
 
       const result = await authGuard.canActivate(mockExecutionContext as unknown as ExecutionContext);
 
