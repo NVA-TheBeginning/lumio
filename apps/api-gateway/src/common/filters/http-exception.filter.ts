@@ -12,13 +12,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<FastifyRequest>();
     const response = ctx.getResponse<FastifyReply>();
 
-    const status = exception.getStatus ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = typeof exception.getStatus === "function" ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
     const exceptionResponse = exception.getResponse();
 
     const rawMessage =
       typeof exceptionResponse === "string"
         ? exceptionResponse
-        : (exceptionResponse as Record<string, unknown>).message || exception.message;
+        : ((exceptionResponse as Record<string, unknown>).message ?? exception.message);
 
     this.logger.error(`[${request.method}] ${request.url} → ${status}: ${JSON.stringify(rawMessage)}`);
 

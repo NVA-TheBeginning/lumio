@@ -31,7 +31,7 @@ export class MicroserviceProxyService {
     params?: object,
   ): Promise<TResponse> {
     const baseUrl = this.configService.get<string>(`microservices.${microservice}`);
-    if (!baseUrl) {
+    if (baseUrl === undefined || baseUrl === '') {
       throw new Error(`URL du microservice "${microservice}" non configurée.`);
     }
 
@@ -45,7 +45,7 @@ export class MicroserviceProxyService {
       const error = err as AxiosError<MicroserviceErrorResponse>;
       const status = error.response?.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
       const message =
-        error.response?.data?.message || error.response?.data?.error || error.message || "Erreur microservice inconnue";
+        error.response?.data?.message ?? error.response?.data?.error ?? error.message ?? "Erreur microservice inconnue";
       throw new HttpException(`[${microservice}] ${message}`, status);
     }
   }

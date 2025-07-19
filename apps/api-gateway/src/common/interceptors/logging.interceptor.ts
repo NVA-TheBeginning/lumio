@@ -8,7 +8,13 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
-    const { method, url, body, params, query } = request;
+    const { method, url, body, params, query } = request as {
+      method: string;
+      url: string;
+      body: unknown;
+      params: unknown;
+      query: unknown;
+    };
     const now = Date.now();
 
     this.logger.log(
@@ -17,8 +23,10 @@ export class LoggingInterceptor implements NestInterceptor {
       )}, Query: ${JSON.stringify(query)}, Body: ${JSON.stringify(body)}`,
     );
 
-    return next
-      .handle()
-      .pipe(tap(() => this.logger.log(`Response sent for ${method} ${url} in ${Date.now() - now}ms`)));
+    return next.handle().pipe(
+      tap(() => {
+        this.logger.log(`Response sent for ${method} ${url} in ${Date.now() - now}ms`);
+      }),
+    );
   }
 }

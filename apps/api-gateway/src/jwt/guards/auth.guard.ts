@@ -6,7 +6,7 @@ import { jwtConstants } from "@/config/constants.js";
 type UserReq = {
   sub: number;
   email: string;
-  role: "TEACHER" | "STUDENT" | "ADMIN" | string;
+  role: string;
   type: string;
   iat?: number;
   exp?: number;
@@ -25,7 +25,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<FastifyRequest>();
     const token = this.extractTokenFromHeader(request);
-    if (!token) {
+    if (token === undefined || token === "") {
       new Logger("AuthGuard").error("No token provided in Authorization header");
       throw new UnauthorizedException();
     }
