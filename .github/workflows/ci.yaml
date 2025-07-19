@@ -84,7 +84,7 @@ jobs:
           ${{ runner.os }}-turbo-
 
     - name: Install dependencies
-      run: bun install --frozen-lockfile
+      run: bun ci
 
     - name: Generate Prisma && Prepare database
       run: bun run prisma
