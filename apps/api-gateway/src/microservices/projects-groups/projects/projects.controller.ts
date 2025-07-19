@@ -180,8 +180,7 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: "Detailed project info" })
   @ApiResponse({ status: 404, description: "Project not found" })
   async findOneProjectTeacher(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser) {
-    const userId = Number(user.sub);
-    return this.proxy.forwardRequest("project", `/projects/${id}/teacher?userId=${userId}`, "GET", undefined);
+    return this.proxy.forwardRequest("project", `/projects/${id}/teacher?userId=${user.sub}`, "GET", undefined);
   }
 
   @Get(":id/student")
@@ -192,8 +191,7 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: "Detailed project info" })
   @ApiResponse({ status: 404, description: "Project not found" })
   async findOneProjectStudent(@Param("id", ParseIntPipe) id: number, @GetUser() user: JwtUser) {
-    const userId = Number(user.sub);
-    return this.proxy.forwardRequest("project", `/projects/${id}/student?userId=${userId}`, "GET", undefined);
+    return this.proxy.forwardRequest("project", `/projects/${id}/student?userId=${user.sub}`, "GET", undefined);
   }
 
   @Get()

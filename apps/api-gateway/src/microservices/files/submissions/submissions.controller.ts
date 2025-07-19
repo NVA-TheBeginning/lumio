@@ -70,7 +70,7 @@ export class SubmissionsController {
       throw new BadRequestException("groupId must be a valid number");
     }
 
-    if (!(file?.buffer || body.gitUrl)) {
+    if (!(file?.buffer || (body.gitUrl != null && body.gitUrl !== ""))) {
       throw new BadRequestException("Either a file or a Git URL must be provided.");
     }
 
@@ -82,7 +82,7 @@ export class SubmissionsController {
       formData.append("file", fileBlob, file.originalname);
     }
 
-    if (body.gitUrl) {
+    if (body.gitUrl != null && body.gitUrl !== "" && body.gitUrl.trim() !== "") {
       formData.append("gitUrl", body.gitUrl);
     }
 
@@ -100,7 +100,7 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.OK, description: "List of submissions." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Deliverable not found." })
   async findAllByDeliverable(@Param("groupId") groupId: number, @Query("idDeliverable") idDeliverable?: number) {
-    if (idDeliverable) {
+    if (idDeliverable != null && !Number.isNaN(idDeliverable)) {
       return await this.proxy.forwardRequest(
         "files",
         `/deliverables/${groupId}/submissions?idDeliverable=${idDeliverable}`,
@@ -129,7 +129,7 @@ export class SubmissionsController {
   @ApiResponse({ status: HttpStatus.OK, description: "List of all submissions for the promotion." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Promotion not found." })
   async findAllPromotionSubmissions(@Param("promotionId") promotionId: number, @Query("projectId") projectId?: number) {
-    if (projectId) {
+    if (projectId != null && !Number.isNaN(projectId)) {
       return await this.proxy.forwardRequest(
         "files",
         `/submissions/${promotionId}/submissions?projectId=${projectId}`,
@@ -143,7 +143,7 @@ export class SubmissionsController {
   @ApiOperation({ summary: "Delete a submission" })
   @ApiResponse({ status: HttpStatus.OK, description: "Submission deleted successfully." })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: "Submission not found." })
-  async deleteSubmission(@Param("idSubmission") idSubmission: number): Promise<void> {
+  async deleteSubmission(@Param("idSubmission") idSubmission: number) {
     return await this.proxy.forwardRequest("files", `/submissions/${idSubmission}`, "DELETE");
   }
 
@@ -188,7 +188,7 @@ export class SubmissionsController {
     @Param("idDeliverable", ParseIntPipe) idDeliverable: number,
     @UploadedFile() file: File,
   ): Promise<{ isValid: boolean; errors: string[] }> {
-    if (!file?.buffer) {
+    if (!file.buffer) {
       throw new BadRequestException("A file must be provided for validation.");
     }
 

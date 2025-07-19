@@ -68,7 +68,7 @@ export class DocumentController {
     @Body("userId") userId: number,
     @Body("projectIds") projectIds?: string,
   ) {
-    if (!file?.buffer) {
+    if (!file.buffer) {
       throw new BadRequestException("No file uploaded");
     }
 
@@ -77,7 +77,7 @@ export class DocumentController {
     formData.append("name", name);
     formData.append("userId", userId.toString());
     formData.append("mimetype", file.mimetype);
-    if (projectIds) {
+    if (projectIds != null && projectIds !== "") {
       formData.append("projectIds", projectIds);
     }
 

@@ -62,7 +62,7 @@ export class PromotionsService {
       studentsData,
     );
 
-    const studentIds = students?.map((s) => s.studentId) || [];
+    const studentIds = students.map((s) => s.studentId);
 
     const projectDto: ProjectPromotionDto = {
       name: createPromotionDto.name,
@@ -94,7 +94,7 @@ export class PromotionsService {
    * Transforme un CSV de lignes lastname,firstname,email en objets StudentData.
    */
   private parseStudentsCsv(csv: string): StudentData[] {
-    if (!csv?.trim()) return [];
+    if (!csv.trim()) return [];
 
     const lines = csv
       .split(regex) // supporter CRLF et LF

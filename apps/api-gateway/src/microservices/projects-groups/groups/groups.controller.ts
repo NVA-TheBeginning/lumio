@@ -82,12 +82,12 @@ export class GroupsController {
         "GET",
       );
 
-      if (!groups?.length) {
+      if (!groups.length) {
         return [];
       }
 
       const studentIds = Array.from(
-        new Set(groups.flatMap((group) => group.members?.map((member) => member.studentId) ?? [])),
+        new Set(groups.flatMap((group) => group.members.map((member) => member.studentId))),
       );
 
       if (!studentIds.length) {
@@ -102,7 +102,7 @@ export class GroupsController {
         `/users?ids=${studentIds.join(",")}`,
         "GET",
       );
-      const studentsData = students?.data ?? [];
+      const studentsData = students.data;
 
       const studentsMap = new Map<number, StudentDto>();
       studentsData.forEach((student) => {
@@ -111,18 +111,17 @@ export class GroupsController {
 
       const enrichedGroups: EnrichedGroup[] = groups.map((group) => ({
         ...group,
-        members:
-          group.members?.map((member) => {
-            const student = studentsMap.get(member.studentId);
-            return {
-              id: member.studentId,
-              lastname: student?.lastname ?? "",
-              firstname: student?.firstname ?? "",
-              email: student?.email ?? "",
-              addedAt: member.addedAt,
-              groupId: member.groupId,
-            };
-          }) ?? [],
+        members: group.members.map((member) => {
+          const student = studentsMap.get(member.studentId);
+          return {
+            id: member.studentId,
+            lastname: student?.lastname ?? "",
+            firstname: student?.firstname ?? "",
+            email: student?.email ?? "",
+            addedAt: member.addedAt,
+            groupId: member.groupId,
+          };
+        }),
       }));
 
       return enrichedGroups;
