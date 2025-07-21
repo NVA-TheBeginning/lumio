@@ -51,6 +51,9 @@ export class ProjectDto {
   creatorId!: number;
 
   @ApiProperty()
+  hasReport!: boolean;
+
+  @ApiProperty()
   createdAt!: Date;
 
   @ApiProperty()

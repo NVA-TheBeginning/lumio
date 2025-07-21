@@ -15,6 +15,7 @@ export interface Project {
   name: string;
   description: string;
   creatorId: number;
+  hasReport: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +36,7 @@ export interface ProjectWithPromotions {
   name: string;
   description: string;
   creatorId: number;
+  hasReport: boolean;
   createdAt: Date;
   updatedAt: Date;
   promotions: Array<{
@@ -51,6 +53,7 @@ export interface getAllStudentProjects {
   name: string;
   description: string;
   creatorId: number;
+  hasReport: boolean;
   createdAt: Date;
   updatedAt: Date;
   group: {
@@ -68,14 +71,14 @@ export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateProjectDto): Promise<{ project: Project; groups: Group[] }> {
-    const { name, description, creatorId, promotionIds = [], groupSettings = [] } = createDto;
+    const { name, description, creatorId, hasReport = true, promotionIds = [], groupSettings = [] } = createDto;
 
     this.validateBasics(name, description, creatorId);
     await this.validatePromotions(promotionIds);
     this.validateGroupSettings(promotionIds, groupSettings);
 
     return this.prisma.$transaction(async (tx) => {
-      const project = await this.createProject(tx, name, description, creatorId);
+      const project = await this.createProject(tx, name, description, creatorId, hasReport);
 
       await this.createProjectPromotions(tx, project.id, promotionIds);
       await this.createGroupSettings(tx, project.id, groupSettings);
@@ -137,6 +140,7 @@ export class ProjectService {
       name: p.name,
       description: p.description,
       creatorId: p.creatorId,
+      hasReport: p.hasReport,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       promotions: p.projectPromotions.map((pp) => ({
@@ -198,6 +202,7 @@ export class ProjectService {
         name: projectData.name,
         description: projectData.description,
         creatorId: projectData.creatorId,
+        hasReport: projectData.hasReport,
         createdAt: projectData.createdAt.toISOString(),
         updatedAt: projectData.updatedAt.toISOString(),
         deletedAt: projectData.deletedAt?.toISOString() || null,
@@ -275,6 +280,7 @@ export class ProjectService {
       name: projectData.name,
       description: projectData.description,
       creatorId: projectData.creatorId,
+      hasReport: projectData.hasReport,
       createdAt: projectData.createdAt.toISOString(),
       updatedAt: projectData.updatedAt.toISOString(),
       deletedAt: projectData.deletedAt?.toISOString() || null,
@@ -364,6 +370,7 @@ export class ProjectService {
           name: projectPromotion.project.name,
           description: projectPromotion.project.description,
           creatorId: projectPromotion.project.creatorId,
+          hasReport: projectPromotion.project.hasReport,
           createdAt: projectPromotion.project.createdAt,
           updatedAt: projectPromotion.project.updatedAt,
           group: studentGroup
@@ -401,6 +408,7 @@ export class ProjectService {
     if (updateDto.name) data.name = updateDto.name;
     if (updateDto.description) data.description = updateDto.description;
     if (updateDto.creatorId) data.creatorId = updateDto.creatorId;
+    if (updateDto.hasReport !== undefined) data.hasReport = updateDto.hasReport;
 
     return this.prisma.$transaction(async (prisma) => {
       const updated = await prisma.project.update({ where: { id }, data });
@@ -508,9 +516,9 @@ export class ProjectService {
     }
   }
 
-  private createProject(tx: Prisma.TransactionClient, name: string, description: string, creatorId: number) {
+  private createProject(tx: Prisma.TransactionClient, name: string, description: string, creatorId: number, hasReport: boolean) {
     return tx.project.create({
-      data: { name, description, creatorId },
+      data: { name, description, creatorId, hasReport },
     });
   }
 

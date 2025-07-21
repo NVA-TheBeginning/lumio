@@ -30,6 +30,9 @@ export class ProjectTeacherDto {
   @ApiProperty({ description: "Creator user ID", example: 123 })
   creatorId: number;
 
+  @ApiProperty({ description: "Whether reports are enabled for this project", example: true })
+  hasReport: boolean;
+
   @ApiProperty({ description: "Project creation date", example: "2024-01-15T10:30:00Z" })
   createdAt: string;
 

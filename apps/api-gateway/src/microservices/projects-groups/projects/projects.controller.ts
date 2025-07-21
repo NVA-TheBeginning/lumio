@@ -26,6 +26,7 @@ import {
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -94,6 +95,11 @@ export class CreateProjectDto {
   @IsNumber()
   creatorId!: number;
 
+  @ApiProperty({ description: "Enable reports for this project", type: Boolean, example: true })
+  @IsOptional()
+  @IsBoolean()
+  hasReport?: boolean;
+
   @ApiProperty({ description: "Array of promotion IDs", type: [Number], example: [1, 2] })
   @IsArray()
   @IsNumber({}, { each: true })
@@ -136,16 +142,18 @@ export class ProjectsController {
       createProjectDto,
     );
 
-    const reports: ReportResponseDto[] = await Promise.all(
-      groups.map((g) =>
-        this.proxy.forwardRequest<ReportResponseDto>("report", "/reports", "POST", {
-          projectId: project.id,
-          groupId: g.id,
-          promotionId: g.promotionId,
-          sections: [],
-        } as CreateReportDto),
-      ),
-    );
+    const reports: ReportResponseDto[] = project.hasReport
+      ? await Promise.all(
+          groups.map((g) =>
+            this.proxy.forwardRequest<ReportResponseDto>("report", "/reports", "POST", {
+              projectId: project.id,
+              groupId: g.id,
+              promotionId: g.promotionId,
+              sections: [],
+            } as CreateReportDto),
+          ),
+        )
+      : [];
 
     return { project, groups, reports };
   }

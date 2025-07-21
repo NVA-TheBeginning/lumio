@@ -12,6 +12,7 @@ import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +36,7 @@ const createProjectSchema = z.object({
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères"),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
   creatorId: z.number().positive("L'ID du créateur est requis"),
+  hasReport: z.boolean().optional(),
   promotionIds: z.array(z.number()),
   groupSettings: z.array(groupSettingSchema).optional(),
 });
@@ -58,6 +60,7 @@ export default function CreateProjectForm() {
     name: "",
     description: "",
     creatorId: 1, // Will be replaced during request
+    hasReport: true,
     promotionIds: [],
     groupSettings: [],
   };
@@ -172,6 +175,30 @@ export default function CreateProjectForm() {
                       />
                     </FormControl>
                     <FormDescription>Une description détaillée du projet et de ses objectifs</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hasReport"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Activer les rapports collaboratifs
+                      </FormLabel>
+                      <FormDescription>
+                        Les étudiants pourront rédiger des rapports collaboratifs pour ce projet
+                      </FormDescription>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
