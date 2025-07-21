@@ -29,6 +29,7 @@ interface Project {
   id: number;
   name: string;
   description: string;
+  hasReport: boolean;
   promotions: {
     id: number;
     name: string;
@@ -43,6 +44,7 @@ interface CreateProjectData {
   name: string;
   description: string;
   creatorId: number;
+  hasReport?: boolean;
   promotionIds: number[];
   groupSettings?: {
     promotionId: number;
@@ -167,6 +169,7 @@ interface getProjectTeacher {
   name: string;
   description: string;
   creatorId: number;
+  hasReport: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -178,6 +181,7 @@ export interface ProjectType {
   name: string;
   description: string;
   creatorId: number;
+  hasReport: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -202,6 +206,7 @@ export async function getProjectByIdTeacher(id: number): Promise<ProjectType> {
     name: projectData.name,
     description: projectData.description,
     creatorId: projectData.creatorId,
+    hasReport: projectData.hasReport,
     createdAt: projectData.createdAt,
     updatedAt: projectData.updatedAt,
     deletedAt: projectData.deletedAt,

@@ -3,6 +3,7 @@ import { GroupMode } from "@prisma-project/client";
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -63,6 +64,11 @@ export class CreateProjectDto {
   @IsInt()
   @IsNotEmpty()
   creatorId!: number;
+
+  @ApiProperty({ description: "Enable reports for this project", example: true, type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  hasReport?: boolean;
 
   @ApiProperty({ description: "List of promotion IDs", type: [Number], example: [1, 2] })
   @IsOptional()

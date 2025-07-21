@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Clock, Eye, EyeOff, MoreHorizontal } from "lucide-react";
+import { Clock, Eye, EyeOff, FileText, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectType, updateProjectStatus } from "@/app/dashboard/teachers/projects/actions";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +85,13 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
           <CardContent>
             <div className="prose max-w-none">
               <p>{project.description}</p>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <Badge variant={project.hasReport ? "default" : "secondary"} className="flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                {project.hasReport ? "Rapports activés" : "Rapports désactivés"}
+              </Badge>
             </div>
 
             <div className="mt-4">
