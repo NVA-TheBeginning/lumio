@@ -189,10 +189,8 @@ export default function CreateProjectForm() {
                       <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Activer les rapports collaboratifs</FormLabel>
-                      <FormDescription>
-                        Les étudiants pourront rédiger des rapports collaboratifs pour ce projet
-                      </FormDescription>
+                      <FormLabel>Activer les rapports</FormLabel>
+                      <FormDescription>Les étudiants devront rédiger un rapport à la fin du projet</FormDescription>
                     </div>
                     <FormMessage />
                   </FormItem>
