@@ -422,8 +422,8 @@ export default function ProjectList() {
                 <p className="text-sm text-gray-600 mb-4 line-clamp-3">{project.description}</p>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <Badge 
-                    variant={project.hasReport ? "default" : "outline"} 
+                  <Badge
+                    variant={project.hasReport ? "default" : "outline"}
                     className="text-xs flex items-center gap-1"
                   >
                     <FileText className="h-3 w-3" />

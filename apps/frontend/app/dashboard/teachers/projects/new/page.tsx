@@ -186,15 +186,10 @@ export default function CreateProjectForm() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Activer les rapports collaboratifs
-                      </FormLabel>
+                      <FormLabel>Activer les rapports collaboratifs</FormLabel>
                       <FormDescription>
                         Les étudiants pourront rédiger des rapports collaboratifs pour ce projet
                       </FormDescription>

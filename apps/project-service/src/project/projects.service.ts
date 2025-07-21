@@ -516,7 +516,13 @@ export class ProjectService {
     }
   }
 
-  private createProject(tx: Prisma.TransactionClient, name: string, description: string, creatorId: number, hasReport: boolean) {
+  private createProject(
+    tx: Prisma.TransactionClient,
+    name: string,
+    description: string,
+    creatorId: number,
+    hasReport: boolean,
+  ) {
     return tx.project.create({
       data: { name, description, creatorId, hasReport },
     });
