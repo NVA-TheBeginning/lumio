@@ -11,7 +11,7 @@ import {
   IsString,
 } from "class-validator";
 
-enum GroupMode {
+export enum GroupMode {
   MANUAL = "MANUAL",
   RANDOM = "RANDOM",
   FREE = "FREE",
