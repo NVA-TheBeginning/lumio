@@ -14,6 +14,7 @@ import {
 } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { CreateProjectDto } from "./dto/create-project.dto";
+import { ProjectStatisticsDto } from "./dto/project-statistics.dto";
 import { ProjectStudentDto } from "./dto/project-student.dto";
 import { ProjectTeacherDto } from "./dto/project-teacher.dto";
 import { UpdateProjectDto, UpdateProjectStatusDto } from "./dto/update-project.dto";
@@ -66,6 +67,32 @@ export class ProjectController {
       return this.projectService.findByCreator(Number(userId), Number(page), Number(size));
     }
     return this.projectService.findProjectsForStudent(Number(userId), Number(page), Number(size));
+  }
+
+  @Get("statistics")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get project statistics for the current user" })
+  @ApiQuery({
+    name: "userId",
+    type: Number,
+    required: true,
+    description: "ID de l'utilisateur (validé via gateway)",
+  })
+  @ApiQuery({
+    name: "userRole",
+    type: String,
+    required: true,
+    description: "Rôle de l'utilisateur (TEACHER, ADMIN ou STUDENT)",
+  })
+  @ApiResponse({ status: 200, description: "User project statistics", type: ProjectStatisticsDto })
+  async getStatistics(
+    @Query("userId") userId: number,
+    @Query("userRole") userRole: "TEACHER" | "ADMIN" | "STUDENT",
+  ): Promise<ProjectStatisticsDto> {
+    if (!(userId && userRole)) {
+      throw new BadRequestException("userId and userRole are required query parameters.");
+    }
+    return this.projectService.getStatistics(Number(userId), userRole);
   }
 
   @Get()
