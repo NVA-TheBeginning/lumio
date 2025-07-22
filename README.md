@@ -17,6 +17,13 @@ L’application repose sur une **architecture microservices** avec une API Gatew
 
 ## 🚀 Lancer le projet
 
+### Prerequisites
+
+- [Bun](https://bun.sh/) >= 1.2.19
+- [Docker](https://www.docker.com/) & Docker Compose
+- [Rust](https://rustup.rs/) (for plagiarism detection service)
+
+
 ```bash
 bun upgrade && bun install
 bun run prisma

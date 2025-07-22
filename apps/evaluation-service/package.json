@@ -21,7 +21,6 @@
     "@prisma/client": "^6.12.0",
     "class-validator": "^0.14.2",
     "date-fns": "^4.1.0",
-    "fast-jwt": "^6.0.2",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
