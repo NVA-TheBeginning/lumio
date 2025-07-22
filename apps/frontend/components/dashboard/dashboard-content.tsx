@@ -57,11 +57,71 @@ export function DashboardContent({ user, userRole, displayName }: DashboardConte
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Informations générales</h2>
-            <p className="text-muted-foreground text-sm">
-              Vous participez à {statistics?.participantProjects ?? 0} projet(s) actif(s) répartis dans{" "}
-              {statistics?.groupMemberships ?? 0} groupe(s) de travail.
-            </p>
+            <h2 className="text-lg font-semibold">Actions rapides</h2>
+            <div className="grid gap-3">
+              <a
+                href="/dashboard/students/projects"
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <title>Voir mes projets</title>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Mes projets</p>
+                  <p className="text-sm text-muted-foreground">Voir tous vos projets actifs</p>
+                </div>
+              </a>
+
+              <a
+                href="/dashboard/students/calendar"
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <title>Calendrier</title>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Calendrier</p>
+                  <p className="text-sm text-muted-foreground">Voir les échéances importantes</p>
+                </div>
+              </a>
+
+              <a
+                href="/dashboard/students/reports"
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <title>Rapports</title>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Mes rapports</p>
+                  <p className="text-sm text-muted-foreground">Rédiger et gérer vos rapports</p>
+                </div>
+              </a>
+            </div>
           </div>
 
           <ActivityFeed activities={activities ?? []} isLoading={activitiesLoading} />
