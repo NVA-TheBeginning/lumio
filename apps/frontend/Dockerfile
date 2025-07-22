@@ -7,7 +7,7 @@ ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 COPY package.json bun.lock ./
 COPY apps/frontend/package.json ./apps/frontend/
 
-RUN bun install
+RUN bun ci
 
 COPY . .
 
