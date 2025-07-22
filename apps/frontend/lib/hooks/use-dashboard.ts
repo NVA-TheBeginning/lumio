@@ -2,12 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { ActivityItem, DashboardStatistics, UserRole } from "@/lib/types/dashboard";
 import { authFetchData } from "@/lib/utils";
 
+const API_URL = process.env.API_URL ?? "http://localhost:3000";
+
 async function fetchDashboardStatistics(userId: number, userRole: UserRole): Promise<DashboardStatistics> {
-  return authFetchData<DashboardStatistics>(`/dashboard/statistics?userId=${userId}&userRole=${userRole}`);
+  return authFetchData<DashboardStatistics>(`${API_URL}/dashboard/statistics?userId=${userId}&userRole=${userRole}`);
 }
 
 async function fetchRecentActivity(userId: number, userRole: UserRole, limit = 10): Promise<ActivityItem[]> {
-  return authFetchData<ActivityItem[]>(`/dashboard/activity?userId=${userId}&userRole=${userRole}&limit=${limit}`);
+  return authFetchData<ActivityItem[]>(
+    `${API_URL}/dashboard/activity?userId=${userId}&userRole=${userRole}&limit=${limit}`,
+  );
 }
 
 export function useDashboardStatistics(userId: number, userRole: UserRole) {

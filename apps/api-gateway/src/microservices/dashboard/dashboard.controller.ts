@@ -86,7 +86,7 @@ export class DashboardController {
     }
 
     return this.proxy.forwardRequest(
-      "project-service",
+      "project",
       `/projects/statistics?userId=${userId}&userRole=${userRole}`,
       "GET",
     ) as Promise<ProjectStatistics>;
