@@ -7,11 +7,5 @@ export default async function DashboardPage() {
   const displayName = isTruthy(user?.firstname) ? user.firstname : isTruthy(user?.email) ? user.email : "Visiteur";
   const userRole = (user?.role as "TEACHER" | "ADMIN") || "TEACHER";
 
-  return (
-    <DashboardContent 
-      user={user} 
-      userRole={userRole} 
-      displayName={displayName} 
-    />
-  );
+  return <DashboardContent user={user} userRole={userRole} displayName={displayName} />;
 }

@@ -59,15 +59,12 @@ export function DashboardContent({ user, userRole, displayName }: DashboardConte
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Informations générales</h2>
             <p className="text-muted-foreground text-sm">
-              Vous participez à {statistics?.participantProjects ?? 0} projet(s) actif(s) 
-              répartis dans {statistics?.groupMemberships ?? 0} groupe(s) de travail.
+              Vous participez à {statistics?.participantProjects ?? 0} projet(s) actif(s) répartis dans{" "}
+              {statistics?.groupMemberships ?? 0} groupe(s) de travail.
             </p>
           </div>
-          
-          <ActivityFeed 
-            activities={activities ?? []} 
-            isLoading={activitiesLoading}
-          />
+
+          <ActivityFeed activities={activities ?? []} isLoading={activitiesLoading} />
         </div>
 
         {(statisticsError || activitiesError) && (
@@ -122,15 +119,12 @@ export function DashboardContent({ user, userRole, displayName }: DashboardConte
             />
           </div>
           <p className="text-muted-foreground text-sm">
-            Vous avez créé {statistics?.totalProjects ?? 0} projet(s) au total, 
-            dont {statistics?.activeProjects ?? 0} actuellement visible(s) aux étudiants.
+            Vous avez créé {statistics?.totalProjects ?? 0} projet(s) au total, dont {statistics?.activeProjects ?? 0}{" "}
+            actuellement visible(s) aux étudiants.
           </p>
         </div>
-        
-        <ActivityFeed 
-          activities={activities ?? []} 
-          isLoading={activitiesLoading}
-        />
+
+        <ActivityFeed activities={activities ?? []} isLoading={activitiesLoading} />
       </div>
 
       {(statisticsError || activitiesError) && (
