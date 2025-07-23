@@ -57,7 +57,6 @@ interface ProjectGroup {
   members: GroupMember[];
 }
 
-
 function getGroupProgress(
   groupId: number,
   criteria: GradingCriteria[],
@@ -175,8 +174,6 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     },
   });
 
-
-
   const activePromotion_obj = project.promotions.find((p) => p.id.toString() === activePromotion);
   const allGroups = activePromotion_obj?.groups ?? [];
 
@@ -247,7 +244,6 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     setPendingUpdates((prev) => new Set(prev).add(key));
   };
 
-
   const getGradeValue = (criteriaId: number, groupId: number, studentId?: number): number => {
     const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     return grades[key]?.gradeValue ?? gradeMatrix[key]?.gradeValue ?? 0;
@@ -258,46 +254,49 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     return grades[key]?.comment ?? gradeMatrix[key]?.comment ?? "";
   };
 
-  const saveGrade = useCallback((criteriaId: number, groupId: number, studentId?: number) => {
-    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
-    const gradeData = grades[key];
-    const existingGrade = gradeMatrix[key];
+  const saveGrade = useCallback(
+    (criteriaId: number, groupId: number, studentId?: number) => {
+      const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+      const gradeData = grades[key];
+      const existingGrade = gradeMatrix[key];
 
-    if (!gradeData) return;
+      if (!gradeData) return;
 
-    if (existingGrade) {
-      updateGradeMutation.mutate({
-        gradeId: existingGrade.id,
-        data: { gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+      if (existingGrade) {
+        updateGradeMutation.mutate({
+          gradeId: existingGrade.id,
+          data: { gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+        });
+      } else {
+        createGradeMutation.mutate({
+          criteriaId,
+          data: { groupId, gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+        });
+      }
+
+      setPendingUpdates((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(key);
+        return newSet;
       });
-    } else {
-      createGradeMutation.mutate({
-        criteriaId,
-        data: { groupId, gradeValue: gradeData.gradeValue, comment: gradeData.comment },
-      });
-    }
-
-    setPendingUpdates((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(key);
-      return newSet;
-    });
-  }, [grades, gradeMatrix, updateGradeMutation, createGradeMutation]);
+    },
+    [grades, gradeMatrix, updateGradeMutation, createGradeMutation],
+  );
 
   useEffect(() => {
     if (pendingUpdates.size === 0) return;
-    
+
     const timeout = setTimeout(() => {
       const pendingKeys = Array.from(pendingUpdates);
-      
+
       for (const key of pendingKeys) {
-        const parts = key.split('-').map(Number);
+        const parts = key.split("-").map(Number);
         const criteriaId = parts[0];
         const groupId = parts[1];
         const studentId = parts[2];
-        
-        if (!criteriaId || !groupId) continue;
-        
+
+        if (!(criteriaId && groupId)) continue;
+
         if (parts.length === 3 && isValidNumber(studentId)) {
           saveGrade(criteriaId, groupId, studentId);
         } else if (parts.length === 2) {
@@ -305,7 +304,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
         }
       }
     }, 2000);
-    
+
     return () => clearTimeout(timeout);
   }, [pendingUpdates.size, saveGrade, pendingUpdates]);
 
@@ -316,7 +315,6 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       </div>
     );
   }
-
 
   return (
     <div className="space-y-6">
@@ -807,8 +805,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                               variant="ghost"
                                                               size="sm"
                                                               onClick={() => {
-                              toggleComment(key);
-                            }}
+                                                                toggleComment(key);
+                                                              }}
                                                             >
                                                               <MessageSquare
                                                                 className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
@@ -907,8 +905,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                   variant="ghost"
                                                                   size="sm"
                                                                   onClick={() => {
-                              toggleComment(key);
-                            }}
+                                                                    toggleComment(key);
+                                                                  }}
                                                                 >
                                                                   <MessageSquare
                                                                     className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
