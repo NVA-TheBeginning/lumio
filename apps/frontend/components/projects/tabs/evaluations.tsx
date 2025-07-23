@@ -137,8 +137,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   });
 
   const { data: existingGrades = [], isLoading: gradesLoading } = useQuery({
-    queryKey: ["grades", criteria.map((c) => c.id)],
+    queryKey: ["grades", criteria.map((c) => c.id), activePromotion],
     queryFn: async () => {
+      if (criteria.length === 0) return [];
       const allGrades = await Promise.all(criteria.map((c) => getGradesForCriteria(c.id)));
       return allGrades.flat();
     },
@@ -200,13 +201,19 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const gradeMatrix = useMemo(() => {
     const matrix: Record<string, Grade | undefined> = {};
     existingGrades.forEach((grade) => {
-      const key = isValidNumber(grade.studentId) 
-        ? `${grade.gradingCriteriaId}-${grade.groupId}-${grade.studentId}`
-        : `${grade.gradingCriteriaId}-${grade.groupId}`;
-      matrix[key] = grade;
+      const individualKey = `${grade.gradingCriteriaId}-${grade.groupId}-${grade.studentId}`;
+      matrix[individualKey] = grade;
+      
+      const criterion = criteria.find(c => c.id === grade.gradingCriteriaId);
+      if (criterion && !criterion.individual) {
+        const groupKey = `${grade.gradingCriteriaId}-${grade.groupId}`;
+        if (!matrix[groupKey]) {
+          matrix[groupKey] = grade;
+        }
+      }
     });
     return matrix;
-  }, [existingGrades]);
+  }, [existingGrades, criteria]);
 
   const handleGradeChange = (criteriaId: number, groupId: number, value: string | number[]) => {
     const key = `${criteriaId}-${groupId}`;
