@@ -3,6 +3,7 @@ WORKDIR /app
 
 COPY package.json bun.lock ./
 COPY apps/api-gateway/package.json ./apps/api-gateway/
+COPY packages/ ./packages/
 
 RUN bun install
 

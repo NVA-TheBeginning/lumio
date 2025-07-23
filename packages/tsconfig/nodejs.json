@@ -4,6 +4,9 @@
     "module": "NodeNext",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "types": ["bun"]
+    "types": ["bun"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }
