@@ -18,7 +18,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   createGrade,
@@ -106,6 +106,35 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCriteriaManagement, setShowCriteriaManagement] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+  const lastToastTime = useRef<number>(0);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showThrottledToast = useCallback((message: string, type: "success" | "error" = "success") => {
+    const now = Date.now();
+    if (now - lastToastTime.current >= 10000) {
+      if (type === "success") {
+        toast.success(message);
+      } else {
+        toast.error(message);
+      }
+      lastToastTime.current = now;
+    } else {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      toastTimeoutRef.current = setTimeout(
+        () => {
+          if (type === "success") {
+            toast.success(message);
+          } else {
+            toast.error(message);
+          }
+          lastToastTime.current = Date.now();
+        },
+        10000 - (now - lastToastTime.current),
+      );
+    }
+  }, []);
 
   const toggleGroup = (groupId: number) => {
     setExpandedGroups((prev) => {
@@ -151,10 +180,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       updateGrade(gradeId, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["grades"] });
-      toast.success("Note mise à jour");
     },
     onError: () => {
-      toast.error("Erreur lors de la mise à jour");
+      showThrottledToast("Erreur lors de la mise à jour", "error");
     },
   });
 
@@ -168,10 +196,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     }) => createGrade(criteriaId, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["grades"] });
-      toast.success("Note créée");
     },
     onError: () => {
-      toast.error("Erreur lors de la création");
+      showThrottledToast("Erreur lors de la création", "error");
     },
   });
 
@@ -214,6 +241,25 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     });
     return matrix;
   }, [existingGrades, criteria]);
+
+  // Update completion grading when grades are fetched
+  useEffect(() => {
+    if (existingGrades.length > 0) {
+      // Calculate completion and show success message once
+      const totalPossibleGrades = criteria.reduce((total, criterion) => {
+        if (criterion.individual) {
+          return total + allGroups.reduce((groupTotal, group) => groupTotal + group.members.length, 0);
+        }
+        return total + allGroups.length;
+      }, 0);
+
+      const completedGrades = existingGrades.length;
+
+      if (completedGrades > 0) {
+        showThrottledToast(`${completedGrades}/${totalPossibleGrades} notes chargées`);
+      }
+    }
+  }, [existingGrades.length, criteria, allGroups, showThrottledToast]);
 
   const handleGradeChange = (criteriaId: number, groupId: number, value: string | number[]) => {
     const key = `${criteriaId}-${groupId}`;
@@ -333,6 +379,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
     const timeout = setTimeout(() => {
       const pendingKeys = Array.from(pendingUpdates);
+      let updatedCount = 0;
 
       for (const key of pendingKeys) {
         const parts = key.split("-").map(Number);
@@ -344,14 +391,31 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
         if (parts.length === 3 && isValidNumber(studentId)) {
           saveGrade(criteriaId, groupId, studentId);
+          updatedCount++;
         } else if (parts.length === 2) {
           saveGrade(criteriaId, groupId);
+          updatedCount++;
         }
+      }
+
+      if (updatedCount > 0) {
+        showThrottledToast(
+          `${updatedCount} note${updatedCount > 1 ? "s" : ""} mise${updatedCount > 1 ? "s" : ""} à jour`,
+        );
       }
     }, 10000);
 
     return () => clearTimeout(timeout);
-  }, [pendingUpdates.size, saveGrade, pendingUpdates]);
+  }, [pendingUpdates.size, saveGrade, pendingUpdates, showThrottledToast]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (criteriaLoading || gradesLoading) {
     return (
