@@ -3,6 +3,7 @@
   "name": "frontend",
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "bun@1.2.19",
   "scripts": {
     "dev": "next dev --turbopack --port 3001",
     "build": "next build --turbopack",
@@ -52,13 +53,13 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/bun": "^1.2.19",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "babel-plugin-react-compiler": "^19.1.0-rc.2",
-    "tailwindcss": "^4.1.11"
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.8.3"
   }
 }
