@@ -71,9 +71,9 @@ export class FinalGradeService {
           const studentGrade = studentGrades.find((g) => g.gradingCriteriaId === criterion.id);
 
           if (studentGrade) {
-            const weight = criterion.weight;
-            totalWeightedScore += (studentGrade.gradeValue * weight) / 100;
-            totalWeight += weight;
+            // Grade values are already weighted in the frontend, so just sum them
+            totalWeightedScore += studentGrade.gradeValue;
+            totalWeight += criterion.weight;
           }
         }
 
@@ -91,7 +91,7 @@ export class FinalGradeService {
               where: { id: existing.id },
               data: {
                 finalGrade,
-                comment: `Calculé automatiquement (${totalWeight}% des critères)`,
+                comment: `Calculé automatiquement - somme des notes pondérées (${totalWeight}% des critères)`,
                 validatedAt: new Date(),
               },
             });
@@ -103,7 +103,7 @@ export class FinalGradeService {
               groupId,
               studentId,
               finalGrade,
-              comment: `Calculé automatiquement (${totalWeight}% des critères)`,
+              comment: `Calculé automatiquement - somme des notes pondérées (${totalWeight}% des critères)`,
             },
           });
         }
