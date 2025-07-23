@@ -132,7 +132,7 @@ function GradingSlider({ value, maxScore, onChange, className = "" }: GradingSli
             <span>{(maxScore * 0.5).toFixed(1)}</span>
             <span>{maxScore.toFixed(1)}</span>
           </div>
-          
+
           {/* Compact touch area for slider */}
           <div className="py-2 px-1">
             <Slider
@@ -144,12 +144,10 @@ function GradingSlider({ value, maxScore, onChange, className = "" }: GradingSli
             />
           </div>
         </div>
-        
+
         {/* Compact score display positioned close to right border */}
         <div className="flex justify-end pr-1">
-          <span className="font-bold text-lg text-gray-900 text-right">
-            {value.toFixed(1)}
-          </span>
+          <span className="font-bold text-lg text-gray-900 text-right">{value.toFixed(1)}</span>
         </div>
       </div>
     </div>
@@ -1027,8 +1025,13 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                         <div className="space-y-3">
                                                           <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-3">
-                                                              <span className="font-semibold text-gray-800">{criterion.name}</span>
-                                                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
+                                                              <span className="font-semibold text-gray-800">
+                                                                {criterion.name}
+                                                              </span>
+                                                              <Badge
+                                                                variant="secondary"
+                                                                className="text-xs bg-green-100 text-green-800 border-green-200"
+                                                              >
                                                                 {criterion.weight}% • Max: {maxScore.toFixed(1)}pts
                                                               </Badge>
                                                             </div>
@@ -1048,7 +1051,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                           <GradingSlider
                                                             value={gradeValue}
                                                             maxScore={maxScore}
-                                                            onChange={(value) => handleGradeChange(criterion.id, group.id, value)}
+                                                            onChange={(value) =>
+                                                              handleGradeChange(criterion.id, group.id, value)
+                                                            }
                                                           />
                                                         </div>
                                                         {showComments.has(key) && (
@@ -1094,8 +1099,13 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                       >
                                                         <div className="mb-3">
                                                           <div className="flex items-center gap-3">
-                                                            <span className="font-semibold text-gray-800">{criterion.name}</span>
-                                                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800 border-purple-200">
+                                                            <span className="font-semibold text-gray-800">
+                                                              {criterion.name}
+                                                            </span>
+                                                            <Badge
+                                                              variant="secondary"
+                                                              className="text-xs bg-purple-100 text-purple-800 border-purple-200"
+                                                            >
                                                               {criterion.weight}% • Max: {maxScore.toFixed(1)}pts
                                                             </Badge>
                                                           </div>
@@ -1147,12 +1157,14 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                   <GradingSlider
                                                                     value={gradeValue}
                                                                     maxScore={maxScore}
-                                                                    onChange={(value) => handleIndividualGradeChange(
-                                                                      criterion.id,
-                                                                      group.id,
-                                                                      member.id,
-                                                                      value,
-                                                                    )}
+                                                                    onChange={(value) =>
+                                                                      handleIndividualGradeChange(
+                                                                        criterion.id,
+                                                                        group.id,
+                                                                        member.id,
+                                                                        value,
+                                                                      )
+                                                                    }
                                                                   />
                                                                 </div>
                                                                 {showComments.has(key) && (
