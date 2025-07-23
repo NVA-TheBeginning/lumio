@@ -718,6 +718,10 @@ export async function updateGrade(gradeId: number, data: { gradeValue?: number; 
 export async function getFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {
   return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/final-grades`);
 }
+
+export async function calculateFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {
+  return await authPostData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/final-grades`, {});
+}
 export interface ProjectDocument {
   id: number;
   name: string;

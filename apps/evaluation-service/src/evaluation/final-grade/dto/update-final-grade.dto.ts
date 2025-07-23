@@ -2,9 +2,9 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsInt, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class UpdateFinalGradeDto {
-  @ApiProperty({ description: "ID de l'utilisateur" })
+  @ApiProperty({ description: "ID de l'étudiant" })
   @IsInt()
-  userId: number;
+  studentId: number;
 
   @ApiProperty({ description: "Note finale" })
   @IsNumber()

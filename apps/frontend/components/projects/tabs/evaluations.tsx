@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Calculator,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -12,6 +13,7 @@ import {
   GraduationCap,
   MessageSquare,
   MinusCircle,
+  Save,
   Search,
   Settings,
   Trophy,
@@ -21,6 +23,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  calculateFinalGrades,
   createGrade,
   Grade,
   GradingCriteria,
@@ -100,15 +103,14 @@ function getGroupStatusSimple(groupGraded: number, groupTotal: number, indivGrad
 
 function getSliderColorClass(gradeValue: number, maxScore: number) {
   const percentage = (gradeValue / maxScore) * 100;
-  const baseTransition = "transition-all duration-300 ease-in-out";
-  
+
   if (percentage < 40) {
-    return `${baseTransition} data-[orientation=horizontal]:bg-red-500 [&_[data-orientation=horizontal]_span]:bg-red-500 [&_[data-orientation=horizontal]]:transition-colors [&_[data-orientation=horizontal]]:duration-300 [&_[data-orientation=horizontal]_span]:transition-colors [&_[data-orientation=horizontal]_span]:duration-300`;
+    return "[&_[data-slot='slider-range']]:bg-red-500 [&_[data-slot='slider-range']]:transition-colors [&_[data-slot='slider-range']]:duration-300";
   }
   if (percentage < 70) {
-    return `${baseTransition} data-[orientation=horizontal]:bg-yellow-500 [&_[data-orientation=horizontal]_span]:bg-yellow-500 [&_[data-orientation=horizontal]]:transition-colors [&_[data-orientation=horizontal]]:duration-300 [&_[data-orientation=horizontal]_span]:transition-colors [&_[data-orientation=horizontal]_span]:duration-300`;
+    return "[&_[data-slot='slider-range']]:bg-yellow-500 [&_[data-slot='slider-range']]:transition-colors [&_[data-slot='slider-range']]:duration-300";
   }
-  return `${baseTransition} data-[orientation=horizontal]:bg-green-500 [&_[data-orientation=horizontal]_span]:bg-green-500 [&_[data-orientation=horizontal]]:transition-colors [&_[data-orientation=horizontal]]:duration-300 [&_[data-orientation=horizontal]_span]:transition-colors [&_[data-orientation=horizontal]_span]:duration-300`;
+  return "[&_[data-slot='slider-range']]:bg-green-500 [&_[data-slot='slider-range']]:transition-colors [&_[data-slot='slider-range']]:duration-300";
 }
 
 export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
@@ -215,6 +217,20 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     },
     onError: () => {
       showThrottledToast("Erreur lors de la création", "error");
+    },
+  });
+
+  const calculateFinalGradesMutation = useMutation({
+    mutationFn: () => calculateFinalGrades(project.id, Number(activePromotion)),
+    onSuccess: (finalGrades) => {
+      void queryClient.invalidateQueries({ queryKey: ["final-grades"] });
+      showThrottledToast(
+        `Notes finales calculées pour ${finalGrades.length} groupe${finalGrades.length > 1 ? "s" : ""}`,
+        "success",
+      );
+    },
+    onError: () => {
+      showThrottledToast("Erreur lors du calcul des notes finales", "error");
     },
   });
 
@@ -390,6 +406,40 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     [grades, gradeMatrix, updateGradeMutation, createGradeMutation, criteria, allGroups],
   );
 
+  const saveAllPendingGrades = useCallback(() => {
+    const pendingKeys = Array.from(pendingUpdates);
+    let updatedCount = 0;
+
+    for (const key of pendingKeys) {
+      const parts = key.split("-").map(Number);
+      const criteriaId = parts[0];
+      const groupId = parts[1];
+      const studentId = parts[2];
+
+      if (!(criteriaId && groupId)) continue;
+
+      if (parts.length === 3 && isValidNumber(studentId)) {
+        saveGrade(criteriaId, groupId, studentId);
+        updatedCount++;
+      } else if (parts.length === 2) {
+        saveGrade(criteriaId, groupId);
+        updatedCount++;
+      }
+    }
+
+    if (updatedCount > 0) {
+      showThrottledToast(
+        `${updatedCount} note${updatedCount > 1 ? "s" : ""} sauvegardée${updatedCount > 1 ? "s" : ""} manuellement`,
+      );
+    }
+  }, [pendingUpdates, saveGrade, showThrottledToast]);
+
+  const handleCalculateFinalGrades = useCallback(() => {
+    if (window.confirm("Calculer les notes finales pour tous les groupes de cette promotion ?")) {
+      calculateFinalGradesMutation.mutate();
+    }
+  }, [calculateFinalGradesMutation]);
+
   useEffect(() => {
     if (pendingUpdates.size === 0) return;
 
@@ -477,6 +527,28 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                 Voir toutes les notes
               </>
             )}
+          </Button>
+          <Button
+            variant="default"
+            onClick={saveAllPendingGrades}
+            disabled={pendingUpdates.size === 0}
+            className="flex items-center gap-2 shadow-sm"
+          >
+            <Save className="h-4 w-4" />
+            {pendingUpdates.size > 0 ? `Sauvegarder (${pendingUpdates.size})` : "Sauvegarder"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleCalculateFinalGrades}
+            disabled={calculateFinalGradesMutation.isPending}
+            className="flex items-center gap-2 shadow-sm"
+          >
+            {calculateFinalGradesMutation.isPending ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
+            ) : (
+              <Calculator className="h-4 w-4" />
+            )}
+            {calculateFinalGradesMutation.isPending ? "Calcul..." : "Calculer notes finales"}
           </Button>
         </div>
       </div>
@@ -906,43 +978,13 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                         key={criterion.id}
                                                         className="border rounded-lg p-3 hover:bg-gray-50/50 transition-colors"
                                                       >
-                                                        <div className="flex items-center justify-between">
-                                                          <div className="flex items-center gap-3 flex-1">
-                                                            <span className="font-medium">{criterion.name}</span>
-                                                            <Badge variant="secondary" className="text-xs">
-                                                              {criterion.weight}% • Max: {maxScore.toFixed(1)}pts
-                                                            </Badge>
-                                                          </div>
-                                                          <div className="flex items-center gap-3">
-                                                            <div className="flex items-center gap-2 min-w-[280px]">
-                                                              <div className="flex-1 relative">
-                                                                {/* Tick marks and labels */}
-                                                                <div className="flex justify-between text-xs text-gray-400 mb-1">
-                                                                  <span>0</span>
-                                                                  <span>{(maxScore * 0.25).toFixed(1)}</span>
-                                                                  <span>{(maxScore * 0.5).toFixed(1)}</span>
-                                                                  <span>{(maxScore * 0.75).toFixed(1)}</span>
-                                                                  <span>{maxScore.toFixed(1)}</span>
-                                                                </div>
-                                                                {/* Quality indicators */}
-                                                                <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                                                  <span className="text-red-500">Insuffisant</span>
-                                                                  <span className="text-yellow-500">Moyen</span>
-                                                                  <span className="text-green-500">Excellent</span>
-                                                                </div>
-                                                                <Slider
-                                                                  value={[gradeValue]}
-                                                                  onValueChange={(value) => {
-                                                                    handleGradeChange(criterion.id, group.id, value);
-                                                                  }}
-                                                                  max={maxScore}
-                                                                  step={0.5}
-                                                                  className={`w-full ${getSliderColorClass(gradeValue, maxScore)}`}
-                                                                />
-                                                              </div>
-                                                              <span className="font-bold text-lg min-w-[60px] text-right">
-                                                                {gradeValue.toFixed(1)}
-                                                              </span>
+                                                        <div className="space-y-3">
+                                                          <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                              <span className="font-medium">{criterion.name}</span>
+                                                              <Badge variant="secondary" className="text-xs">
+                                                                {criterion.weight}% • Max: {maxScore.toFixed(1)}pts
+                                                              </Badge>
                                                             </div>
                                                             <Button
                                                               variant="ghost"
@@ -955,6 +997,33 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                 className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
                                                               />
                                                             </Button>
+                                                          </div>
+                                                          <div className="grid grid-cols-[300px_100px] gap-4 items-center">
+                                                            <div className="relative">
+                                                              {/* Tick marks positioned above slider */}
+                                                              <div className="flex justify-between text-xs text-gray-500 mb-3 px-2">
+                                                                <span>0</span>
+                                                                <span>{(maxScore * 0.5).toFixed(1)}</span>
+                                                                <span>{maxScore.toFixed(1)}</span>
+                                                              </div>
+                                                              {/* Slider with increased padding for better touch area */}
+                                                              <div className="py-3 px-2">
+                                                                <Slider
+                                                                  value={[gradeValue]}
+                                                                  onValueChange={(value) => {
+                                                                    handleGradeChange(criterion.id, group.id, value);
+                                                                  }}
+                                                                  max={maxScore}
+                                                                  step={0.5}
+                                                                  className={`w-full h-8 ${getSliderColorClass(gradeValue, maxScore)}`}
+                                                                />
+                                                              </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                              <span className="font-bold text-xl text-gray-900">
+                                                                {gradeValue.toFixed(1)}
+                                                              </span>
+                                                            </div>
                                                           </div>
                                                         </div>
                                                         {showComments.has(key) && (
@@ -1019,39 +1088,61 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                             return (
                                                               <div
                                                                 key={member.id}
-                                                                className="flex items-center gap-2 border rounded p-2 bg-white"
+                                                                className="border rounded p-3 bg-white/80 hover:bg-white transition-colors"
                                                               >
-                                                                <span
-                                                                  className="w-32 truncate"
-                                                                  title={`${member.firstname} ${member.lastname}`}
-                                                                >
-                                                                  {member.firstname} {member.lastname.charAt(0)}.
-                                                                </span>
-                                                                <div className="flex-1 relative mx-2">
-                                                                  {/* Compact tick marks */}
-                                                                  <div className="flex justify-between text-xs text-gray-400 mb-1">
-                                                                    <span>0</span>
-                                                                    <span>{(maxScore * 0.5).toFixed(1)}</span>
-                                                                    <span>{maxScore.toFixed(1)}</span>
+                                                                <div className="space-y-3">
+                                                                  <div className="flex items-center justify-between">
+                                                                    <span
+                                                                      className="font-medium text-purple-700"
+                                                                      title={`${member.firstname} ${member.lastname}`}
+                                                                    >
+                                                                      {member.firstname} {member.lastname}
+                                                                    </span>
+                                                                    <Button
+                                                                      variant="ghost"
+                                                                      size="sm"
+                                                                      onClick={() => {
+                                                                        toggleComment(key);
+                                                                      }}
+                                                                    >
+                                                                      <MessageSquare
+                                                                        className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
+                                                                      />
+                                                                    </Button>
                                                                   </div>
-                                                                  <Slider
-                                                                    value={[gradeValue]}
-                                                                    onValueChange={(value) => {
-                                                                      handleIndividualGradeChange(
-                                                                        criterion.id,
-                                                                        group.id,
-                                                                        member.id,
-                                                                        value,
-                                                                      );
-                                                                    }}
-                                                                    max={maxScore}
-                                                                    step={0.5}
-                                                                    className={`w-full ${getSliderColorClass(gradeValue, maxScore)}`}
-                                                                  />
+                                                                  <div className="grid grid-cols-[300px_100px] gap-4 items-center">
+                                                                    <div className="relative">
+                                                                      {/* Tick marks positioned above slider */}
+                                                                      <div className="flex justify-between text-xs text-gray-500 mb-3 px-2">
+                                                                        <span>0</span>
+                                                                        <span>{(maxScore * 0.5).toFixed(1)}</span>
+                                                                        <span>{maxScore.toFixed(1)}</span>
+                                                                      </div>
+                                                                      {/* Slider with increased padding for better touch area */}
+                                                                      <div className="py-3 px-2">
+                                                                        <Slider
+                                                                          value={[gradeValue]}
+                                                                          onValueChange={(value) => {
+                                                                            handleIndividualGradeChange(
+                                                                              criterion.id,
+                                                                              group.id,
+                                                                              member.id,
+                                                                              value,
+                                                                            );
+                                                                          }}
+                                                                          max={maxScore}
+                                                                          step={0.5}
+                                                                          className={`w-full h-8 ${getSliderColorClass(gradeValue, maxScore)}`}
+                                                                        />
+                                                                      </div>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                      <span className="font-bold text-xl text-gray-900">
+                                                                        {gradeValue.toFixed(1)}
+                                                                      </span>
+                                                                    </div>
+                                                                  </div>
                                                                 </div>
-                                                                <span className="font-bold text-base min-w-[50px] text-right">
-                                                                  {gradeValue.toFixed(1)}
-                                                                </span>
                                                                 <Button
                                                                   variant="ghost"
                                                                   size="sm"
