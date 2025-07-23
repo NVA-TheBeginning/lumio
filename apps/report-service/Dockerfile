@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install openssl -y --no-install-recommends \
 
 COPY package.json bun.lock ./
 COPY apps/report-service/package.json ./apps/report-service/
+COPY packages/ ./packages/
 
 RUN bun install
 
@@ -26,6 +27,7 @@ RUN apt-get update && apt-get install curl -y --no-install-recommends \
 
 COPY --from=base /app/package.json ./
 COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/packages ./packages
 COPY --from=base /app/apps/report-service ./report-service
 
 ENV NODE_ENV=production

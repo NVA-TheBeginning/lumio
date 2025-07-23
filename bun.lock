@@ -39,6 +39,7 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "fastify": "^5.4.0",
         "typescript": "^5.8.3",
@@ -63,6 +64,7 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "prisma": "^6.12.0",
         "typescript": "^5.8.3",
@@ -87,6 +89,7 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "prisma": "^6.12.0",
         "typescript": "^5.8.3",
@@ -114,6 +117,7 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "@types/yauzl": "^2.10.3",
         "prisma": "^6.12.0",
@@ -163,6 +167,7 @@
         "zod": "^4.0.5",
       },
       "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
         "@tailwindcss/postcss": "^4.1.11",
         "@types/bun": "^1.2.19",
         "@types/node": "^24.0.15",
@@ -192,6 +197,7 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "typescript": "^5.8.3",
       },
@@ -219,6 +225,7 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "fastify": "^5.4.0",
         "prisma": "^6.12.0",
@@ -244,8 +251,16 @@
         "@nestjs/cli": "^11.0.7",
         "@nestjs/schematics": "^11.0.5",
         "@nestjs/testing": "^11.1.5",
+        "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "prisma": "^6.12.0",
+        "typescript": "^5.8.3",
+      },
+    },
+    "packages/tsconfig": {
+      "name": "@repo/typescript-config",
+      "version": "0.0.0",
+      "devDependencies": {
         "typescript": "^5.8.3",
       },
     },
@@ -612,6 +627,8 @@
     "@react-pdf/textkit": ["@react-pdf/textkit@6.0.0", "", { "dependencies": { "@react-pdf/fns": "3.1.2", "bidi-js": "^1.0.2", "hyphen": "^1.6.4", "unicode-properties": "^1.4.1" } }, "sha512-fDt19KWaJRK/n2AaFoVm31hgGmpygmTV7LsHGJNGZkgzXcFyLsx+XUl63DTDPH3iqxj3xUX128t104GtOz8tTw=="],
 
     "@react-pdf/types": ["@react-pdf/types@2.9.0", "", { "dependencies": { "@react-pdf/font": "^4.0.2", "@react-pdf/primitives": "^4.1.1", "@react-pdf/stylesheet": "^6.1.0" } }, "sha512-ckj80vZLlvl9oYrQ4tovEaqKWP3O06Eb1D48/jQWbdwz1Yh7Y9v1cEmwlP8ET+a1Whp8xfdM0xduMexkuPANCQ=="],
+
+    "@repo/typescript-config": ["@repo/typescript-config@workspace:packages/tsconfig"],
 
     "@scarf/scarf": ["@scarf/scarf@1.4.0", "", {}, "sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ=="],
 

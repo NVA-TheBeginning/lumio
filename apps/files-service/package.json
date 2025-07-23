@@ -30,6 +30,7 @@
     "@nestjs/cli": "^11.0.7",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.1.5",
+    "@repo/typescript-config": "workspace:*",
     "@types/bun": "^1.2.19",
     "@types/yauzl": "^2.10.3",
     "prisma": "^6.12.0",

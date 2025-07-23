@@ -3,6 +3,7 @@ WORKDIR /app
 
 COPY package.json bun.lock ./
 COPY apps/notif-service/package.json ./apps/notif-service/
+COPY packages/ ./packages/
 
 RUN bun install
 
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install curl -y --no-install-recommends \
 
 COPY --from=base /app/package.json ./
 COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/packages ./packages
 COPY --from=base /app/apps/notif-service ./notif-service
 
 ENV NODE_ENV=production
