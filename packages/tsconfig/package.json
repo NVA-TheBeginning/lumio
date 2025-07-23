@@ -7,6 +7,7 @@
   "files": [
     "base.json",
     "nodejs.json",
+    "nodejs.esm.json",
     "frontend.json"
   ],
   "devDependencies": {
