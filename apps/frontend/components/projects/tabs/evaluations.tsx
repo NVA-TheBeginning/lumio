@@ -113,6 +113,49 @@ function getSliderColorClass(gradeValue: number, maxScore: number) {
   return "[&_[data-slot='slider-range']]:bg-green-500 [&_[data-slot='slider-range']]:transition-colors [&_[data-slot='slider-range']]:duration-300";
 }
 
+interface GradingSliderProps {
+  value: number;
+  maxScore: number;
+  onChange: (value: number[]) => void;
+  className?: string;
+}
+
+function GradingSlider({ value, maxScore, onChange, className = "" }: GradingSliderProps) {
+  return (
+    <div className={`${className}`}>
+      {/* Compact slider container with tick marks directly above slider */}
+      <div className="grid grid-cols-[1fr_50px] gap-2 items-center">
+        <div className="relative min-w-0">
+          {/* Tick marks positioned directly above slider track */}
+          <div className="flex justify-between text-xs text-gray-500 font-medium mb-1 px-1">
+            <span>0</span>
+            <span>{(maxScore * 0.5).toFixed(1)}</span>
+            <span>{maxScore.toFixed(1)}</span>
+          </div>
+          
+          {/* Compact touch area for slider */}
+          <div className="py-2 px-1">
+            <Slider
+              value={[value]}
+              onValueChange={onChange}
+              max={maxScore}
+              step={0.5}
+              className={`w-full h-8 ${getSliderColorClass(value, maxScore)}`}
+            />
+          </div>
+        </div>
+        
+        {/* Compact score display positioned close to right border */}
+        <div className="flex justify-end pr-1">
+          <span className="font-bold text-lg text-gray-900 text-right">
+            {value.toFixed(1)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const queryClient = useQueryClient();
   const [activePromotion, setActivePromotion] = useState<string>(project.promotions[0]?.id.toString() ?? "");
@@ -957,15 +1000,18 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
                                     {/* Collapsible Detailed Grading Section */}
                                     {isExpanded && (
-                                      <div className="p-6 bg-white">
-                                        <div className="space-y-6">
+                                      <div className="p-4 bg-white">
+                                        <div className="space-y-4">
                                           {/* Group Criteria */}
                                           {criteria.filter((c) => !c.individual).length > 0 && (
-                                            <div>
-                                              <h5 className="font-semibold text-md mb-2 flex items-center gap-2">
-                                                <Users className="w-4 h-4 text-green-600" /> Critères de groupe
+                                            <div className="bg-green-50/30 border border-green-100 rounded-xl p-4">
+                                              <h5 className="font-semibold text-lg mb-4 flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                                  <Users className="w-4 h-4 text-green-600" />
+                                                </div>
+                                                <span className="text-green-800">Critères de groupe</span>
                                               </h5>
-                                              <div className="space-y-2">
+                                              <div className="space-y-4">
                                                 {criteria
                                                   .filter((c) => !c.individual)
                                                   .map((criterion) => {
@@ -976,13 +1022,13 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                     return (
                                                       <div
                                                         key={criterion.id}
-                                                        className="border rounded-lg p-3 hover:bg-gray-50/50 transition-colors"
+                                                        className="bg-white border border-green-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200"
                                                       >
                                                         <div className="space-y-3">
                                                           <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-3">
-                                                              <span className="font-medium">{criterion.name}</span>
-                                                              <Badge variant="secondary" className="text-xs">
+                                                              <span className="font-semibold text-gray-800">{criterion.name}</span>
+                                                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
                                                                 {criterion.weight}% • Max: {maxScore.toFixed(1)}pts
                                                               </Badge>
                                                             </div>
@@ -992,42 +1038,21 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                               onClick={() => {
                                                                 toggleComment(key);
                                                               }}
+                                                              className="hover:bg-green-50"
                                                             >
                                                               <MessageSquare
                                                                 className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
                                                               />
                                                             </Button>
                                                           </div>
-                                                          <div className="grid grid-cols-[300px_100px] gap-4 items-center">
-                                                            <div className="relative">
-                                                              {/* Tick marks positioned above slider */}
-                                                              <div className="flex justify-between text-xs text-gray-500 mb-3 px-2">
-                                                                <span>0</span>
-                                                                <span>{(maxScore * 0.5).toFixed(1)}</span>
-                                                                <span>{maxScore.toFixed(1)}</span>
-                                                              </div>
-                                                              {/* Slider with increased padding for better touch area */}
-                                                              <div className="py-3 px-2">
-                                                                <Slider
-                                                                  value={[gradeValue]}
-                                                                  onValueChange={(value) => {
-                                                                    handleGradeChange(criterion.id, group.id, value);
-                                                                  }}
-                                                                  max={maxScore}
-                                                                  step={0.5}
-                                                                  className={`w-full h-8 ${getSliderColorClass(gradeValue, maxScore)}`}
-                                                                />
-                                                              </div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                              <span className="font-bold text-xl text-gray-900">
-                                                                {gradeValue.toFixed(1)}
-                                                              </span>
-                                                            </div>
-                                                          </div>
+                                                          <GradingSlider
+                                                            value={gradeValue}
+                                                            maxScore={maxScore}
+                                                            onChange={(value) => handleGradeChange(criterion.id, group.id, value)}
+                                                          />
                                                         </div>
                                                         {showComments.has(key) && (
-                                                          <div className="mt-2">
+                                                          <div className="mt-3 pt-3 border-t border-green-100">
                                                             <Textarea
                                                               placeholder="Ajouter un commentaire..."
                                                               value={getGradeComment(criterion.id, group.id)}
@@ -1038,7 +1063,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                   e.target.value,
                                                                 );
                                                               }}
-                                                              className="min-h-[60px]"
+                                                              className="min-h-[60px] border-green-200 focus:border-green-400"
                                                             />
                                                           </div>
                                                         )}
@@ -1050,11 +1075,14 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                           )}
                                           {/* Individual Criteria */}
                                           {criteria.filter((c) => c.individual).length > 0 && (
-                                            <div>
-                                              <h5 className="font-semibold text-md mb-2 flex items-center gap-2">
-                                                <User className="w-4 h-4 text-purple-600" /> Critères individuels
+                                            <div className="bg-purple-50/30 border border-purple-100 rounded-xl p-4">
+                                              <h5 className="font-semibold text-lg mb-4 flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                  <User className="w-4 h-4 text-purple-600" />
+                                                </div>
+                                                <span className="text-purple-800">Critères individuels</span>
                                               </h5>
-                                              <div className="space-y-2">
+                                              <div className="space-y-4">
                                                 {criteria
                                                   .filter((c) => c.individual)
                                                   .map((criterion) => {
@@ -1062,17 +1090,17 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                     return (
                                                       <div
                                                         key={criterion.id}
-                                                        className="border rounded-lg p-3 hover:bg-purple-50/50 transition-colors"
+                                                        className="bg-white border border-purple-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200"
                                                       >
-                                                        <div className="flex items-center justify-between">
-                                                          <div className="flex items-center gap-3 flex-1">
-                                                            <span className="font-medium">{criterion.name}</span>
-                                                            <Badge variant="secondary" className="text-xs">
+                                                        <div className="mb-3">
+                                                          <div className="flex items-center gap-3">
+                                                            <span className="font-semibold text-gray-800">{criterion.name}</span>
+                                                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800 border-purple-200">
                                                               {criterion.weight}% • Max: {maxScore.toFixed(1)}pts
                                                             </Badge>
                                                           </div>
                                                         </div>
-                                                        <div className="space-y-2 mt-2">
+                                                        <div className="space-y-3">
                                                           {group.members.map((member) => {
                                                             const key = `${criterion.id}-${group.id}-${member.id}`;
                                                             const gradeValue = getGradeValue(
@@ -1088,74 +1116,47 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                             return (
                                                               <div
                                                                 key={member.id}
-                                                                className="border rounded p-3 bg-white/80 hover:bg-white transition-colors"
+                                                                className="bg-purple-50/50 border border-purple-100 rounded-lg p-3 hover:bg-purple-50/70 transition-all duration-200"
                                                               >
                                                                 <div className="space-y-3">
                                                                   <div className="flex items-center justify-between">
-                                                                    <span
-                                                                      className="font-medium text-purple-700"
-                                                                      title={`${member.firstname} ${member.lastname}`}
-                                                                    >
-                                                                      {member.firstname} {member.lastname}
-                                                                    </span>
+                                                                    <div className="flex items-center gap-3">
+                                                                      <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+                                                                        <User className="w-3 h-3 text-purple-600" />
+                                                                      </div>
+                                                                      <span
+                                                                        className="font-semibold text-purple-700"
+                                                                        title={`${member.firstname} ${member.lastname}`}
+                                                                      >
+                                                                        {member.firstname} {member.lastname}
+                                                                      </span>
+                                                                    </div>
                                                                     <Button
                                                                       variant="ghost"
                                                                       size="sm"
                                                                       onClick={() => {
                                                                         toggleComment(key);
                                                                       }}
+                                                                      className="hover:bg-purple-100"
                                                                     >
                                                                       <MessageSquare
                                                                         className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
                                                                       />
                                                                     </Button>
                                                                   </div>
-                                                                  <div className="grid grid-cols-[300px_100px] gap-4 items-center">
-                                                                    <div className="relative">
-                                                                      {/* Tick marks positioned above slider */}
-                                                                      <div className="flex justify-between text-xs text-gray-500 mb-3 px-2">
-                                                                        <span>0</span>
-                                                                        <span>{(maxScore * 0.5).toFixed(1)}</span>
-                                                                        <span>{maxScore.toFixed(1)}</span>
-                                                                      </div>
-                                                                      {/* Slider with increased padding for better touch area */}
-                                                                      <div className="py-3 px-2">
-                                                                        <Slider
-                                                                          value={[gradeValue]}
-                                                                          onValueChange={(value) => {
-                                                                            handleIndividualGradeChange(
-                                                                              criterion.id,
-                                                                              group.id,
-                                                                              member.id,
-                                                                              value,
-                                                                            );
-                                                                          }}
-                                                                          max={maxScore}
-                                                                          step={0.5}
-                                                                          className={`w-full h-8 ${getSliderColorClass(gradeValue, maxScore)}`}
-                                                                        />
-                                                                      </div>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                      <span className="font-bold text-xl text-gray-900">
-                                                                        {gradeValue.toFixed(1)}
-                                                                      </span>
-                                                                    </div>
-                                                                  </div>
-                                                                </div>
-                                                                <Button
-                                                                  variant="ghost"
-                                                                  size="sm"
-                                                                  onClick={() => {
-                                                                    toggleComment(key);
-                                                                  }}
-                                                                >
-                                                                  <MessageSquare
-                                                                    className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
+                                                                  <GradingSlider
+                                                                    value={gradeValue}
+                                                                    maxScore={maxScore}
+                                                                    onChange={(value) => handleIndividualGradeChange(
+                                                                      criterion.id,
+                                                                      group.id,
+                                                                      member.id,
+                                                                      value,
+                                                                    )}
                                                                   />
-                                                                </Button>
+                                                                </div>
                                                                 {showComments.has(key) && (
-                                                                  <div className="ml-2 flex-1">
+                                                                  <div className="mt-3 pt-3 border-t border-purple-100">
                                                                     <Textarea
                                                                       placeholder="Ajouter un commentaire..."
                                                                       value={getGradeComment(
@@ -1171,7 +1172,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                           member.id,
                                                                         );
                                                                       }}
-                                                                      className="min-h-[40px]"
+                                                                      className="min-h-[60px] border-purple-200 focus:border-purple-400"
                                                                     />
                                                                   </div>
                                                                 )}
