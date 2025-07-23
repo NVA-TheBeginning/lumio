@@ -18,7 +18,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   createGrade,
@@ -58,7 +58,6 @@ interface ProjectGroup {
 }
 
 
-// Helper to get group and individual progress
 function getGroupProgress(
   groupId: number,
   criteria: GradingCriteria[],
@@ -88,6 +87,7 @@ function getGroupProgress(
   }
   return { groupGraded, groupTotal, indivGraded, indivTotal };
 }
+
 function getGroupStatusSimple(groupGraded: number, groupTotal: number, indivGraded: number, indivTotal: number) {
   const all = groupGraded === groupTotal && indivGraded === indivTotal && groupTotal + indivTotal > 0;
   const none = groupGraded === 0 && indivGraded === 0;
@@ -107,6 +107,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCriteriaManagement, setShowCriteriaManagement] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+
   const toggleGroup = (groupId: number) => {
     setExpandedGroups((prev) => {
       const newSet = new Set(prev);
@@ -118,7 +119,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       return newSet;
     });
   };
+
   const [showComments, setShowComments] = useState<Set<string>>(new Set());
+
   const toggleComment = (key: string) => {
     setShowComments((prev) => {
       const newSet = new Set(prev);
@@ -177,16 +180,13 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const activePromotion_obj = project.promotions.find((p) => p.id.toString() === activePromotion);
   const allGroups = activePromotion_obj?.groups ?? [];
 
-  // Filter groups based on selection and search
   const filteredGroups = useMemo(() => {
     let filtered = allGroups;
 
-    // Filter by selected group
     if (selectedGroup !== "all") {
       filtered = filtered.filter((group) => group.id.toString() === selectedGroup);
     }
 
-    // Filter by search term (search in group name and member names)
     if (searchTerm) {
       filtered = filtered.filter(
         (group) =>
@@ -258,7 +258,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     return grades[key]?.comment ?? gradeMatrix[key]?.comment ?? "";
   };
 
-  const saveGrade = (criteriaId: number, groupId: number, studentId?: number) => {
+  const saveGrade = useCallback((criteriaId: number, groupId: number, studentId?: number) => {
     const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     const gradeData = grades[key];
     const existingGrade = gradeMatrix[key];
@@ -282,34 +282,32 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       newSet.delete(key);
       return newSet;
     });
-  };
+  }, [grades, gradeMatrix, updateGradeMutation, createGradeMutation]);
 
-  // Debounced auto-save
   useEffect(() => {
     if (pendingUpdates.size === 0) return;
     
     const timeout = setTimeout(() => {
-      // Save all pending grades
       const pendingKeys = Array.from(pendingUpdates);
       
       for (const key of pendingKeys) {
         const parts = key.split('-').map(Number);
-        const criteriaId = parts[0]!;
-        const groupId = parts[1]!;
+        const criteriaId = parts[0];
+        const groupId = parts[1];
         const studentId = parts[2];
         
+        if (!criteriaId || !groupId) continue;
+        
         if (parts.length === 3 && isValidNumber(studentId)) {
-          // Individual grade with studentId
           saveGrade(criteriaId, groupId, studentId);
         } else if (parts.length === 2) {
-          // Group grade without studentId
           saveGrade(criteriaId, groupId);
         }
       }
     }, 2000);
     
     return () => clearTimeout(timeout);
-  }, [pendingUpdates.size, grades, gradeMatrix, updateGradeMutation, createGradeMutation]);
+  }, [pendingUpdates.size, saveGrade, pendingUpdates]);
 
   if (criteriaLoading || gradesLoading) {
     return (
@@ -576,7 +574,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                   id="group-search"
                                   placeholder="Rechercher un groupe ou membre..."
                                   value={searchTerm}
-                                  onChange={(e) => { {
+                                  onChange={(e) => {
                                     setSearchTerm(e.target.value);
                                   }}
                                   className="pl-10 border-2 border-gray-200 focus:border-blue-400 transition-colors"
@@ -617,7 +615,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                   <button
                                     type="button"
                                     key={group.id}
-                                    onClick={() => setSelectedGroup(group.id.toString())}
+                                    onClick={() => {
+                                      setSelectedGroup(group.id.toString());
+                                    }}
                                     className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-200 border-2 ${
                                       selectedGroup === group.id.toString()
                                         ? "bg-green-50 text-green-900 border-green-300 shadow-md"
@@ -703,7 +703,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                             ? "bg-yellow-50 hover:bg-yellow-100 border-yellow-200"
                                             : "bg-gray-50 hover:bg-gray-100 border-gray-200"
                                       } ${isExpanded ? "border-b" : ""}`}
-                                      onClick={() => toggleGroup(group.id)}
+                                      onClick={() => {
+                                        toggleGroup(group.id);
+                                      }}
                                       onKeyDown={(e) => {
                                         if (e.key === "Enter" || e.key === " ") {
                                           e.preventDefault();
@@ -791,8 +793,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                               <Slider
                                                                 value={[gradeValue]}
                                                                 onValueChange={(value) => {
-                                                                  handleGradeChange(criterion.id, group.id, value)
-                                                                }
+                                                                  handleGradeChange(criterion.id, group.id, value);
+                                                                }}
                                                                 max={maxScore}
                                                                 step={0.5}
                                                                 className="flex-1"
@@ -824,8 +826,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                   criterion.id,
                                                                   group.id,
                                                                   e.target.value,
-                                                                )
-                                                              }
+                                                                );
+                                                              }}
                                                               className="min-h-[60px]"
                                                             />
                                                           </div>
@@ -892,8 +894,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                       group.id,
                                                                       member.id,
                                                                       value,
-                                                                    )
-                                                                  }
+                                                                    );
+                                                                  }}
                                                                   max={maxScore}
                                                                   step={0.5}
                                                                   className="flex-1"
@@ -927,8 +929,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                           group.id,
                                                                           e.target.value,
                                                                           member.id,
-                                                                        )
-                                                                      }
+                                                                        );
+                                                                      }}
                                                                       className="min-h-[40px]"
                                                                     />
                                                                   </div>
