@@ -203,8 +203,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     existingGrades.forEach((grade) => {
       const individualKey = `${grade.gradingCriteriaId}-${grade.groupId}-${grade.studentId}`;
       matrix[individualKey] = grade;
-      
-      const criterion = criteria.find(c => c.id === grade.gradingCriteriaId);
+
+      const criterion = criteria.find((c) => c.id === grade.gradingCriteriaId);
       if (criterion && !criterion.individual) {
         const groupKey = `${grade.gradingCriteriaId}-${grade.groupId}`;
         if (!matrix[groupKey]) {
@@ -265,10 +265,10 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
   const saveGrade = useCallback(
     (criteriaId: number, groupId: number, studentId?: number) => {
-      const criterion = criteria.find(c => c.id === criteriaId);
+      const criterion = criteria.find((c) => c.id === criteriaId);
       if (!criterion) return;
 
-      const group = allGroups.find(g => g.id === groupId);
+      const group = allGroups.find((g) => g.id === groupId);
       if (!group) return;
 
       if (criterion.individual) {
