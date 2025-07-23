@@ -10,7 +10,7 @@
   },
   "compilerOptions": {
     "manualRestart": true,
-    "tsConfigPath": "../../packages/tsconfig/nodejs.build.json",
+    "tsConfigPath": "tsconfig.build.json",
     "plugins": [
       {
         "name": "@nestjs/swagger",

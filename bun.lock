@@ -42,7 +42,6 @@
         "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "fastify": "^5.4.0",
-        "typescript": "^5.8.3",
       },
     },
     "apps/auth-service": {
@@ -67,7 +66,6 @@
         "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "prisma": "^6.12.0",
-        "typescript": "^5.8.3",
       },
     },
     "apps/evaluation-service": {
@@ -92,7 +90,6 @@
         "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "prisma": "^6.12.0",
-        "typescript": "^5.8.3",
       },
     },
     "apps/files-service": {
@@ -121,7 +118,6 @@
         "@types/bun": "^1.2.19",
         "@types/yauzl": "^2.10.3",
         "prisma": "^6.12.0",
-        "typescript": "^5.8.3",
       },
     },
     "apps/frontend": {
@@ -175,7 +171,6 @@
         "@types/react-dom": "^19.1.6",
         "babel-plugin-react-compiler": "^19.1.0-rc.2",
         "tailwindcss": "^4.1.11",
-        "typescript": "^5.8.3",
       },
     },
     "apps/notif-service": {
@@ -199,7 +194,6 @@
         "@nestjs/testing": "^11.1.5",
         "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
-        "typescript": "^5.8.3",
       },
     },
     "apps/plagiarism-service": {
@@ -229,7 +223,6 @@
         "@types/bun": "^1.2.19",
         "fastify": "^5.4.0",
         "prisma": "^6.12.0",
-        "typescript": "^5.8.3",
       },
     },
     "apps/report-service": {
@@ -254,7 +247,6 @@
         "@repo/typescript-config": "workspace:*",
         "@types/bun": "^1.2.19",
         "prisma": "^6.12.0",
-        "typescript": "^5.8.3",
       },
     },
     "packages/tsconfig": {

@@ -7,3 +7,10 @@ LICENSE
 Makefile
 helm-charts
 coverage*
+dist
+*.test.ts
+*.test.js
+apps/*/dist
+apps/*/node_modules
+target/
+extract/

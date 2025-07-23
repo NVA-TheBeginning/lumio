@@ -29,7 +29,6 @@
     "@nestjs/testing": "^11.1.5",
     "@repo/typescript-config": "workspace:*",
     "@types/bun": "^1.2.19",
-    "prisma": "^6.12.0",
-    "typescript": "^5.8.3"
+    "prisma": "^6.12.0"
   }
 }
