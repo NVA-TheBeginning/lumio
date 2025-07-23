@@ -797,8 +797,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                     {/* Left Sidebar */}
                     <div className="w-80 flex-shrink-0">
                       <Card className="h-full shadow-lg border-2 border-gray-100">
-                        <CardContent className="p-6">
-                          <div className="space-y-6">
+                        <CardContent className="p-6 flex flex-col h-full">
+                          <div className="space-y-6 flex flex-col h-full">
                             {/* Search Bar */}
                             <div>
                               <div className="flex items-center gap-2 mb-3">
@@ -822,7 +822,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                             </div>
 
                             {/* Group List */}
-                            <div>
+                            <div className="flex-1 flex flex-col min-h-0">
                               <div className="flex items-center gap-2 mb-3">
                                 <Users className="h-5 w-5 text-green-600" />
                                 <h4 className="text-lg font-bold text-gray-800">Groupes</h4>
@@ -830,7 +830,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                   {filteredGroups.length}
                                 </span>
                               </div>
-                              <div className="space-y-2 max-h-96 overflow-y-auto">
+                              <div className="space-y-2 flex-1 overflow-y-auto">
                                 <button
                                   type="button"
                                   onClick={() => {
