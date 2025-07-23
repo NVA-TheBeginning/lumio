@@ -6,6 +6,14 @@ import { UpdateFinalGradeDto } from "./dto/update-final-grade.dto";
 export class FinalGradeService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Rounds a grade up to the next 0.5 increment
+   * Examples: 19.4 → 19.5, 19.9 → 20.0, 18.1 → 18.5, 18.6 → 19.0
+   */
+  private roundGradeToNextHalf(grade: number): number {
+    return Math.ceil(grade * 2) / 2;
+  }
+
   async findAll(projectId: number, promotionId: number) {
     return this.prisma.finalGrade.findMany({
       where: {
@@ -79,7 +87,8 @@ export class FinalGradeService {
 
         // Only calculate if we have complete grades
         if (totalWeight > 0) {
-          const finalGrade = totalWeightedScore;
+          const rawFinalGrade = totalWeightedScore;
+          const finalGrade = this.roundGradeToNextHalf(rawFinalGrade);
 
           // Find existing final grade for this student
           const existing = await this.prisma.finalGrade.findFirst({
@@ -91,7 +100,7 @@ export class FinalGradeService {
               where: { id: existing.id },
               data: {
                 finalGrade,
-                comment: `Calculé automatiquement - somme des notes pondérées (${totalWeight}% des critères)`,
+                comment: `Calculé automatiquement - somme des notes pondérées arrondie au 0.5 supérieur (${totalWeight}% des critères)`,
                 validatedAt: new Date(),
               },
             });
@@ -103,7 +112,7 @@ export class FinalGradeService {
               groupId,
               studentId,
               finalGrade,
-              comment: `Calculé automatiquement - somme des notes pondérées (${totalWeight}% des critères)`,
+              comment: `Calculé automatiquement - somme des notes pondérées arrondie au 0.5 supérieur (${totalWeight}% des critères)`,
             },
           });
         }
