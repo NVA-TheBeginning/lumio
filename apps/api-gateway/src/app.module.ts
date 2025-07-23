@@ -5,6 +5,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { HealthController } from "@/health/health.controller.js";
 import { AuthModule } from "@/microservices/auth/auth.module.js";
+import { DashboardModule } from "@/microservices/dashboard/dashboard.module.js";
 import { CriteriaModule } from "@/microservices/evaluations/criteria/criteria.module.js";
 import { FinalGradeModule } from "@/microservices/evaluations/final-grade/final-grade.module.js";
 import { GradeModule } from "@/microservices/evaluations/grade/grade.module.js";
@@ -32,6 +33,7 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     }),
     AuthModule,
     UsersModule,
+    DashboardModule,
     ProjectsModule,
     FilesModule,
     SubmissionsModule,
