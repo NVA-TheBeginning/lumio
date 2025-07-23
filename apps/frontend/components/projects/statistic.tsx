@@ -1,5 +1,3 @@
-"use client";
-
 import { ProjectType } from "@/app/dashboard/teachers/projects/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
