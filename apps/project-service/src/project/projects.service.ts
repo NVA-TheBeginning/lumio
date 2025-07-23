@@ -4,6 +4,7 @@ import { GroupMode } from "@/groups/dto/group.dto";
 import { Paginated, PaginationMeta } from "@/interfaces/pagination.interface";
 import { PrismaService } from "@/prisma.service";
 import { CreateProjectDto, GroupSettingDto } from "./dto/create-project.dto";
+import { ProjectStatisticsDto } from "./dto/project-statistics.dto";
 import { ProjectStudentDto } from "./dto/project-student.dto";
 import { ProjectTeacherDto } from "./dto/project-teacher.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
@@ -628,5 +629,63 @@ export class ProjectService {
       name: `Groupe ${i + 1}`,
     }));
     await tx.group.createMany({ data: skeletons });
+  }
+
+  async getStatistics(userId: number, userRole: "TEACHER" | "ADMIN" | "STUDENT"): Promise<ProjectStatisticsDto> {
+    if (userRole === "TEACHER" || userRole === "ADMIN") {
+      const [totalProjects, activeProjects, draftProjects, hiddenProjects, totalPromotions] = await Promise.all([
+        this.prisma.project.count({
+          where: { creatorId: userId, deletedAt: null },
+        }),
+        this.prisma.projectPromotion.count({
+          where: { project: { creatorId: userId, deletedAt: null }, status: "VISIBLE" },
+        }),
+        this.prisma.projectPromotion.count({
+          where: { project: { creatorId: userId, deletedAt: null }, status: "DRAFT" },
+        }),
+        this.prisma.projectPromotion.count({
+          where: { project: { creatorId: userId, deletedAt: null }, status: "HIDDEN" },
+        }),
+        this.prisma.promotion.count({
+          where: { creatorId: userId },
+        }),
+      ]);
+
+      return {
+        totalProjects,
+        activeProjects,
+        draftProjects,
+        hiddenProjects,
+        totalPromotions,
+      };
+    }
+    const [participantProjects, groupMemberships, totalPromotions] = await Promise.all([
+      this.prisma.projectPromotion.count({
+        where: {
+          status: "VISIBLE",
+          promotion: {
+            studentPromotions: {
+              some: { userId },
+            },
+          },
+        },
+      }),
+      this.prisma.groupMember.count({
+        where: { studentId: userId },
+      }),
+      this.prisma.studentPromotion.count({
+        where: { userId },
+      }),
+    ]);
+
+    return {
+      totalProjects: 0,
+      activeProjects: 0,
+      draftProjects: 0,
+      hiddenProjects: 0,
+      totalPromotions,
+      participantProjects,
+      groupMemberships,
+    };
   }
 }
