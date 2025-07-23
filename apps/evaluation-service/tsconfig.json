@@ -1,3 +1,8 @@
 {
-  "extends": "@repo/typescript-config/nodejs.json"
+  "extends": "@repo/typescript-config/nodejs.json",
+   "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
 }
