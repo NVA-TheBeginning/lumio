@@ -18,11 +18,12 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   createGrade,
   Grade,
+  GradingCriteria,
   getCriteria,
   getGradesForCriteria,
   ProjectType,
@@ -36,30 +37,10 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { Criteria } from "@/lib/types";
 import { isValidNumber } from "@/lib/utils";
 
 interface ProjectEvaluationsProps {
   project: ProjectType;
-}
-
-// Helper to get group grading status
-function _getGroupStatus(
-  groupId: number,
-  criteria: Criteria[],
-  grades: Record<string, Grade | { value: number; comment?: string }>,
-) {
-  let graded = 0;
-  const total = criteria.length;
-  for (const criterion of criteria) {
-    const key = `${criterion.id}-${groupId}`;
-    if (grades[key] && grades[key].value !== undefined && grades[key].value !== null && grades[key].value !== "") {
-      graded++;
-    }
-  }
-  if (graded === 0) return "none";
-  if (graded === total) return "all";
-  return "partial";
 }
 
 interface GroupMember {
@@ -76,36 +57,12 @@ interface ProjectGroup {
   members: GroupMember[];
 }
 
-function _getCellStatus(
-  criterion: Criteria,
-  groupId: number,
-  grades: Record<string, Grade | { value: number; comment?: string }>,
-  group: ProjectGroup,
-) {
-  if (criterion.individual) {
-    let graded = 0;
-    const total = group.members.length;
-    for (const member of group.members) {
-      const key = `${criterion.id}-${groupId}-${member.id}`;
-      if (grades[key] && grades[key].value !== undefined && grades[key].value !== null && grades[key].value !== "") {
-        graded++;
-      }
-    }
-    if (graded === 0) return { status: "none", summary: `0/${total}` };
-    if (graded === total) return { status: "all", summary: `${graded}/${total}` };
-    return { status: "partial", summary: `${graded}/${total}` };
-  }
-  const key = `${criterion.id}-${groupId}`;
-  const value = grades[key]?.value;
-  if (value !== undefined && value !== null && value !== "") return { status: "all", value };
-  return { status: "none" };
-}
 
 // Helper to get group and individual progress
 function getGroupProgress(
   groupId: number,
-  criteria: Criteria[],
-  grades: Record<string, Grade | { value: number; comment?: string }>,
+  criteria: GradingCriteria[],
+  grades: Record<string, { gradeValue: number; comment?: string }>,
   group: ProjectGroup,
 ) {
   let groupTotal = 0;
@@ -117,14 +74,14 @@ function getGroupProgress(
       indivTotal += group.members.length;
       for (const member of group.members) {
         const key = `${criterion.id}-${groupId}-${member.id}`;
-        if (grades[key] && grades[key].value !== undefined && grades[key].value !== null && grades[key].value !== "") {
+        if (grades[key]?.gradeValue !== undefined) {
           indivGraded++;
         }
       }
     } else {
       groupTotal++;
       const key = `${criterion.id}-${groupId}`;
-      if (grades[key] && grades[key].value !== undefined && grades[key].value !== null && grades[key].value !== "") {
+      if (grades[key]?.gradeValue !== undefined) {
         groupGraded++;
       }
     }
@@ -142,7 +99,7 @@ function getGroupStatusSimple(groupGraded: number, groupTotal: number, indivGrad
 export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const queryClient = useQueryClient();
   const [activePromotion, setActivePromotion] = useState<string>(project.promotions[0]?.id.toString() ?? "");
-  const [grades, setGrades] = useState<Record<string, { value: number; comment?: string }>>({});
+  const [grades, setGrades] = useState<Record<string, { gradeValue: number; comment?: string }>>({});
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
   const [viewAllGrades, setViewAllGrades] = useState(false);
   const [gradesDisplayMode, setGradesDisplayMode] = useState<"criteria" | "group">("criteria");
@@ -171,7 +128,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     });
   };
 
-  const { data: criteria = [], isLoading: criteriaLoading } = useQuery({
+  const { data: criteria = [], isLoading: criteriaLoading } = useQuery<GradingCriteria[]>({
     queryKey: ["criteria", project.id, activePromotion],
     queryFn: () => getCriteria(project.id, Number(activePromotion)),
     enabled: !!activePromotion,
@@ -214,6 +171,8 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       toast.error("Erreur lors de la création");
     },
   });
+
+
 
   const activePromotion_obj = project.promotions.find((p) => p.id.toString() === activePromotion);
   const allGroups = activePromotion_obj?.groups ?? [];
@@ -258,7 +217,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
     setGrades((prev) => ({
       ...prev,
-      [key]: { value: numValue, comment: prev[key]?.comment ?? "" },
+      [key]: { gradeValue: numValue, comment: prev[key]?.comment ?? "" },
     }));
 
     setPendingUpdates((prev) => new Set(prev).add(key));
@@ -272,7 +231,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
     setGrades((prev) => ({
       ...prev,
-      [key]: { value: numValue, comment: prev[key]?.comment ?? "" },
+      [key]: { gradeValue: numValue, comment: prev[key]?.comment ?? "" },
     }));
 
     setPendingUpdates((prev) => new Set(prev).add(key));
@@ -282,13 +241,24 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     setGrades((prev) => ({
       ...prev,
-      [key]: { value: prev[key]?.value ?? 0, comment },
+      [key]: { gradeValue: prev[key]?.gradeValue ?? 0, comment },
     }));
 
     setPendingUpdates((prev) => new Set(prev).add(key));
   };
 
-  const _saveGrade = (criteriaId: number, groupId: number, studentId?: number) => {
+
+  const getGradeValue = (criteriaId: number, groupId: number, studentId?: number): number => {
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    return grades[key]?.gradeValue ?? gradeMatrix[key]?.gradeValue ?? 0;
+  };
+
+  const getGradeComment = (criteriaId: number, groupId: number, studentId?: number): string => {
+    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
+    return grades[key]?.comment ?? gradeMatrix[key]?.comment ?? "";
+  };
+
+  const saveGrade = (criteriaId: number, groupId: number, studentId?: number) => {
     const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
     const gradeData = grades[key];
     const existingGrade = gradeMatrix[key];
@@ -298,12 +268,12 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     if (existingGrade) {
       updateGradeMutation.mutate({
         gradeId: existingGrade.id,
-        data: { gradeValue: gradeData.value, comment: gradeData.comment },
+        data: { gradeValue: gradeData.gradeValue, comment: gradeData.comment },
       });
     } else {
       createGradeMutation.mutate({
         criteriaId,
-        data: { groupId, gradeValue: gradeData.value, comment: gradeData.comment },
+        data: { groupId, gradeValue: gradeData.gradeValue, comment: gradeData.comment },
       });
     }
 
@@ -314,32 +284,32 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     });
   };
 
-  const getGradeValue = (criteriaId: number, groupId: number, studentId?: number): number => {
-    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
-    return grades[key]?.value ?? gradeMatrix[key]?.gradeValue ?? 0;
-  };
-
-  const getGradeComment = (criteriaId: number, groupId: number, studentId?: number): string => {
-    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
-    return grades[key]?.comment ?? gradeMatrix[key]?.comment ?? "";
-  };
-
-  const _isPending = (criteriaId: number, groupId: number, studentId?: number): boolean => {
-    const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
-    return pendingUpdates.has(key);
-  };
-
-  const _lastSavedGrades = useRef(grades);
   // Debounced auto-save
   useEffect(() => {
     if (pendingUpdates.size === 0) return;
+    
     const timeout = setTimeout(() => {
-      // Save all pending grades (simulate with toast)
-      toast.success("✓ Sauvegardé");
-      setPendingUpdates(new Set());
+      // Save all pending grades
+      const pendingKeys = Array.from(pendingUpdates);
+      
+      for (const key of pendingKeys) {
+        const parts = key.split('-').map(Number);
+        const criteriaId = parts[0]!;
+        const groupId = parts[1]!;
+        const studentId = parts[2];
+        
+        if (parts.length === 3 && isValidNumber(studentId)) {
+          // Individual grade with studentId
+          saveGrade(criteriaId, groupId, studentId);
+        } else if (parts.length === 2) {
+          // Group grade without studentId
+          saveGrade(criteriaId, groupId);
+        }
+      }
     }, 2000);
+    
     return () => clearTimeout(timeout);
-  }, [pendingUpdates.size]);
+  }, [pendingUpdates.size, grades, gradeMatrix, updateGradeMutation, createGradeMutation]);
 
   if (criteriaLoading || gradesLoading) {
     return (
@@ -349,29 +319,6 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
     );
   }
 
-  // Helper to calculate group total score
-  function _calculateTotalScore(groupId: number) {
-    let total = 0;
-    for (const criterion of criteria) {
-      const _maxScore = (criterion.weight / 100) * 20;
-      if (criterion.individual) continue;
-      const key = `${criterion.id}-${groupId}`;
-      const value = grades[key]?.value ?? gradeMatrix[key]?.gradeValue;
-      if (typeof value === "number") total += value;
-    }
-    for (const criterion of criteria) {
-      if (!criterion.individual) continue;
-      const _maxScore = (criterion.weight / 100) * 20;
-      const group = allGroups.find((g) => g.id === groupId);
-      if (!group) continue;
-      for (const member of group.members) {
-        const key = `${criterion.id}-${groupId}-${member.id}`;
-        const value = grades[key]?.value ?? gradeMatrix[key]?.gradeValue;
-        if (typeof value === "number") total += value;
-      }
-    }
-    return total.toFixed(1);
-  }
 
   return (
     <div className="space-y-6">
@@ -383,7 +330,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => setShowCriteriaManagement(!showCriteriaManagement)}
+            onClick={() => {
+              setShowCriteriaManagement(!showCriteriaManagement);
+            }}
             className="flex items-center gap-2 shadow-sm"
           >
             <Settings className="h-4 w-4" />
@@ -391,7 +340,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setViewAllGrades(!viewAllGrades)}
+            onClick={() => {
+              setViewAllGrades(!viewAllGrades);
+            }}
             className="flex items-center gap-2 shadow-sm"
           >
             {viewAllGrades ? (
@@ -423,7 +374,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                 <Button
                   variant={gradesDisplayMode === "criteria" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setGradesDisplayMode("criteria")}
+                  onClick={() => {
+                    setGradesDisplayMode("criteria");
+                  }}
                   className="flex items-center gap-2"
                 >
                   <Filter className="h-4 w-4" />
@@ -432,7 +385,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                 <Button
                   variant={gradesDisplayMode === "group" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setGradesDisplayMode("group")}
+                  onClick={() => {
+                    setGradesDisplayMode("group");
+                  }}
                   className="flex items-center gap-2"
                 >
                   <Users className="h-4 w-4" />
@@ -550,7 +505,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                         key={group.id}
                         className="flex items-center gap-6 py-3 px-4 hover:bg-muted cursor-pointer transition-colors group w-full text-left"
                         title={`Voir les évaluations du ${group.name}`}
-                        onClick={() => toggleGroup(group.id)}
+                        onClick={() => {
+                          toggleGroup(group.id);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
@@ -619,7 +576,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                   id="group-search"
                                   placeholder="Rechercher un groupe ou membre..."
                                   value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  onChange={(e) => { {
+                                    setSearchTerm(e.target.value);
+                                  }}
                                   className="pl-10 border-2 border-gray-200 focus:border-blue-400 transition-colors"
                                 />
                               </div>
@@ -637,7 +596,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                               <div className="space-y-2 max-h-96 overflow-y-auto">
                                 <button
                                   type="button"
-                                  onClick={() => setSelectedGroup("all")}
+                                  onClick={() => {
+                                    setSelectedGroup("all");
+                                  }}
                                   className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-200 border-2 ${
                                     selectedGroup === "all"
                                       ? "bg-blue-50 text-blue-900 border-blue-300 shadow-md"
@@ -829,7 +790,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                             <div className="flex items-center gap-2 min-w-[200px]">
                                                               <Slider
                                                                 value={[gradeValue]}
-                                                                onValueChange={(value) =>
+                                                                onValueChange={(value) => {
                                                                   handleGradeChange(criterion.id, group.id, value)
                                                                 }
                                                                 max={maxScore}
@@ -843,7 +804,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                             <Button
                                                               variant="ghost"
                                                               size="sm"
-                                                              onClick={() => toggleComment(key)}
+                                                              onClick={() => {
+                              toggleComment(key);
+                            }}
                                                             >
                                                               <MessageSquare
                                                                 className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
@@ -856,7 +819,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                             <Textarea
                                                               placeholder="Ajouter un commentaire..."
                                                               value={getGradeComment(criterion.id, group.id)}
-                                                              onChange={(e) =>
+                                                              onChange={(e) => {
                                                                 handleCommentChange(
                                                                   criterion.id,
                                                                   group.id,
@@ -884,7 +847,6 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                   .filter((c) => c.individual)
                                                   .map((criterion) => {
                                                     const maxScore = (criterion.weight / 100) * 20;
-                                                    const _groupKey = `${criterion.id}-${group.id}`;
                                                     return (
                                                       <div
                                                         key={criterion.id}
@@ -924,7 +886,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                 </span>
                                                                 <Slider
                                                                   value={[gradeValue]}
-                                                                  onValueChange={(value) =>
+                                                                  onValueChange={(value) => {
                                                                     handleIndividualGradeChange(
                                                                       criterion.id,
                                                                       group.id,
@@ -942,7 +904,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                 <Button
                                                                   variant="ghost"
                                                                   size="sm"
-                                                                  onClick={() => toggleComment(key)}
+                                                                  onClick={() => {
+                              toggleComment(key);
+                            }}
                                                                 >
                                                                   <MessageSquare
                                                                     className={`h-4 w-4 ${hasComment ? "text-blue-500" : "text-gray-400"}`}
@@ -957,7 +921,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
                                                                         group.id,
                                                                         member.id,
                                                                       )}
-                                                                      onChange={(e) =>
+                                                                      onChange={(e) => {
                                                                         handleCommentChange(
                                                                           criterion.id,
                                                                           group.id,
