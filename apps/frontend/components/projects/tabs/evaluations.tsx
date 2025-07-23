@@ -163,7 +163,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
       data,
     }: {
       criteriaId: number;
-      data: { groupId: number; gradeValue: number; comment?: string };
+      data: { groupId: number; studentId: number; gradeValue: number; comment?: string };
     }) => createGrade(criteriaId, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["grades"] });
@@ -200,7 +200,9 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
   const gradeMatrix = useMemo(() => {
     const matrix: Record<string, Grade | undefined> = {};
     existingGrades.forEach((grade) => {
-      const key = `${grade.gradingCriteriaId}-${grade.groupId}`;
+      const key = isValidNumber(grade.studentId) 
+        ? `${grade.gradingCriteriaId}-${grade.groupId}-${grade.studentId}`
+        : `${grade.gradingCriteriaId}-${grade.groupId}`;
       matrix[key] = grade;
     });
     return matrix;
@@ -256,31 +258,67 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
 
   const saveGrade = useCallback(
     (criteriaId: number, groupId: number, studentId?: number) => {
-      const key = isValidNumber(studentId) ? `${criteriaId}-${groupId}-${studentId}` : `${criteriaId}-${groupId}`;
-      const gradeData = grades[key];
-      const existingGrade = gradeMatrix[key];
+      const criterion = criteria.find(c => c.id === criteriaId);
+      if (!criterion) return;
 
-      if (!gradeData) return;
+      const group = allGroups.find(g => g.id === groupId);
+      if (!group) return;
 
-      if (existingGrade) {
-        updateGradeMutation.mutate({
-          gradeId: existingGrade.id,
-          data: { gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+      if (criterion.individual) {
+        if (!isValidNumber(studentId)) return;
+        const key = `${criteriaId}-${groupId}-${studentId}`;
+        const gradeData = grades[key];
+        const existingGrade = gradeMatrix[key];
+
+        if (!gradeData) return;
+
+        if (existingGrade) {
+          updateGradeMutation.mutate({
+            gradeId: existingGrade.id,
+            data: { gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+          });
+        } else {
+          createGradeMutation.mutate({
+            criteriaId,
+            data: { groupId, studentId, gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+          });
+        }
+
+        setPendingUpdates((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(key);
+          return newSet;
         });
       } else {
-        createGradeMutation.mutate({
-          criteriaId,
-          data: { groupId, gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+        const key = `${criteriaId}-${groupId}`;
+        const gradeData = grades[key];
+        if (!gradeData) return;
+
+        for (const member of group.members) {
+          const memberKey = `${criteriaId}-${groupId}-${member.id}`;
+          const existingGrade = gradeMatrix[memberKey];
+
+          if (existingGrade) {
+            updateGradeMutation.mutate({
+              gradeId: existingGrade.id,
+              data: { gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+            });
+          } else {
+            createGradeMutation.mutate({
+              criteriaId,
+              data: { groupId, studentId: member.id, gradeValue: gradeData.gradeValue, comment: gradeData.comment },
+            });
+          }
+        }
+
+        setPendingUpdates((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(key);
+          return newSet;
         });
       }
-
-      setPendingUpdates((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(key);
-        return newSet;
-      });
     },
-    [grades, gradeMatrix, updateGradeMutation, createGradeMutation],
+    [grades, gradeMatrix, updateGradeMutation, createGradeMutation, criteria, allGroups],
   );
 
   useEffect(() => {
@@ -303,7 +341,7 @@ export function ProjectEvaluations({ project }: ProjectEvaluationsProps) {
           saveGrade(criteriaId, groupId);
         }
       }
-    }, 2000);
+    }, 10000);
 
     return () => clearTimeout(timeout);
   }, [pendingUpdates.size, saveGrade, pendingUpdates]);

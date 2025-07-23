@@ -697,10 +697,18 @@ export async function getGradesForCriteria(criteriaId: number): Promise<Grade[]>
 
 export async function createGrade(
   criteriaId: number,
-  data: { groupId: number; gradeValue: number; comment?: string },
+  data: { groupId: number; studentId: number; gradeValue: number; comment?: string },
 ): Promise<Grade> {
   const payload = { ...data, gradingCriteriaId: criteriaId };
   return await authPostData(`${API_URL}/criteria/${criteriaId}/grades`, payload);
+}
+
+export async function createGradesBatch(
+  criteriaId: number,
+  gradesData: { groupId: number; studentId: number; gradeValue: number; comment?: string }[],
+): Promise<Grade[]> {
+  const promises = gradesData.map((data) => createGrade(criteriaId, data));
+  return await Promise.all(promises);
 }
 
 export async function updateGrade(gradeId: number, data: { gradeValue?: number; comment?: string }): Promise<Grade> {
