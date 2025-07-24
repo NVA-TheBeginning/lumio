@@ -76,7 +76,6 @@ function getGroupProgress(
       indivTotal += group.members.length;
       for (const member of group.members) {
         const key = `${criterion.id}-${groupId}-${member.id}`;
-        // Check both pending grades and existing grades
         if (grades[key]?.gradeValue !== undefined || gradeMatrix[key]?.gradeValue !== undefined) {
           indivGraded++;
         }
@@ -84,7 +83,6 @@ function getGroupProgress(
     } else {
       groupTotal++;
       const key = `${criterion.id}-${groupId}`;
-      // Check both pending grades and existing grades
       if (grades[key]?.gradeValue !== undefined || gradeMatrix[key]?.gradeValue !== undefined) {
         groupGraded++;
       }

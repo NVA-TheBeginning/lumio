@@ -80,19 +80,38 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
       onOpenChange(false);
       onSuccess();
     } catch (error: unknown) {
-      console.error("Erreur lors de la soumission:", error);
+      if (error instanceof Error) {
+        console.error("Erreur de soumission:", error.message);
 
-      if (error instanceof Error && error.message.includes("does not meet the required rules")) {
-        const ruleViolations = error.message
-          .split("\n")
-          .filter((line: string) => isTruthy(line.trim()) && !line.includes("does not meet the required rules"))
-          .map((line: string) => line.trim());
+        if (error.message.includes("does not meet the required rules")) {
+          const ruleViolations = error.message
+            .split("\n")
+            .filter(
+              (line: string) =>
+                isTruthy(line.trim()) &&
+                !line.includes("Submission does not meet the required rules:") &&
+                !line.includes("HTTP error"),
+            )
+            .map((line: string) => line.trim());
 
-        if (ruleViolations.length > 0) {
-          setValidationErrors(ruleViolations);
-          toast.error("Votre soumission ne respecte pas les règles requises");
+          if (ruleViolations.length > 0) {
+            setValidationErrors(ruleViolations);
+            toast.error("Votre soumission ne respecte pas les règles requises");
+          } else {
+            toast.error("Votre soumission ne respecte pas les règles requises");
+          }
         } else {
-          toast.error("Erreur lors de la soumission");
+          if (error.message === "Submission is not allowed after the deadline") {
+            toast.error("La soumission n'est pas autorisée après la date limite");
+          } else if (error.message === "Invalid Git URL format") {
+            toast.error("Format d'URL Git invalide");
+          } else if (error.message === "ZIP is invalid or contains forbidden files") {
+            toast.error("Le fichier ZIP est invalide ou contient des fichiers interdits");
+          } else if (error.message === "Either a file or a Git URL must be provided.") {
+            toast.error("Un fichier ou une URL Git doit être fourni");
+          } else {
+            toast.error(error.message);
+          }
         }
       } else {
         toast.error("Erreur lors de la soumission");

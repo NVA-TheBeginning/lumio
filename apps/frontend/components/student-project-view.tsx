@@ -1056,7 +1056,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                                   {criteria.studentGrade ? (
                                     <div>
                                       <Badge variant="outline" className="text-lg px-3 py-1">
-                                        {criteria.studentGrade.gradeValue}/20
+                                        {criteria.studentGrade.gradeValue}/{20 * criteria.weight}
                                       </Badge>
                                       <p className="text-xs text-muted-foreground mt-1">
                                         Évalué le : {formatDate(criteria.studentGrade.gradedAt)}
