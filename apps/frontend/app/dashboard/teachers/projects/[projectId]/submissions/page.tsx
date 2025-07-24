@@ -48,6 +48,8 @@ export default function ProjectSubmissionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [acceptingSubmissions, setAcceptingSubmissions] = useState<Set<number>>(new Set());
+  const [checkingPlagiarism, setCheckingPlagiarism] = useState<Set<number>>(new Set());
+  const [downloadingSubmissions, setDownloadingSubmissions] = useState<Set<number>>(new Set());
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["projects", Number(projectId)],
@@ -97,10 +99,20 @@ export default function ProjectSubmissionsPage() {
     onSuccess: (data, { deliverableId }) => {
       toast.success("Vérification de plagiat terminée");
       queryClient.setQueryData(["plagiarism-results", activePromotion, projectId, deliverableId], data);
+      setCheckingPlagiarism((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(Number(deliverableId));
+        return newSet;
+      });
     },
-    onError: (error) => {
+    onError: (error, { deliverableId }) => {
       console.error("Erreur lors de la vérification:", error);
       toast.error("Erreur lors de la vérification de plagiat");
+      setCheckingPlagiarism((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(Number(deliverableId));
+        return newSet;
+      });
     },
   });
 
@@ -139,6 +151,7 @@ export default function ProjectSubmissionsPage() {
   };
 
   const handleDownloadSubmission = async (submissionId: number) => {
+    setDownloadingSubmissions((prev) => new Set(prev).add(submissionId));
     try {
       toast.info("Téléchargement en cours...");
       await downloadSubmission(submissionId, getSubmissionDownloadData);
@@ -146,6 +159,12 @@ export default function ProjectSubmissionsPage() {
     } catch (error) {
       console.error("Erreur lors du téléchargement:", error);
       toast.error("Erreur lors du téléchargement");
+    } finally {
+      setDownloadingSubmissions((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(submissionId);
+        return newSet;
+      });
     }
   };
 
@@ -157,6 +176,7 @@ export default function ProjectSubmissionsPage() {
   const handleCheckPlagiarism = (deliverableId: number) => {
     if (!activePromotion) return;
 
+    setCheckingPlagiarism((prev) => new Set(prev).add(deliverableId));
     plagiarismCheckMutation.mutate({
       projectId: projectId.toString(),
       promotionId: activePromotion,
@@ -392,15 +412,19 @@ export default function ProjectSubmissionsPage() {
                                   {deliverableSubmissions.length > 1 ? "s" : ""}
                                 </Badge>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCheckPlagiarism(Number(deliverableId))}
-                                disabled={plagiarismCheckMutation.isPending}
-                              >
-                                <AlertTriangle className="h-4 w-4 mr-1" />
-                                {plagiarismCheckMutation.isPending ? "Vérification..." : "Vérifier plagiat"}
-                              </Button>
+                              {deliverableSubmissions.length > 1 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCheckPlagiarism(Number(deliverableId))}
+                                  disabled={checkingPlagiarism.has(Number(deliverableId))}
+                                >
+                                  <AlertTriangle className="h-4 w-4 mr-1" />
+                                  {checkingPlagiarism.has(Number(deliverableId))
+                                    ? "Vérification..."
+                                    : "Vérifier plagiat"}
+                                </Button>
+                              )}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
@@ -499,8 +523,10 @@ export default function ProjectSubmissionsPage() {
                                         onClick={() => {
                                           void handleDownloadSubmission(submission.submissionId);
                                         }}
+                                        disabled={downloadingSubmissions.has(submission.submissionId)}
                                       >
                                         <Download className="h-4 w-4" />
+                                        {downloadingSubmissions.has(submission.submissionId) && "..."}
                                       </Button>
                                     )}
                                   </div>
