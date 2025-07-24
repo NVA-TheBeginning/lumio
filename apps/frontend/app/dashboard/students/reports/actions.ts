@@ -1,5 +1,6 @@
 "use server";
 
+import { getUserFromCookie } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPatchData, authPostData } from "@/lib/utils";
 import type { CreateReportDto, Report, ReportSection, UpdateReportDto } from "@/types/report";
 
@@ -18,26 +19,62 @@ interface ReportFilters {
   promotionId?: number;
 }
 
+async function getStudentGroupIds(): Promise<number[]> {
+  try {
+    const response = await authFetchData<{
+      data: Array<{ id: number; group?: { id: number } | null }>;
+    }>(`${API_BASE_URL}/projects/myprojects?page=1&size=100`);
+
+    return response.data
+      .filter((project) => project.group?.id)
+      .map((project) => project.group?.id)
+      .filter((id): id is number => id !== undefined);
+  } catch (error) {
+    console.error("Error fetching student groups:", error);
+    return [];
+  }
+}
+
 export async function getReports(filters?: ReportFilters): Promise<Report[]> {
   try {
-    const queryParts: string[] = [];
-    if (filters?.projectId != null && filters.projectId !== 0) {
-      queryParts.push(`projectId=${encodeURIComponent(filters.projectId.toString())}`);
-    }
-    if (filters?.groupId != null && filters.groupId !== 0) {
-      queryParts.push(`groupId=${encodeURIComponent(filters.groupId.toString())}`);
-    }
-    if (filters?.promotionId != null && filters.promotionId !== 0) {
-      queryParts.push(`promotionId=${encodeURIComponent(filters.promotionId.toString())}`);
+    const user = await getUserFromCookie();
+    if (!user?.id) {
+      throw new Error("User not authenticated");
     }
 
-    const queryString = queryParts.join("&");
-    const url = `${API_BASE_URL}/reports${queryString ? `?${queryString}` : ""}`;
-    return await authFetchData<Report[]>(url);
+    const [studentGroupIds, allReports] = await Promise.all([getStudentGroupIds(), fetchAllReports(filters)]);
+
+    console.log("Student Group IDs:", studentGroupIds);
+    console.log("All Reports:", allReports);
+    if (studentGroupIds.length === 0) {
+      return [];
+    }
+
+    return allReports.filter((report) => {
+      return studentGroupIds.includes(report.groupId);
+    });
   } catch (error) {
     console.error("Error fetching reports:", error);
     throw error;
   }
+}
+
+async function fetchAllReports(filters?: ReportFilters): Promise<Report[]> {
+  const queryParts: string[] = [];
+
+  if (filters?.projectId != null && filters.projectId !== 0) {
+    queryParts.push(`projectId=${encodeURIComponent(filters.projectId.toString())}`);
+  }
+  if (filters?.groupId != null && filters.groupId !== 0) {
+    queryParts.push(`groupId=${encodeURIComponent(filters.groupId.toString())}`);
+  }
+  if (filters?.promotionId != null && filters.promotionId !== 0) {
+    queryParts.push(`promotionId=${encodeURIComponent(filters.promotionId.toString())}`);
+  }
+
+  const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+  const url = `${API_BASE_URL}/reports${queryString}`;
+  return await authFetchData<Report[]>(url);
 }
 
 export async function updateReport(id: number, data: UpdateReportDto): Promise<Report> {
