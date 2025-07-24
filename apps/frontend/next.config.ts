@@ -25,12 +25,12 @@ const nextConfig: NextConfig = {
   experimental: {
     reactCompiler: enableReactCompiler,
     optimizePackageImports: ["@radix-ui/*", "framer-motion"],
-    nodeMiddleware: true,
+    //nodeMiddleware: true,
     browserDebugInfoInTerminal: true,
     serverActions: {
       bodySizeLimit: "1gb",
     },
-    turbopackPersistentCaching: true,
+    //turbopackPersistentCaching: true,
   },
   env: {
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
