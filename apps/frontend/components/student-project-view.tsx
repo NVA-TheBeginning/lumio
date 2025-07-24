@@ -31,10 +31,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useDeliverableRules,
-  useFinalGrades,
   useJoinGroup,
   useLeaveGroup,
   useProjectStudent,
+  useStudentEvaluations,
 } from "@/hooks/use-project-student";
 import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
@@ -107,7 +107,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     currentUserGroup?.id ?? 0,
   );
 
-  const { data: finalGrades } = useFinalGrades(projectId, project?.promotionId ?? 0, !!project && !!currentUserGroup);
+  const { data: evaluations } = useStudentEvaluations(projectId, !!project && !!currentUserGroup);
+
+  const finalGrades = evaluations?.finalGrades;
+  const criteriaWithGrades = evaluations?.criteriaWithGrades;
 
   const [submissionDialog, setSubmissionDialog] = useState<{
     open: boolean;
@@ -989,33 +992,96 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
               <Separator />
 
               <div>
-                <h4 className="font-medium mb-3">Note finale</h4>
+                <h4 className="font-medium mb-3">Évaluations</h4>
+
+                {/* Final Grade Section */}
                 {finalGrades && finalGrades.length > 0 ? (
+                  <div className="space-y-4 mb-6">
+                    {finalGrades.map((finalGrade) => (
+                      <Card key={finalGrade.id} className="border-l-4 border-l-green-500">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-lg">Note finale du projet</p>
+                              <p className="text-sm text-muted-foreground">
+                                Évalué le : {formatDate(finalGrade.createdAt)}
+                              </p>
+                              {finalGrade.comment && (
+                                <p className="text-sm text-muted-foreground mt-1">{finalGrade.comment}</p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-2xl px-4 py-2">
+                              {finalGrade.finalGrade}/20
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Award className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucune note finale disponible pour le moment</p>
+                  </div>
+                )}
+
+                {/* Detailed Criteria Breakdown */}
+                {criteriaWithGrades && criteriaWithGrades.length > 0 && (
                   <div className="space-y-4">
-                    {finalGrades
-                      .filter((grade) => grade.groupId === currentUserGroup?.id)
-                      .map((finalGrade) => (
-                        <Card key={finalGrade.id} className="border-l-4 border-l-green-500">
+                    <Separator />
+                    <h5 className="font-medium text-base">Détail des évaluations par critère</h5>
+                    <div className="space-y-3">
+                      {criteriaWithGrades.map((criteria) => (
+                        <Card key={criteria.id} className="border-l-4 border-l-blue-500">
                           <CardContent className="pt-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-lg">Note finale du projet</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Évalué le : {formatDate(finalGrade.createdAt)}
-                                </p>
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h6 className="font-medium">{criteria.name}</h6>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {criteria.type === "DELIVERABLE" && "Livrable"}
+                                      {criteria.type === "REPORT" && "Rapport"}
+                                      {criteria.type === "PRESENTATION" && "Présentation"}
+                                    </Badge>
+                                    {criteria.individual && (
+                                      <Badge variant="outline" className="text-xs">
+                                        Individuel
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">Coefficient : {criteria.weight}</p>
+                                </div>
+                                <div className="text-right">
+                                  {criteria.studentGrade ? (
+                                    <div>
+                                      <Badge variant="outline" className="text-lg px-3 py-1">
+                                        {criteria.studentGrade.gradeValue}/20
+                                      </Badge>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Évalué le : {formatDate(criteria.studentGrade.gradedAt)}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-sm">
+                                      Non évalué
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              <Badge variant="outline" className="text-2xl px-4 py-2">
-                                {finalGrade.finalGrade}/20
-                              </Badge>
+                              {criteria.studentGrade?.comment && (
+                                <div className="pt-2 border-t">
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Commentaire :</p>
+                                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                    {criteria.studentGrade.comment}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
                       ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucune note finale disponible pour le moment</p>
+                    </div>
                   </div>
                 )}
               </div>

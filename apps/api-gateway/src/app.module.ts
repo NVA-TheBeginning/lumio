@@ -46,7 +46,9 @@ import { ReportsModule } from "./microservices/reports/reports.module.js";
     CriteriaModule,
     GradeModule,
     FinalGradeModule,
-    JwtModule.register({}),
+    JwtModule.register({
+      global: true,
+    }),
     PrometheusModule.register({
       path: "/metrics",
       defaultLabels: {

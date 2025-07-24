@@ -22,6 +22,25 @@ export class FinalGradeController {
     return this.service.findAll(projectId, promotionId);
   }
 
+  @Get("students/:studentId/projects/:projectId/evaluations")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Récupérer toutes les évaluations d'un étudiant pour un projet (notes finales + détail des critères)",
+  })
+  @ApiParam({ name: "studentId", type: Number, description: "ID de l'étudiant" })
+  @ApiParam({ name: "projectId", type: Number, description: "ID du projet" })
+  @ApiResponse({
+    status: 200,
+    description: "Évaluations complètes de l'étudiant (notes finales + critères avec notes).",
+  })
+  @ApiResponse({ status: 404, description: "Étudiant ou projet introuvable." })
+  findStudentEvaluations(
+    @Param("studentId", ParseIntPipe) studentId: number,
+    @Param("projectId", ParseIntPipe) projectId: number,
+  ) {
+    return this.service.findByStudentAndProject(studentId, projectId);
+  }
+
   @Post("projects/:projectId/promotions/:promotionId/final-grades")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Calculer et sauvegarder les notes finales" })
