@@ -110,7 +110,9 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
           } else if (error.message === "Either a file or a Git URL must be provided.") {
             toast.error("Un fichier ou une URL Git doit être fourni");
           } else {
-            toast.error(error.message);
+            toast.error(
+              "Une erreur est survenue lors de la soumission, veuillez vérifier les règles de soumission et réessayer.",
+            );
           }
         }
       } else {

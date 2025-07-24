@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Eye, FileText, Filter, Search, Users, X } from "lucide-react";
+import { ArrowLeft, Calendar, Download, Eye, FileText, Filter, Search, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import ReportEditor from "@/components/report-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, isNotEmpty, isNotNull } from "@/lib/utils";
-import { getReports } from "./actions";
+import { getReport, getReports } from "./actions";
 
 type ViewMode = "list" | "viewer";
 
@@ -149,6 +150,69 @@ export default function TeacherReportsPage() {
       search: "",
       status: "all",
     });
+  };
+
+  const downloadReportMarkdown = async (reportId: number, _reportTitle?: string) => {
+    try {
+      const report = await getReport(reportId);
+
+      if (!report.sections || report.sections.length === 0) {
+        toast.error("Aucun contenu à télécharger");
+        return;
+      }
+
+      let markdownContent = "";
+      markdownContent += "# Rapport\n\n";
+      if (report.projectId) {
+        markdownContent += `**Projet ID:** ${report.projectId}\n`;
+      }
+      if (report.groupId) {
+        markdownContent += `**Groupe ID:** ${report.groupId}\n`;
+      }
+      if (report.promotionId) {
+        markdownContent += `**Promotion ID:** ${report.promotionId}\n`;
+      }
+      if (report.updatedAt) {
+        markdownContent += `**Modifié le:** ${new Date(report.updatedAt).toLocaleDateString("fr-FR")}\n`;
+      }
+      if (report.submittedAt) {
+        markdownContent += `**Soumis le:** ${new Date(report.submittedAt).toLocaleDateString("fr-FR")}\n`;
+      }
+      markdownContent += "\n---\n\n";
+
+      report.sections.forEach((section, index) => {
+        if (section.title || section.contentMarkdown) {
+          markdownContent += `# ${section.title || `Section ${index + 1}`}\n\n`;
+          if (section.contentMarkdown) {
+            markdownContent += `${section.contentMarkdown}\n\n`;
+          }
+          markdownContent += "---\n\n";
+        }
+      });
+
+      const blob = new Blob([markdownContent], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+      const filename = `rapport_${reportId}_${timestamp}.md`;
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Rapport téléchargé", {
+        description: `Le fichier ${filename} a été téléchargé.`,
+      });
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      toast.error("Erreur lors du téléchargement", {
+        description: "Impossible de télécharger le rapport.",
+      });
+    }
   };
 
   if (viewMode === "viewer" && selectedReportId !== null) {
@@ -359,9 +423,7 @@ export default function TeacherReportsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className={`w-5 h-5 ${isEmpty || hasEmptyContent ? "text-orange-500" : ""}`} />
-                    <span>
-                      Rapport {isNotEmpty(report.group?.name) ? `(${report.group.name})` : ""} #{report.id}
-                    </span>
+                    <span>Rapport {isNotEmpty(report.group?.name) ? `(${report.group.name})` : ""}</span>
                     {isEmpty && (
                       <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-100">
                         Vide
@@ -421,7 +483,7 @@ export default function TeacherReportsPage() {
                         Soumis le {formatDate(report.submittedAt.toString())}
                       </p>
                     )}
-                    <div className="pt-2">
+                    <div className="pt-2 space-y-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -431,6 +493,18 @@ export default function TeacherReportsPage() {
                         <Eye className="w-4 h-4" />
                         Consulter
                       </Button>
+                      {!isEmpty && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full flex items-center gap-2"
+                          onClick={() => downloadReportMarkdown(report.id)}
+                          disabled={report.sections.length === 0}
+                        >
+                          <Download className="w-4 h-4" />
+                          Télécharger
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

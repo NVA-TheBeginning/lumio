@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Eye, FileText, GripVertical, Plus, Save, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Eye, FileText, GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { getReport, updateReport } from "@/app/dashboard/students/reports/actions";
@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { isTruthy } from "@/lib/utils";
-import { ReportSection, UpdateReportDto } from "@/types/report";
+import { Report, ReportSection, UpdateReportDto } from "@/types/report";
 
 export default function ReportEditor({ reportId, readOnly = false }: { reportId: number; readOnly?: boolean }) {
   const queryClient = useQueryClient();
@@ -22,12 +22,14 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
   const [sections, setSections] = useState<ReportSection[]>([]);
   const [activeSection, setActiveSection] = useState<number>(0);
   const [isPreview, setIsPreview] = useState<boolean>(false);
+  const [reportData, setReportData] = useState<Report | null>(null);
 
   useQuery({
     queryKey: ["reports", reportId],
     queryFn: async () => {
       const report = await getReport(reportId);
       setSections(report.sections);
+      setReportData(report);
       return report;
     },
   });
@@ -139,6 +141,62 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
     setIsPreview((prev) => !prev);
   }, []);
 
+  const downloadMarkdown = useCallback(() => {
+    if (!sections || sections.length === 0) {
+      toast.error("Aucun contenu à télécharger");
+      return;
+    }
+
+    let markdownContent = "";
+    if (reportData) {
+      markdownContent += "# Rapport\n\n";
+      if (reportData.projectId) {
+        markdownContent += `**Projet ID:** ${reportData.projectId}\n`;
+      }
+      if (reportData.groupId) {
+        markdownContent += `**Groupe ID:** ${reportData.groupId}\n`;
+      }
+      if (reportData.promotionId) {
+        markdownContent += `**Promotion ID:** ${reportData.promotionId}\n`;
+      }
+      if (reportData.updatedAt) {
+        markdownContent += `**Modifié le:** ${new Date(reportData.updatedAt).toLocaleDateString("fr-FR")}\n`;
+      }
+      if (reportData.submittedAt) {
+        markdownContent += `**Soumis le:** ${new Date(reportData.submittedAt).toLocaleDateString("fr-FR")}\n`;
+      }
+      markdownContent += "\n---\n\n";
+    }
+
+    sections.forEach((section, index) => {
+      if (section.title || section.contentMarkdown) {
+        markdownContent += `# ${section.title || `Section ${index + 1}`}\n\n`;
+        if (section.contentMarkdown) {
+          markdownContent += `${section.contentMarkdown}\n\n`;
+        }
+        markdownContent += "---\n\n";
+      }
+    });
+
+    const blob = new Blob([markdownContent], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+    const filename = `rapport_${reportId}_${timestamp}.md`;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Rapport téléchargé", {
+      description: `Le fichier ${filename} a été téléchargé.`,
+    });
+  }, [sections, reportData, reportId]);
+
   const navigateToSection = useCallback(
     (direction: "prev" | "next") => {
       setActiveSection((prevActiveSection) => {
@@ -159,6 +217,12 @@ export default function ReportEditor({ reportId, readOnly = false }: { reportId:
       <div className="flex items-center justify-between mb-6">
         <div className="text-3xl font-bold" />
         <div className="flex gap-2">
+          {(readOnly || isPreview) && (
+            <Button variant="outline" onClick={downloadMarkdown}>
+              <Download className="w-4 h-4 mr-2" />
+              Télécharger
+            </Button>
+          )}
           {!readOnly && (
             <Button variant="outline" onClick={togglePreview}>
               <Eye className="w-4 h-4 mr-2" />
