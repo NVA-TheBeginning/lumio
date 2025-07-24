@@ -3,6 +3,37 @@ import { getTokens } from "@/lib/cookie";
 import { authDeleteData, authFetchData, authPostFormData } from "@/lib/utils";
 import type { FinalGrade } from "@/types/evaluation";
 
+export interface GradingCriteria {
+  id: number;
+  projectId: number;
+  promotionId: number;
+  name: string;
+  weight: number;
+  type: "DELIVERABLE" | "REPORT" | "PRESENTATION";
+  individual: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Grade {
+  id: number;
+  gradingCriteriaId: number;
+  groupId: number;
+  studentId?: number;
+  gradeValue: number;
+  comment?: string;
+  gradedAt: string;
+}
+
+export interface CriteriaWithGrade extends GradingCriteria {
+  studentGrade?: Grade;
+}
+
+export interface StudentEvaluations {
+  finalGrades: FinalGrade[];
+  criteriaWithGrades: CriteriaWithGrade[];
+}
+
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
 export interface SubmissionData {
@@ -103,6 +134,10 @@ export async function deleteSubmission(submissionId: number): Promise<void> {
 
 export async function getFinalGrades(projectId: number, promotionId: number): Promise<FinalGrade[]> {
   return await authFetchData(`${API_URL}/projects/${projectId}/promotions/${promotionId}/final-grades`);
+}
+
+export async function getStudentEvaluations(projectId: number): Promise<StudentEvaluations> {
+  return await authFetchData(`${API_URL}/students/me/projects/${projectId}/evaluations`);
 }
 
 export async function downloadProjectDocument(documentId: number): Promise<{
