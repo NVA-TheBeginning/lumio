@@ -1,4 +1,3 @@
-"use server";
 import { useQuery } from "@tanstack/react-query";
 import { ActivityItem, DashboardStatistics, UserRole } from "@/lib/types/dashboard";
 import { authFetchData } from "@/lib/utils";
@@ -15,7 +14,7 @@ async function fetchRecentActivity(userId: number, userRole: UserRole, limit = 1
   );
 }
 
-export async function useDashboardStatistics(userId: number, userRole: UserRole) {
+export function useDashboardStatistics(userId: number, userRole: UserRole) {
   return useQuery({
     queryKey: ["dashboard", "statistics", userId, userRole],
     queryFn: () => fetchDashboardStatistics(userId, userRole),
@@ -25,7 +24,7 @@ export async function useDashboardStatistics(userId: number, userRole: UserRole)
   });
 }
 
-export async function useRecentActivity(userId: number, userRole: UserRole, limit = 10) {
+export function useRecentActivity(userId: number, userRole: UserRole, limit = 10) {
   return useQuery({
     queryKey: ["dashboard", "activity", userId, userRole, limit],
     queryFn: () => fetchRecentActivity(userId, userRole, limit),
