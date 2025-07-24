@@ -104,7 +104,16 @@ export async function authPostFormData<T>(url: string, formData: FormData): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
+    let errorMessage = `HTTP error! Status: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {}
+    throw new Error(errorMessage);
   }
 
   return await response.json();
