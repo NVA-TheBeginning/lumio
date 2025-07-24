@@ -1,7 +1,7 @@
 "use server";
 
 import type { CreateCriteriaDto, Criteria } from "@/lib/types";
-import { createCriteria, getAllProjects, getAllCriteria } from "../projects/actions";
+import { createCriteria, getAllCriteria, getAllProjects } from "../projects/actions";
 
 export interface ProjectWithCriteria {
   id: number;

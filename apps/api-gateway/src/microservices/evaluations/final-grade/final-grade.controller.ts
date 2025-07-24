@@ -1,5 +1,7 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { GetUser, JwtUser } from "@/common/decorators/get-user.decorator.js";
+import { AuthGuard } from "@/jwt/guards/auth.guard.js";
 import { MicroserviceProxyService } from "@/proxies/microservice-proxy.service.js";
 import { UpdateFinalGradeDto } from "../dto/update-final-grade.dto.js";
 
@@ -24,6 +26,20 @@ export class FinalGradeController {
       `/projects/${projectId}/promotions/${promotionId}/final-grades`,
       "GET",
     );
+  }
+
+  @Get("students/me/projects/:projectId/evaluations")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: "Récupérer toutes les évaluations de l'étudiant connecté pour un projet" })
+  @ApiParam({ name: "projectId", type: Number, description: "ID du projet" })
+  @ApiResponse({
+    status: 200,
+    description: "Évaluations complètes de l'étudiant (notes finales + critères avec notes).",
+  })
+  @ApiResponse({ status: 404, description: "Projet introuvable ou étudiant non trouvé." })
+  findStudentEvaluations(@Param("projectId", ParseIntPipe) projectId: number, @GetUser() user: JwtUser) {
+    return this.proxy.forwardRequest("evaluation", `/students/${user.sub}/projects/${projectId}/evaluations`, "GET");
   }
 
   @Post("projects/:projectId/promotions/:promotionId/final-grades")

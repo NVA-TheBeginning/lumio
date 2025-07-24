@@ -5,7 +5,6 @@ import { ArrowRight, BookCheck, Copy, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { copyCriteria, type ProjectWithCriteria } from "@/app/dashboard/teachers/evaluations/actions";
-import type { Criteria } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

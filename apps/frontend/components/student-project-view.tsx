@@ -1,7 +1,19 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { AlertCircle, Award, Calendar, CheckCircle, Clock, Download, Eye, FileText, Upload, Users } from "lucide-react";
+import {
+  AlertCircle,
+  Award,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  Info,
+  Upload,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { downloadProjectDocument, SubmissionMetadataResponse } from "@/app/dashboard/students/projects/actions";
@@ -13,15 +25,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useDeliverableRules,
-  useFinalGrades,
   useJoinGroup,
   useLeaveGroup,
   useProjectStudent,
+  useStudentEvaluations,
 } from "@/hooks/use-project-student";
 import { useStudentPresentationOrder } from "@/hooks/use-student-presentations";
 import { useSubmissions } from "@/hooks/use-submissions";
@@ -94,7 +107,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     currentUserGroup?.id ?? 0,
   );
 
-  const { data: finalGrades } = useFinalGrades(projectId, project?.promotionId ?? 0, !!project && !!currentUserGroup);
+  const { data: evaluations } = useStudentEvaluations(projectId, !!project && !!currentUserGroup);
+
+  const finalGrades = evaluations?.finalGrades;
+  const criteriaWithGrades = evaluations?.criteriaWithGrades;
 
   const [submissionDialog, setSubmissionDialog] = useState<{
     open: boolean;
@@ -106,6 +122,11 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     submission: DialogSubmission | null;
     deliverable: DeliverableType | null;
   }>({ open: false, submission: null, deliverable: null });
+
+  const [rulesDialog, setRulesDialog] = useState<{
+    open: boolean;
+    deliverable: DeliverableType | null;
+  }>({ open: false, deliverable: null });
 
   const handleOpenSubmissionDialog = (deliverable: DeliverableType) => {
     setSubmissionDialog({ open: true, deliverable });
@@ -142,6 +163,14 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
   const handleCloseSubmissionDetailsDialog = () => {
     setSubmissionDetailsDialog({ open: false, submission: null, deliverable: null });
+  };
+
+  const handleOpenRulesDialog = (deliverable: DeliverableType) => {
+    setRulesDialog({ open: true, deliverable });
+  };
+
+  const handleCloseRulesDialog = () => {
+    setRulesDialog({ open: false, deliverable: null });
   };
 
   const handleSubmissionSuccess = async () => {
@@ -224,102 +253,175 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   };
 
   const renderRuleDetails = (rule: DeliverableRule) => {
+    let parsedDetails: DeliverableRule["ruleDetails"];
+    try {
+      parsedDetails = typeof rule.ruleDetails === "string" ? JSON.parse(rule.ruleDetails) : rule.ruleDetails;
+    } catch (error) {
+      console.error("Error parsing rule details:", error);
+      return <div className="text-sm text-muted-foreground italic">Erreur lors du parsing des détails de la règle</div>;
+    }
+
     switch (rule.ruleType) {
       case RuleType.SIZE_LIMIT: {
-        const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
+        const sizeDetails = parsedDetails as { maxSizeInBytes: number };
         return (
-          <div className="text-sm text-muted-foreground">
-            Taille maximale : {formatFileSize(sizeDetails.maxSizeInBytes)}
+          <div className="space-y-2">
+            <div className="text-sm">
+              <span className="font-medium">Taille maximale autorisée :</span>
+            </div>
+            <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+              {formatFileSize(sizeDetails.maxSizeInBytes)}
+            </div>
           </div>
         );
       }
       case RuleType.FILE_PRESENCE: {
-        const fileDetails = rule.ruleDetails as {
-          requiredFiles: string[];
+        const fileDetails = parsedDetails as {
+          requiredFiles?: string[];
           allowedExtensions?: string[];
           forbiddenExtensions?: string[];
         };
         return (
-          <div className="text-sm text-muted-foreground space-y-1">
-            {fileDetails.requiredFiles.length > 0 && (
-              <div>Fichiers requis : {fileDetails.requiredFiles.join(", ")}</div>
+          <div className="space-y-3">
+            {(fileDetails.requiredFiles?.length ?? 0) > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-1">Fichiers obligatoires :</div>
+                <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {fileDetails.requiredFiles?.join(", ")}
+                </div>
+              </div>
             )}
             {(fileDetails.allowedExtensions?.length ?? 0) > 0 && (
-              <div>Extensions autorisées : {fileDetails.allowedExtensions?.join(", ")}</div>
+              <div>
+                <div className="text-sm font-medium mb-1">Extensions autorisées :</div>
+                <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {fileDetails.allowedExtensions?.join(", ")}
+                </div>
+              </div>
             )}
             {(fileDetails.forbiddenExtensions?.length ?? 0) > 0 && (
-              <div>Extensions interdites : {fileDetails.forbiddenExtensions?.join(", ")}</div>
+              <div>
+                <div className="text-sm font-medium mb-1">Extensions interdites :</div>
+                <div className="text-sm text-muted-foreground bg-red-50 dark:bg-red-950 p-2 rounded border border-red-200 dark:border-red-800">
+                  {fileDetails.forbiddenExtensions?.join(", ")}
+                </div>
+              </div>
             )}
+            {(fileDetails.requiredFiles?.length ?? 0) === 0 &&
+              (fileDetails.allowedExtensions?.length ?? 0) === 0 &&
+              (fileDetails.forbiddenExtensions?.length ?? 0) === 0 && (
+                <div className="text-sm text-muted-foreground italic">
+                  Aucune restriction spécifique sur les fichiers
+                </div>
+              )}
           </div>
         );
       }
       case RuleType.DIRECTORY_STRUCTURE: {
-        const dirDetails = rule.ruleDetails as {
-          requiredDirectories: string[];
+        const dirDetails = parsedDetails as {
+          requiredDirectories?: string[];
           forbiddenDirectories?: string[];
         };
         return (
-          <div className="text-sm text-muted-foreground space-y-1">
-            {dirDetails.requiredDirectories.length > 0 && (
-              <div>Dossiers requis : {dirDetails.requiredDirectories.join(", ")}</div>
+          <div className="space-y-3">
+            {(dirDetails.requiredDirectories?.length ?? 0) > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-1">Dossiers obligatoires :</div>
+                <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {dirDetails.requiredDirectories?.join(", ")}
+                </div>
+              </div>
             )}
             {(dirDetails.forbiddenDirectories?.length ?? 0) > 0 && (
-              <div>Dossiers interdits : {dirDetails.forbiddenDirectories?.join(", ")}</div>
+              <div>
+                <div className="text-sm font-medium mb-1">Dossiers interdits :</div>
+                <div className="text-sm text-muted-foreground bg-red-50 dark:bg-red-950 p-2 rounded border border-red-200 dark:border-red-800">
+                  {dirDetails.forbiddenDirectories?.join(", ")}
+                </div>
+              </div>
             )}
+            {(dirDetails.requiredDirectories?.length ?? 0) === 0 &&
+              (dirDetails.forbiddenDirectories?.length ?? 0) === 0 && (
+                <div className="text-sm text-muted-foreground italic">
+                  Aucune restriction spécifique sur la structure des dossiers
+                </div>
+              )}
           </div>
         );
       }
       default:
-        return null;
+        return <div className="text-sm text-muted-foreground italic">Type de règle non reconnu : {rule.ruleType}</div>;
     }
   };
 
-  const DeliverableRules = ({ deliverableId }: { deliverableId: number }) => {
-    const { data: rules, isLoading } = useDeliverableRules(deliverableId);
+  const DeliverableRulesModal = ({ deliverable }: { deliverable: DeliverableType }) => {
+    const { data: rules, isLoading } = useDeliverableRules(deliverable.id);
 
-    if (isLoading) return null;
-    if (!rules || rules.length === 0) return null;
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      );
+    }
 
-    const validRules = rules.filter((rule) => {
-      switch (rule.ruleType) {
-        case RuleType.SIZE_LIMIT: {
-          const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
-          return sizeDetails.maxSizeInBytes > 0;
-        }
-        case RuleType.FILE_PRESENCE: {
-          const fileDetails = rule.ruleDetails as {
-            requiredFiles: string[];
-            allowedExtensions?: string[];
-            forbiddenExtensions?: string[];
-          };
-          return (
-            fileDetails.requiredFiles.length > 0 ||
-            (fileDetails.allowedExtensions?.length ?? 0) > 0 ||
-            (fileDetails.forbiddenExtensions?.length ?? 0) > 0
-          );
-        }
-        case RuleType.DIRECTORY_STRUCTURE: {
-          const dirDetails = rule.ruleDetails as {
-            requiredDirectories: string[];
-            forbiddenDirectories?: string[];
-          };
-          return dirDetails.requiredDirectories.length > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0;
-        }
-        default:
-          return false;
-      }
-    });
+    console.log("Deliverable Rules:", rules);
 
-    if (validRules.length === 0) return null;
+    if (!rules || rules.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Aucune règle spécifique n'a été définie pour ce livrable.</p>
+        </div>
+      );
+    }
 
     return (
-      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-        <h5 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Règles de soumission :</h5>
-        <div className="space-y-2">
-          {validRules.map((rule) => (
-            <div key={rule.id} className="flex items-start gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
-              <div className="flex-1">{renderRuleDetails(rule)}</div>
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h4 className="font-medium text-blue-800 dark:text-blue-200">Informations générales</h4>
+            </div>
+            <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+              <p>
+                <strong>Nom :</strong> {deliverable.name}
+              </p>
+              <p>
+                <strong>Description :</strong> {deliverable.description}
+              </p>
+              <p>
+                <strong>Date d'échéance :</strong> {formatDate(deliverable.deadline)}
+              </p>
+              {deliverable.allowLateSubmission && (
+                <p>
+                  <strong>Soumission tardive :</strong> Autorisée avec pénalité de {deliverable.lateSubmissionPenalty}%
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-semibold text-lg flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Règles de soumission
+          </h4>
+
+          {rules.map((rule, index) => (
+            <div key={rule.id} className="p-4 border rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                  {index + 1}
+                </div>
+                <h5 className="font-medium">
+                  {rule.ruleType === RuleType.SIZE_LIMIT && "Limite de taille"}
+                  {rule.ruleType === RuleType.FILE_PRESENCE && "Présence de fichiers"}
+                  {rule.ruleType === RuleType.DIRECTORY_STRUCTURE && "Structure de dossiers"}
+                </h5>
+              </div>
+              <div className="ml-8">{renderRuleDetails(rule)}</div>
             </div>
           ))}
         </div>
@@ -518,8 +620,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                             </div>
                           </div>
 
-                          <DeliverableRules deliverableId={deliverable.id} />
-
                           <Separator className="my-4" />
 
                           <div className="flex items-center justify-between">
@@ -531,6 +631,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                               )}
                             </div>
                             <div className="flex gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => handleOpenRulesDialog(deliverable)}>
+                                <Info className="h-4 w-4 mr-2" />
+                                Voir les règles
+                              </Button>
                               {submission ? (
                                 <>
                                   <Button
@@ -843,33 +947,96 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
               <Separator />
 
               <div>
-                <h4 className="font-medium mb-3">Note finale</h4>
+                <h4 className="font-medium mb-3">Évaluations</h4>
+
+                {/* Final Grade Section */}
                 {finalGrades && finalGrades.length > 0 ? (
+                  <div className="space-y-4 mb-6">
+                    {finalGrades.map((finalGrade) => (
+                      <Card key={finalGrade.id} className="border-l-4 border-l-green-500">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-lg">Note finale du projet</p>
+                              <p className="text-sm text-muted-foreground">
+                                Évalué le : {formatDate(finalGrade.createdAt)}
+                              </p>
+                              {finalGrade.comment && (
+                                <p className="text-sm text-muted-foreground mt-1">{finalGrade.comment}</p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-2xl px-4 py-2">
+                              {finalGrade.finalGrade}/20
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Award className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucune note finale disponible pour le moment</p>
+                  </div>
+                )}
+
+                {/* Detailed Criteria Breakdown */}
+                {criteriaWithGrades && criteriaWithGrades.length > 0 && (
                   <div className="space-y-4">
-                    {finalGrades
-                      .filter((grade) => grade.groupId === currentUserGroup?.id)
-                      .map((finalGrade) => (
-                        <Card key={finalGrade.id} className="border-l-4 border-l-green-500">
+                    <Separator />
+                    <h5 className="font-medium text-base">Détail des évaluations par critère</h5>
+                    <div className="space-y-3">
+                      {criteriaWithGrades.map((criteria) => (
+                        <Card key={criteria.id} className="border-l-4 border-l-blue-500">
                           <CardContent className="pt-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-lg">Note finale du projet</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Évalué le : {formatDate(finalGrade.createdAt)}
-                                </p>
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h6 className="font-medium">{criteria.name}</h6>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {criteria.type === "DELIVERABLE" && "Livrable"}
+                                      {criteria.type === "REPORT" && "Rapport"}
+                                      {criteria.type === "PRESENTATION" && "Présentation"}
+                                    </Badge>
+                                    {criteria.individual && (
+                                      <Badge variant="outline" className="text-xs">
+                                        Individuel
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">Coefficient : {criteria.weight}</p>
+                                </div>
+                                <div className="text-right">
+                                  {criteria.studentGrade ? (
+                                    <div>
+                                      <Badge variant="outline" className="text-lg px-3 py-1">
+                                        {criteria.studentGrade.gradeValue}/{20 * criteria.weight}
+                                      </Badge>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Évalué le : {formatDate(criteria.studentGrade.gradedAt)}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-sm">
+                                      Non évalué
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              <Badge variant="outline" className="text-2xl px-4 py-2">
-                                {finalGrade.finalGrade}/20
-                              </Badge>
+                              {criteria.studentGrade?.comment && (
+                                <div className="pt-2 border-t">
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Commentaire :</p>
+                                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                    {criteria.studentGrade.comment}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
                       ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucune note finale disponible pour le moment</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -898,6 +1065,19 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           deliverable={submissionDetailsDialog.deliverable}
           onSuccess={handleSubmissionDeleted}
         />
+      )}
+      {rulesDialog.deliverable && (
+        <Dialog open={rulesDialog.open} onOpenChange={handleCloseRulesDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Règles du livrable : {rulesDialog.deliverable.name}
+              </DialogTitle>
+            </DialogHeader>
+            <DeliverableRulesModal deliverable={rulesDialog.deliverable} />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

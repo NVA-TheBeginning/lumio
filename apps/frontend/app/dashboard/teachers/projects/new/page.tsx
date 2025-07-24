@@ -92,7 +92,7 @@ export default function CreateProjectForm() {
     const currentGroupSettings = getValues("groupSettings") ?? [];
     const existingSettingsMap = new Map(currentGroupSettings.map((setting) => [setting.promotionId, setting]));
 
-    if (currentPromotionIds.length === 0) {
+    if (!currentPromotionIds || currentPromotionIds.length === 0) {
       setValue("groupSettings", [], { shouldDirty: true, shouldValidate: true });
       return;
     }

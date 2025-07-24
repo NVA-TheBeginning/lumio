@@ -24,8 +24,42 @@ export class FinalGradeService {
     });
   }
 
+  async findByStudentAndProject(studentId: number, projectId: number) {
+    const [finalGrades, criteriaWithGrades] = await this.prisma.$transaction([
+      this.prisma.finalGrade.findMany({
+        where: {
+          studentId,
+          projectId,
+        },
+        orderBy: { promotionId: "asc" },
+      }),
+      this.prisma.gradingCriteria.findMany({
+        where: { projectId },
+        include: {
+          grades: {
+            where: {
+              OR: [{ studentId }, { groupId: { not: null } }],
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    const criteriaWithStudentGrades = criteriaWithGrades.map((criterion) => ({
+      ...criterion,
+      studentGrade: criterion.grades.find(
+        (grade) => grade.studentId === studentId || (grade.groupId !== null && !criterion.individual),
+      ),
+    }));
+
+    return {
+      finalGrades,
+      criteriaWithGrades: criteriaWithStudentGrades,
+    };
+  }
+
   async calculateAndSave(projectId: number, promotionId: number) {
-    // Get all criteria for this project/promotion
     const criteria = await this.prisma.gradingCriteria.findMany({
       where: { projectId, promotionId },
     });
@@ -34,21 +68,12 @@ export class FinalGradeService {
       throw new NotFoundException("No criteria found for this project/promotion");
     }
 
-    // Get all grades for these criteria
     const grades = await this.prisma.grade.findMany({
       where: {
         gradingCriteriaId: { in: criteria.map((c) => c.id) },
       },
     });
 
-    // We need to fetch group members from project-service
-    // For now, we'll get unique group IDs and student IDs from grades
-    const _groupIds = [...new Set(grades.filter((g) => g.groupId !== null).map((g) => g.groupId))];
-
-    // Create a criteria map for quick lookup
-    const _criteriaMap = new Map(criteria.map((c) => [c.id, c]));
-
-    // Group grades by groupId and studentId
     const gradesByGroupAndStudent = grades.reduce(
       (acc, grade) => {
         if (grade.groupId !== null && grade.studentId !== null) {
@@ -67,30 +92,24 @@ export class FinalGradeService {
       {} as Record<string, { groupId: number; studentId: number; grades: typeof grades }>,
     );
 
-    // Calculate final grades for each student
     const finalGradePromises = Object.values(gradesByGroupAndStudent).map(
       async ({ groupId, studentId, grades: studentGrades }) => {
-        // Calculate weighted average for this student
         let totalWeightedScore = 0;
         let totalWeight = 0;
 
-        // For each criterion, find the student's grade
         for (const criterion of criteria) {
           const studentGrade = studentGrades.find((g) => g.gradingCriteriaId === criterion.id);
 
           if (studentGrade) {
-            // Grade values are already weighted in the frontend, so just sum them
             totalWeightedScore += studentGrade.gradeValue;
             totalWeight += criterion.weight;
           }
         }
 
-        // Only calculate if we have complete grades
         if (totalWeight > 0) {
           const rawFinalGrade = totalWeightedScore;
           const finalGrade = this.roundGradeToNextHalf(rawFinalGrade);
 
-          // Find existing final grade for this student
           const existing = await this.prisma.finalGrade.findFirst({
             where: { projectId, promotionId, groupId, studentId },
           });

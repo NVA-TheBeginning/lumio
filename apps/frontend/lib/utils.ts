@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { getTokens } from "@/lib/cookie";
 
 export function isTruthy(value: string | undefined | null): value is string {
   if (value === undefined || value === null) {
@@ -47,7 +48,6 @@ export function formatDateTime(dateString: string): string {
 }
 
 export async function authFetchData<T>(url: string): Promise<T> {
-  const { getTokens } = await import("@/lib/cookie");
   const { accessToken } = await getTokens();
   if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
@@ -68,7 +68,6 @@ export async function authFetchData<T>(url: string): Promise<T> {
 }
 
 export async function authPostData<T>(url: string, data: unknown): Promise<T> {
-  const { getTokens } = await import("@/lib/cookie");
   const { accessToken } = await getTokens();
   if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
@@ -90,7 +89,6 @@ export async function authPostData<T>(url: string, data: unknown): Promise<T> {
 }
 
 export async function authPostFormData<T>(url: string, formData: FormData): Promise<T> {
-  const { getTokens } = await import("@/lib/cookie");
   const { accessToken } = await getTokens();
   if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
@@ -104,14 +102,22 @@ export async function authPostFormData<T>(url: string, formData: FormData): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
+    let errorMessage = `HTTP error! Status: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {}
+    throw new Error(errorMessage);
   }
 
   return await response.json();
 }
 
 export async function authPutData<T>(url: string, data: unknown): Promise<T> {
-  const { getTokens } = await import("@/lib/cookie");
   const { accessToken } = await getTokens();
   if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
@@ -133,7 +139,6 @@ export async function authPutData<T>(url: string, data: unknown): Promise<T> {
 }
 
 export async function authPatchData<T>(url: string, data: unknown): Promise<T> {
-  const { getTokens } = await import("@/lib/cookie");
   const { accessToken } = await getTokens();
   if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");
@@ -155,7 +160,6 @@ export async function authPatchData<T>(url: string, data: unknown): Promise<T> {
 }
 
 export async function authDeleteData<T = void>(url: string): Promise<T> {
-  const { getTokens } = await import("@/lib/cookie");
   const { accessToken } = await getTokens();
   if (!isTruthy(accessToken)) {
     throw new Error("Access token is missing");

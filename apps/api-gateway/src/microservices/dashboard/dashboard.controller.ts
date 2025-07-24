@@ -165,7 +165,7 @@ export class DashboardController {
       }
 
       const recentProjects = (await this.proxy.forwardRequest(
-        "project-service",
+        "project",
         `/projects/myprojects?userId=${userId}&userRole=${userRole}&page=1&size=${Math.ceil(limit / 2)}`,
         "GET",
       )) as ProjectsResponse;

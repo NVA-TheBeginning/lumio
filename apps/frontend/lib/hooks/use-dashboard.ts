@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ActivityItem, DashboardStatistics, UserRole } from "@/lib/types/dashboard";
 import { authFetchData } from "@/lib/utils";
 
-const API_URL = process.env.API_URL ?? "http://localhost:3000";
+const API_URL = process.env.API_URL ?? "https://lumio-gateway.jayllyz.fr";
 
 async function fetchDashboardStatistics(userId: number, userRole: UserRole): Promise<DashboardStatistics> {
   return authFetchData<DashboardStatistics>(`${API_URL}/dashboard/statistics?userId=${userId}&userRole=${userRole}`);
