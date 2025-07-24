@@ -69,8 +69,6 @@ export function CopyCriteriaDialog({ isOpen, onClose, sourceProject, targetProje
 
   const selectedSourcePromotionData = sourcePromotionsWithCriteria.find((p) => p.id === selectedSourcePromotion);
 
-  const _selectedTargetPromotionData = targetPromotionsWithoutCriteria.find((p) => p.id === selectedTargetPromotion);
-
   const canCopy =
     isValidNumber(selectedSourcePromotion) &&
     isValidNumber(selectedTargetPromotion) &&
