@@ -76,10 +76,13 @@ model FinalGrade {
   projectId   Int
   promotionId Int
   groupId     Int
+  studentId   Int
   finalGrade  Float
   comment     String?
   validatedAt DateTime @default(now())
 
+  @@unique([projectId, promotionId, groupId, studentId])
+  @@index([studentId])
   @@map("final_grades")
   @@schema("evaluation_schema")
 }

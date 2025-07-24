@@ -6,6 +6,14 @@ import { UpdateFinalGradeDto } from "./dto/update-final-grade.dto";
 export class FinalGradeService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Rounds a grade up to the next 0.5 increment
+   * Examples: 19.4 → 19.5, 19.9 → 20.0, 18.1 → 18.5, 18.6 → 19.0
+   */
+  private roundGradeToNextHalf(grade: number): number {
+    return Math.ceil(grade * 2) / 2;
+  }
+
   async findAll(projectId: number, promotionId: number) {
     return this.prisma.finalGrade.findMany({
       where: {
@@ -33,71 +41,84 @@ export class FinalGradeService {
       },
     });
 
-    // Create a criteria map for quick lookup
-    const criteriaMap = new Map(criteria.map((c) => [c.id, c]));
+    // We need to fetch group members from project-service
+    // For now, we'll get unique group IDs and student IDs from grades
+    const _groupIds = [...new Set(grades.filter((g) => g.groupId !== null).map((g) => g.groupId))];
 
-    // Group grades by groupId
-    const gradesByGroup = grades.reduce(
+    // Create a criteria map for quick lookup
+    const _criteriaMap = new Map(criteria.map((c) => [c.id, c]));
+
+    // Group grades by groupId and studentId
+    const gradesByGroupAndStudent = grades.reduce(
       (acc, grade) => {
-        if (grade.groupId !== null) {
-          if (!acc[grade.groupId]) {
-            acc[grade.groupId] = [];
+        if (grade.groupId !== null && grade.studentId !== null) {
+          const key = `${grade.groupId}-${grade.studentId}`;
+          if (!acc[key]) {
+            acc[key] = {
+              groupId: grade.groupId,
+              studentId: grade.studentId,
+              grades: [],
+            };
           }
-          acc[grade.groupId].push(grade);
+          acc[key].grades.push(grade);
         }
         return acc;
       },
-      {} as Record<number, typeof grades>,
+      {} as Record<string, { groupId: number; studentId: number; grades: typeof grades }>,
     );
 
-    // Calculate final grades for each group
-    const finalGradePromises = Object.entries(gradesByGroup).map(async ([groupIdStr, groupGrades]) => {
-      const groupId = parseInt(groupIdStr);
+    // Calculate final grades for each student
+    const finalGradePromises = Object.values(gradesByGroupAndStudent).map(
+      async ({ groupId, studentId, grades: studentGrades }) => {
+        // Calculate weighted average for this student
+        let totalWeightedScore = 0;
+        let totalWeight = 0;
 
-      // Calculate weighted average
-      let totalWeightedScore = 0;
-      let totalWeight = 0;
+        // For each criterion, find the student's grade
+        for (const criterion of criteria) {
+          const studentGrade = studentGrades.find((g) => g.gradingCriteriaId === criterion.id);
 
-      for (const grade of groupGrades) {
-        const criteria = criteriaMap.get(grade.gradingCriteriaId);
-        if (criteria) {
-          const weight = criteria.weight;
-          totalWeightedScore += (grade.gradeValue * weight) / 100;
-          totalWeight += weight;
+          if (studentGrade) {
+            // Grade values are already weighted in the frontend, so just sum them
+            totalWeightedScore += studentGrade.gradeValue;
+            totalWeight += criterion.weight;
+          }
         }
-      }
 
-      // Only calculate if we have complete grades
-      if (totalWeight > 0) {
-        const finalGrade = totalWeightedScore;
+        // Only calculate if we have complete grades
+        if (totalWeight > 0) {
+          const rawFinalGrade = totalWeightedScore;
+          const finalGrade = this.roundGradeToNextHalf(rawFinalGrade);
 
-        // Find or create final grade
-        const existing = await this.prisma.finalGrade.findFirst({
-          where: { projectId, promotionId, groupId },
-        });
+          // Find existing final grade for this student
+          const existing = await this.prisma.finalGrade.findFirst({
+            where: { projectId, promotionId, groupId, studentId },
+          });
 
-        if (existing) {
-          return await this.prisma.finalGrade.update({
-            where: { id: existing.id },
+          if (existing) {
+            return await this.prisma.finalGrade.update({
+              where: { id: existing.id },
+              data: {
+                finalGrade,
+                comment: `Calculé automatiquement - somme des notes pondérées arrondie au 0.5 supérieur (${totalWeight}% des critères)`,
+                validatedAt: new Date(),
+              },
+            });
+          }
+          return await this.prisma.finalGrade.create({
             data: {
+              projectId,
+              promotionId,
+              groupId,
+              studentId,
               finalGrade,
-              comment: `Calculé automatiquement (${totalWeight}% des critères)`,
-              validatedAt: new Date(),
+              comment: `Calculé automatiquement - somme des notes pondérées arrondie au 0.5 supérieur (${totalWeight}% des critères)`,
             },
           });
         }
-        return await this.prisma.finalGrade.create({
-          data: {
-            projectId,
-            promotionId,
-            groupId,
-            finalGrade,
-            comment: `Calculé automatiquement (${totalWeight}% des critères)`,
-          },
-        });
-      }
-      return null;
-    });
+        return null;
+      },
+    );
 
     const results = await Promise.all(finalGradePromises);
     const finalGrades = results.filter((result) => result !== null);

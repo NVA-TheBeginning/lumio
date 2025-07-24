@@ -3,6 +3,7 @@ export interface FinalGrade {
   projectId: number;
   promotionId: number;
   groupId: number;
+  studentId: number;
   finalGrade: number;
   comment?: string;
   createdAt: string;
