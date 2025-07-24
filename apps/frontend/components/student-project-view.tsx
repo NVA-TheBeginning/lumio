@@ -288,22 +288,24 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
         }
         case RuleType.FILE_PRESENCE: {
           const fileDetails = rule.ruleDetails as {
-            requiredFiles: string[];
+            requiredFiles?: string[];
             allowedExtensions?: string[];
             forbiddenExtensions?: string[];
           };
           return (
-            fileDetails.requiredFiles.length > 0 ||
+            (fileDetails.requiredFiles?.length ?? 0) > 0 ||
             (fileDetails.allowedExtensions?.length ?? 0) > 0 ||
             (fileDetails.forbiddenExtensions?.length ?? 0) > 0
           );
         }
         case RuleType.DIRECTORY_STRUCTURE: {
           const dirDetails = rule.ruleDetails as {
-            requiredDirectories: string[];
+            requiredDirectories?: string[];
             forbiddenDirectories?: string[];
           };
-          return dirDetails.requiredDirectories.length > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0;
+          return (
+            (dirDetails.requiredDirectories?.length ?? 0) > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0
+          );
         }
         default:
           return false;
