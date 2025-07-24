@@ -253,109 +253,105 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
   };
 
   const renderRuleDetails = (rule: DeliverableRule) => {
+    let parsedDetails: DeliverableRule["ruleDetails"];
+    try {
+      parsedDetails = typeof rule.ruleDetails === "string" ? JSON.parse(rule.ruleDetails) : rule.ruleDetails;
+    } catch (error) {
+      console.error("Error parsing rule details:", error);
+      return <div className="text-sm text-muted-foreground italic">Erreur lors du parsing des détails de la règle</div>;
+    }
+
     switch (rule.ruleType) {
       case RuleType.SIZE_LIMIT: {
-        const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
+        const sizeDetails = parsedDetails as { maxSizeInBytes: number };
         return (
-          <div className="text-sm text-muted-foreground">
-            Taille maximale : {formatFileSize(sizeDetails.maxSizeInBytes)}
+          <div className="space-y-2">
+            <div className="text-sm">
+              <span className="font-medium">Taille maximale autorisée :</span>
+            </div>
+            <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+              {formatFileSize(sizeDetails.maxSizeInBytes)}
+            </div>
           </div>
         );
       }
       case RuleType.FILE_PRESENCE: {
-        const fileDetails = rule.ruleDetails as {
-          requiredFiles: string[];
+        const fileDetails = parsedDetails as {
+          requiredFiles?: string[];
           allowedExtensions?: string[];
           forbiddenExtensions?: string[];
         };
         return (
-          <div className="text-sm text-muted-foreground space-y-1">
-            {fileDetails.requiredFiles.length > 0 && (
-              <div>Fichiers requis : {fileDetails.requiredFiles.join(", ")}</div>
+          <div className="space-y-3">
+            {(fileDetails.requiredFiles?.length ?? 0) > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-1">Fichiers obligatoires :</div>
+                <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {fileDetails.requiredFiles?.join(", ")}
+                </div>
+              </div>
             )}
             {(fileDetails.allowedExtensions?.length ?? 0) > 0 && (
-              <div>Extensions autorisées : {fileDetails.allowedExtensions?.join(", ")}</div>
+              <div>
+                <div className="text-sm font-medium mb-1">Extensions autorisées :</div>
+                <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {fileDetails.allowedExtensions?.join(", ")}
+                </div>
+              </div>
             )}
             {(fileDetails.forbiddenExtensions?.length ?? 0) > 0 && (
-              <div>Extensions interdites : {fileDetails.forbiddenExtensions?.join(", ")}</div>
+              <div>
+                <div className="text-sm font-medium mb-1">Extensions interdites :</div>
+                <div className="text-sm text-muted-foreground bg-red-50 dark:bg-red-950 p-2 rounded border border-red-200 dark:border-red-800">
+                  {fileDetails.forbiddenExtensions?.join(", ")}
+                </div>
+              </div>
             )}
+            {(fileDetails.requiredFiles?.length ?? 0) === 0 &&
+              (fileDetails.allowedExtensions?.length ?? 0) === 0 &&
+              (fileDetails.forbiddenExtensions?.length ?? 0) === 0 && (
+                <div className="text-sm text-muted-foreground italic">
+                  Aucune restriction spécifique sur les fichiers
+                </div>
+              )}
           </div>
         );
       }
       case RuleType.DIRECTORY_STRUCTURE: {
-        const dirDetails = rule.ruleDetails as {
-          requiredDirectories: string[];
+        const dirDetails = parsedDetails as {
+          requiredDirectories?: string[];
           forbiddenDirectories?: string[];
         };
         return (
-          <div className="text-sm text-muted-foreground space-y-1">
-            {dirDetails.requiredDirectories.length > 0 && (
-              <div>Dossiers requis : {dirDetails.requiredDirectories.join(", ")}</div>
+          <div className="space-y-3">
+            {(dirDetails.requiredDirectories?.length ?? 0) > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-1">Dossiers obligatoires :</div>
+                <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {dirDetails.requiredDirectories?.join(", ")}
+                </div>
+              </div>
             )}
             {(dirDetails.forbiddenDirectories?.length ?? 0) > 0 && (
-              <div>Dossiers interdits : {dirDetails.forbiddenDirectories?.join(", ")}</div>
+              <div>
+                <div className="text-sm font-medium mb-1">Dossiers interdits :</div>
+                <div className="text-sm text-muted-foreground bg-red-50 dark:bg-red-950 p-2 rounded border border-red-200 dark:border-red-800">
+                  {dirDetails.forbiddenDirectories?.join(", ")}
+                </div>
+              </div>
             )}
+            {(dirDetails.requiredDirectories?.length ?? 0) === 0 &&
+              (dirDetails.forbiddenDirectories?.length ?? 0) === 0 && (
+                <div className="text-sm text-muted-foreground italic">
+                  Aucune restriction spécifique sur la structure des dossiers
+                </div>
+              )}
           </div>
         );
       }
       default:
-        return null;
+        return <div className="text-sm text-muted-foreground italic">Type de règle non reconnu : {rule.ruleType}</div>;
     }
-  };
-
-  const DeliverableRules = ({ deliverableId }: { deliverableId: number }) => {
-    const { data: rules, isLoading } = useDeliverableRules(deliverableId);
-
-    if (isLoading) return null;
-    if (!rules || rules.length === 0) return null;
-
-    const validRules = rules.filter((rule) => {
-      switch (rule.ruleType) {
-        case RuleType.SIZE_LIMIT: {
-          const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
-          return sizeDetails.maxSizeInBytes > 0;
-        }
-        case RuleType.FILE_PRESENCE: {
-          const fileDetails = rule.ruleDetails as {
-            requiredFiles?: string[];
-            allowedExtensions?: string[];
-            forbiddenExtensions?: string[];
-          };
-          return (
-            (fileDetails.requiredFiles?.length ?? 0) > 0 ||
-            (fileDetails.allowedExtensions?.length ?? 0) > 0 ||
-            (fileDetails.forbiddenExtensions?.length ?? 0) > 0
-          );
-        }
-        case RuleType.DIRECTORY_STRUCTURE: {
-          const dirDetails = rule.ruleDetails as {
-            requiredDirectories?: string[];
-            forbiddenDirectories?: string[];
-          };
-          return (
-            (dirDetails.requiredDirectories?.length ?? 0) > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0
-          );
-        }
-        default:
-          return false;
-      }
-    });
-
-    if (validRules.length === 0) return null;
-
-    return (
-      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-        <h5 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Règles de soumission :</h5>
-        <div className="space-y-2">
-          {validRules.map((rule) => (
-            <div key={rule.id} className="flex items-start gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
-              <div className="flex-1">{renderRuleDetails(rule)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   const DeliverableRulesModal = ({ deliverable }: { deliverable: DeliverableType }) => {
@@ -369,48 +365,9 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
       );
     }
 
+    console.log("Deliverable Rules:", rules);
+
     if (!rules || rules.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Aucune règle spécifique n'a été définie pour ce livrable.</p>
-        </div>
-      );
-    }
-
-    const validRules = rules.filter((rule) => {
-      switch (rule.ruleType) {
-        case RuleType.SIZE_LIMIT: {
-          const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
-          return sizeDetails.maxSizeInBytes > 0;
-        }
-        case RuleType.FILE_PRESENCE: {
-          const fileDetails = rule.ruleDetails as {
-            requiredFiles?: string[];
-            allowedExtensions?: string[];
-            forbiddenExtensions?: string[];
-          };
-          return (
-            (fileDetails.requiredFiles?.length ?? 0) > 0 ||
-            (fileDetails.allowedExtensions?.length ?? 0) > 0 ||
-            (fileDetails.forbiddenExtensions?.length ?? 0) > 0
-          );
-        }
-        case RuleType.DIRECTORY_STRUCTURE: {
-          const dirDetails = rule.ruleDetails as {
-            requiredDirectories?: string[];
-            forbiddenDirectories?: string[];
-          };
-          return (
-            (dirDetails.requiredDirectories?.length ?? 0) > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0
-          );
-        }
-        default:
-          return false;
-      }
-    });
-
-    if (validRules.length === 0) {
       return (
         <div className="text-center py-8">
           <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -452,7 +409,7 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             Règles de soumission
           </h4>
 
-          {validRules.map((rule, index) => (
+          {rules.map((rule, index) => (
             <div key={rule.id} className="p-4 border rounded-lg space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
@@ -662,8 +619,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                               </div>
                             </div>
                           </div>
-
-                          <DeliverableRules deliverableId={deliverable.id} />
 
                           <Separator className="my-4" />
 
