@@ -84,7 +84,9 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
           </CardHeader>
           <CardContent>
             <div className="prose max-w-none">
-              <p>{project.description}</p>
+              <p>
+                {project.description.length > 100 ? `${project.description.slice(0, 100)}...` : project.description}
+              </p>
             </div>
 
             <div className="mt-4 flex items-center gap-2">
@@ -185,7 +187,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        window.location.href = `/dashboard/teachers/projects/${project.id}/deliverables/${deliverable.id}`;
+                        window.location.href = `/dashboard/teachers/projects/${project.id}/submissions?deliverable=${deliverable.id}&promotion=${project.promotions[0]?.id}`;
                       }}
                     >
                       Détails

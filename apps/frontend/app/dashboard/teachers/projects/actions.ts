@@ -351,6 +351,16 @@ export async function getProjectByIdStudent(id: number): Promise<ProjectStudentT
   return result;
 }
 
+export interface UpdateProjectData {
+  name?: string;
+  description?: string;
+  hasReport?: boolean;
+}
+
+export async function updateProject(id: number, data: UpdateProjectData): Promise<void> {
+  return await authPatchData(`${API_URL}/projects/${id}`, data);
+}
+
 export async function deleteProject(id: number): Promise<void> {
   return await authDeleteData(`${API_URL}/projects/${id}`);
 }
