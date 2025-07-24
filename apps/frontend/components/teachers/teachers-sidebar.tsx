@@ -1,6 +1,15 @@
 "use client";
 
-import { BookOpen, Calendar, FileText, GalleryVerticalEnd, LayoutDashboard, Settings, Users } from "lucide-react";
+import {
+  BookCheck,
+  BookOpen,
+  Calendar,
+  FileText,
+  GalleryVerticalEnd,
+  LayoutDashboard,
+  Settings,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
@@ -50,6 +59,11 @@ const navData = {
           url: "/dashboard/teachers/projects/new",
         },
       ],
+    },
+    {
+      title: "Évaluations",
+      url: "/dashboard/teachers/evaluations",
+      icon: <BookCheck className="size-4" />,
     },
     {
       title: "Calendrier",
