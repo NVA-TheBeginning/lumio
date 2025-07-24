@@ -60,7 +60,7 @@ export function SubmissionDialog({ open, onOpenChange, deliverable, groupId, onS
       if (submissionType === "file" && file) {
         submissionData.file = file;
       } else if (submissionType === "git" && gitUrl) {
-        const GIT_URL_REGEX = /^https:\/\/github\.com\/[^\/]+\/[^\/]+/;
+        const GIT_URL_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+/;
         if (!GIT_URL_REGEX.test(gitUrl)) {
           toast.error("URL Git invalide. Utilisez le format: https://github.com/utilisateur/repo");
           return;
