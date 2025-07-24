@@ -81,13 +81,13 @@ jobs:
       run: bun ci
 
     - name: Generate Prisma && Prepare database
-      run: bun run prisma
+      run: bun --bun run prisma
 
     - name: Build
-      run: bun run build:ci
+      run: bun --bun run build:ci
 
     - name: Run tests
-      run: bun run test:ci
+      run: bun --bun run test:ci
 
   lint:
     name: Code quality
