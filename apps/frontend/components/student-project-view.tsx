@@ -1,7 +1,19 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { AlertCircle, Award, Calendar, CheckCircle, Clock, Download, Eye, FileText, Upload, Users } from "lucide-react";
+import {
+  AlertCircle,
+  Award,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  Info,
+  Upload,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { downloadProjectDocument, SubmissionMetadataResponse } from "@/app/dashboard/students/projects/actions";
@@ -13,6 +25,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -107,6 +120,11 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
     deliverable: DeliverableType | null;
   }>({ open: false, submission: null, deliverable: null });
 
+  const [rulesDialog, setRulesDialog] = useState<{
+    open: boolean;
+    deliverable: DeliverableType | null;
+  }>({ open: false, deliverable: null });
+
   const handleOpenSubmissionDialog = (deliverable: DeliverableType) => {
     setSubmissionDialog({ open: true, deliverable });
   };
@@ -142,6 +160,14 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
 
   const handleCloseSubmissionDetailsDialog = () => {
     setSubmissionDetailsDialog({ open: false, submission: null, deliverable: null });
+  };
+
+  const handleOpenRulesDialog = (deliverable: DeliverableType) => {
+    setRulesDialog({ open: true, deliverable });
+  };
+
+  const handleCloseRulesDialog = () => {
+    setRulesDialog({ open: false, deliverable: null });
   };
 
   const handleSubmissionSuccess = async () => {
@@ -322,6 +348,120 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
             <div key={rule.id} className="flex items-start gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
               <div className="flex-1">{renderRuleDetails(rule)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const DeliverableRulesModal = ({ deliverable }: { deliverable: DeliverableType }) => {
+    const { data: rules, isLoading } = useDeliverableRules(deliverable.id);
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      );
+    }
+
+    if (!rules || rules.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Aucune règle spécifique n'a été définie pour ce livrable.</p>
+        </div>
+      );
+    }
+
+    const validRules = rules.filter((rule) => {
+      switch (rule.ruleType) {
+        case RuleType.SIZE_LIMIT: {
+          const sizeDetails = rule.ruleDetails as { maxSizeInBytes: number };
+          return sizeDetails.maxSizeInBytes > 0;
+        }
+        case RuleType.FILE_PRESENCE: {
+          const fileDetails = rule.ruleDetails as {
+            requiredFiles?: string[];
+            allowedExtensions?: string[];
+            forbiddenExtensions?: string[];
+          };
+          return (
+            (fileDetails.requiredFiles?.length ?? 0) > 0 ||
+            (fileDetails.allowedExtensions?.length ?? 0) > 0 ||
+            (fileDetails.forbiddenExtensions?.length ?? 0) > 0
+          );
+        }
+        case RuleType.DIRECTORY_STRUCTURE: {
+          const dirDetails = rule.ruleDetails as {
+            requiredDirectories?: string[];
+            forbiddenDirectories?: string[];
+          };
+          return (
+            (dirDetails.requiredDirectories?.length ?? 0) > 0 || (dirDetails.forbiddenDirectories?.length ?? 0) > 0
+          );
+        }
+        default:
+          return false;
+      }
+    });
+
+    if (validRules.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Aucune règle spécifique n'a été définie pour ce livrable.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h4 className="font-medium text-blue-800 dark:text-blue-200">Informations générales</h4>
+            </div>
+            <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+              <p>
+                <strong>Nom :</strong> {deliverable.name}
+              </p>
+              <p>
+                <strong>Description :</strong> {deliverable.description}
+              </p>
+              <p>
+                <strong>Date d'échéance :</strong> {formatDate(deliverable.deadline)}
+              </p>
+              {deliverable.allowLateSubmission && (
+                <p>
+                  <strong>Soumission tardive :</strong> Autorisée avec pénalité de {deliverable.lateSubmissionPenalty}%
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-semibold text-lg flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Règles de soumission
+          </h4>
+
+          {validRules.map((rule, index) => (
+            <div key={rule.id} className="p-4 border rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                  {index + 1}
+                </div>
+                <h5 className="font-medium">
+                  {rule.ruleType === RuleType.SIZE_LIMIT && "Limite de taille"}
+                  {rule.ruleType === RuleType.FILE_PRESENCE && "Présence de fichiers"}
+                  {rule.ruleType === RuleType.DIRECTORY_STRUCTURE && "Structure de dossiers"}
+                </h5>
+              </div>
+              <div className="ml-8">{renderRuleDetails(rule)}</div>
             </div>
           ))}
         </div>
@@ -533,6 +673,10 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
                               )}
                             </div>
                             <div className="flex gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => handleOpenRulesDialog(deliverable)}>
+                                <Info className="h-4 w-4 mr-2" />
+                                Voir les règles
+                              </Button>
                               {submission ? (
                                 <>
                                   <Button
@@ -900,6 +1044,19 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
           deliverable={submissionDetailsDialog.deliverable}
           onSuccess={handleSubmissionDeleted}
         />
+      )}
+      {rulesDialog.deliverable && (
+        <Dialog open={rulesDialog.open} onOpenChange={handleCloseRulesDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Règles du livrable : {rulesDialog.deliverable.name}
+              </DialogTitle>
+            </DialogHeader>
+            <DeliverableRulesModal deliverable={rulesDialog.deliverable} />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
