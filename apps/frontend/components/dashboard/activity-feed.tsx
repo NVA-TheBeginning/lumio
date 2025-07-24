@@ -94,8 +94,7 @@ export function ActivityFeed({ activities, isLoading }: ActivityFeedProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{activity.title}</p>
-                  {activity.description && <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>}
+                  <p className="text-sm font-medium text-foreground">{activity.title}</p>                
                   {activity.projectName && (
                     <p className="text-xs text-muted-foreground mt-1">Projet: {activity.projectName}</p>
                   )}

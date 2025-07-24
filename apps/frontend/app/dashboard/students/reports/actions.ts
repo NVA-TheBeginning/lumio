@@ -44,8 +44,6 @@ export async function getReports(filters?: ReportFilters): Promise<Report[]> {
 
     const [studentGroupIds, allReports] = await Promise.all([getStudentGroupIds(), fetchAllReports(filters)]);
 
-    console.log("Student Group IDs:", studentGroupIds);
-    console.log("All Reports:", allReports);
     if (studentGroupIds.length === 0) {
       return [];
     }

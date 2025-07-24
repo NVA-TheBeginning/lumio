@@ -365,8 +365,6 @@ export default function StudentProjectView({ projectId, currentUserId }: Student
       );
     }
 
-    console.log("Deliverable Rules:", rules);
-
     if (!rules || rules.length === 0) {
       return (
         <div className="text-center py-8">

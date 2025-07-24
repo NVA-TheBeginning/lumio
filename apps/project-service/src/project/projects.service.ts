@@ -476,7 +476,17 @@ export class ProjectService {
     });
     if (!existing) throw new NotFoundException(`Project ${id} not found`);
 
-    await this.prisma.project.update({ where: { id }, data: { deletedAt: new Date() } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.project.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+
+      await tx.projectPromotion.deleteMany({
+        where: { projectId: id },
+      });
+    });
+
     return { deleted: true };
   }
 

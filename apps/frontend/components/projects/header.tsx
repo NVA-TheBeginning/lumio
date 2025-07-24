@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, Edit, MoreHorizontal, Trash } from "lucide-react";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteProject, ProjectType } from "@/app/dashboard/teachers/projects/actions";
+import { deleteProject, ProjectType, updateProject } from "@/app/dashboard/teachers/projects/actions";
 import { HoverPrefetchLink } from "@/components/hover-prefetch-link";
 import {
   Breadcrumb,
@@ -51,6 +51,23 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [projectName, setProjectName] = useState(project.name);
   const [projectDescription, setProjectDescription] = useState(project.description);
+  const queryClient = useQueryClient();
+
+  const updateProjectMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string }) => {
+      await updateProject(project.id, data);
+    },
+    onSuccess: () => {
+      toast.success("Projet modifié avec succès");
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", project.id],
+      });
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la modification du projet");
+    },
+  });
 
   const deleteProjectMutation = useMutation({
     mutationFn: async (projectId: number) => {
@@ -66,7 +83,10 @@ export function ProjectHeader({ project, router }: ProjectHeaderProps) {
   });
 
   const handleSaveChanges = () => {
-    setIsEditing(false);
+    updateProjectMutation.mutate({
+      name: projectName,
+      description: projectDescription,
+    });
   };
 
   const handleDeleteProject = () => {
