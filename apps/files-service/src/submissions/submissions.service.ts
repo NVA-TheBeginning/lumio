@@ -35,7 +35,7 @@ export interface SubmissionFileResponse {
   status: string;
 }
 
-const GIT_URL_REGEX = /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(?:(?:\.git)|(?:\/))?$/;
+const GIT_URL_REGEX = /^https:\/\/github\.com\/[^\/]+\/[^\/]+/;
 
 @Injectable()
 export class SubmissionsService {
