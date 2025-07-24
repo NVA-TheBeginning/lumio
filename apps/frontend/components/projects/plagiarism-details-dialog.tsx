@@ -1,4 +1,4 @@
-import { AlertTriangle, Copy, FileText, GitBranch, Percent } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, Copy, FileText, GitBranch, Percent } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { isNotEmpty } from "@/lib/utils";
 
+interface FileComparison {
+  fileName: string;
+  fileRelativePath: string;
+  fileSizeBytes: number;
+  linesOfCode: number;
+  mossScore: number;
+  rabinKarpScore: number;
+  combinedScore: number;
+  flags: string[];
+}
+
 interface PlagiarismMatch {
   matchedFolder: string;
   overallMatchPercentage: number;
   combinedScore: number;
   flags: string[];
+  fileComparisons?: FileComparison[];
 }
 
 interface PlagiarismResult {
@@ -37,6 +49,7 @@ interface PlagiarismDetailsDialogProps {
 
 export function PlagiarismDetailsDialog({ plagiarismResult, children }: PlagiarismDetailsDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedMatches, setExpandedMatches] = useState<Set<number>>(new Set());
 
   const copyToClipboard = (text: string) => {
     void navigator.clipboard.writeText(text);
@@ -60,6 +73,29 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
   const getGroupName = (folderName: string) => {
     const parts = folderName.split("-");
     return parts.length > 1 ? parts.slice(1).join("-") : folderName;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const toggleMatchExpansion = (index: number) => {
+    const newExpanded = new Set(expandedMatches);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedMatches(newExpanded);
+  };
+
+  const getScoreSeverity = (score: number) => {
+    if (score >= 80) return "text-red-600";
+    if (score >= 60) return "text-orange-600";
+    if (score >= 40) return "text-yellow-600";
+    return "text-green-600";
   };
 
   const severity = getPlagiarismSeverity(plagiarismResult.plagiarismPercentage);
@@ -149,61 +185,161 @@ export function PlagiarismDetailsDialog({ plagiarismResult, children }: Plagiari
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {plagiarismResult.matches.map((match, index) => (
-                    <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{getGroupName(match.matchedFolder)}</span>
-                          <Badge variant="outline" className="text-xs">
-                            Correspondance #{index + 1}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => copyToClipboard(match.matchedFolder)}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
+                  {plagiarismResult.matches.map((match, index) => {
+                    const isExpanded = expandedMatches.has(index);
+                    const fileComparisons = match.fileComparisons || [];
+                    const hasFileComparisons = Boolean(fileComparisons) && fileComparisons.length > 0;
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium">Pourcentage de correspondance:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`font-bold ${getMatchSeverity(match.overallMatchPercentage)}`}>
-                              {match.overallMatchPercentage}%
-                            </span>
-                            <Progress value={match.overallMatchPercentage} className="h-1 flex-1" />
-                          </div>
-                        </div>
-                        <div>
-                          <span className="font-medium">Score combiné:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`font-bold ${getMatchSeverity(match.combinedScore)}`}>
-                              {match.combinedScore}%
-                            </span>
-                            <Progress value={match.combinedScore} className="h-1 flex-1" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {match.flags.length > 0 && (
-                        <div className="mt-3">
-                          <span className="font-medium text-sm">Indicateurs détectés:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {match.flags.map((flag, flagIndex) => (
-                              <Badge
-                                key={flagIndex}
-                                variant={flag === "VERY_HIGH_SIMILARITY" ? "destructive" : "secondary"}
-                                className="text-xs"
-                              >
-                                {flag}
+                    return (
+                      <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{getGroupName(match.matchedFolder)}</span>
+                            <Badge variant="outline" className="text-xs">
+                              Correspondance #{index + 1}
+                            </Badge>
+                            {hasFileComparisons && (
+                              <Badge variant="secondary" className="text-xs">
+                                {fileComparisons.length} fichier(s)
                               </Badge>
-                            ))}
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {hasFileComparisons && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleMatchExpansion(index)}
+                                className="flex items-center gap-1"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronDown className="h-3 w-3" />
+                                    Masquer fichiers
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronRight className="h-3 w-3" />
+                                    Voir fichiers
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => copyToClipboard(match.matchedFolder)}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Pourcentage de correspondance:</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`font-bold ${getMatchSeverity(match.overallMatchPercentage)}`}>
+                                {match.overallMatchPercentage}%
+                              </span>
+                              <Progress value={match.overallMatchPercentage} className="h-1 flex-1" />
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium">Score combiné:</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`font-bold ${getMatchSeverity(match.combinedScore)}`}>
+                                {match.combinedScore}%
+                              </span>
+                              <Progress value={match.combinedScore} className="h-1 flex-1" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {match.flags.length > 0 && (
+                          <div className="mt-3">
+                            <span className="font-medium text-sm">Indicateurs détectés:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {match.flags.map((flag, flagIndex) => (
+                                <Badge
+                                  key={flagIndex}
+                                  variant={flag === "VERY_HIGH_SIMILARITY" ? "destructive" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  {flag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Per-File Details Section */}
+                        {hasFileComparisons && isExpanded && (
+                          <div className="mt-4 border-t pt-4">
+                            <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              Analyse par fichier
+                            </h4>
+
+                            <div className="space-y-3">
+                              {fileComparisons.map((file, fileIndex) => (
+                                <div key={fileIndex} className="bg-muted/30 border rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="h-3 w-3 text-muted-foreground" />
+                                      <span className="font-medium text-sm">{file.fileName}</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {formatFileSize(file.fileSizeBytes)}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {file.linesOfCode} lignes
+                                      </Badge>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => copyToClipboard(file.fileRelativePath)}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                                    <div className="space-y-1">
+                                      <span className="font-medium text-muted-foreground">Score MOSS:</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-bold ${getScoreSeverity(file.mossScore)}`}>
+                                          {file.mossScore.toFixed(1)}%
+                                        </span>
+                                        <Progress value={file.mossScore} className="h-1 flex-1" />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <span className="font-medium text-muted-foreground">Score Rabin-Karp:</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-bold ${getScoreSeverity(file.rabinKarpScore)}`}>
+                                          {file.rabinKarpScore.toFixed(1)}%
+                                        </span>
+                                        <Progress value={file.rabinKarpScore} className="h-1 flex-1" />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <span className="font-medium text-muted-foreground">Score combiné:</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-bold ${getScoreSeverity(file.combinedScore)}`}>
+                                          {file.combinedScore.toFixed(1)}%
+                                        </span>
+                                        <Progress value={file.combinedScore} className="h-1 flex-1" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
